@@ -1,0 +1,11 @@
+Model Information:
+* title:	Idle 1 Male Free Animation (200 frames loop)
+* source:	https://sketchfab.com/3d-models/idle-1-male-free-animation-200-frames-loop-4add87eb9b7744c593e6684c5df3551b
+* author:	Denys Almaral (https://sketchfab.com/denysalmaral)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Idle 1 Male Free Animation (200 frames loop)" (https://sketchfab.com/3d-models/idle-1-male-free-animation-200-frames-loop-4add87eb9b7744c593e6684c5df3551b) by Denys Almaral (https://sketchfab.com/denysalmaral) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
