@@ -11,6 +11,5 @@ export class ObjectToDodge extends PhysicsContainer {
 		enemy.endFill();
 
 		this.addChild(enemy);
-
 	}
 }
