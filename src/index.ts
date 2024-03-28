@@ -13,7 +13,7 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
-import { NutritionScene } from "./project/scenes/NutritionScene";
+import { DodgeScene } from "./project/scenes/NewGame/DodgeScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -75,7 +75,7 @@ window.dispatchEvent(new Event("resize"));
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
 	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
-	Manager.changeScene(NutritionScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(DodgeScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {
