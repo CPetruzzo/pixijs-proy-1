@@ -84,7 +84,17 @@
 				"loliLose": "./models/LOLI.png",
 				"PLAY": "./models/PLAY.jpg",
 				"loliGameOver": "./models/LOLIGAMEOVER.png",
-				"LDTK_IMG": "./img/TopDown_by_deepnight.png"
+				"LDTK_IMG": "./img/TopDown_by_deepnight.png",
+				"DODGE-BACKGROUND": "./img/BACKGROUND.jpg",
+				"DODGE-BACKGROUND2": "./img/BACKGROUND2.jpg",
+				"player1": "./img/player1.png",
+				"player2": "./img/player2.png",
+				"player3": "./img/player3.png",
+				"powerup": "./img/powerup.png",
+				"enemy": "./img/enemy.png",
+				"coin": "./img/monedita.png",
+				"obstacule": "./img/obstacule.png"
+				
 			}
 		},
 		{

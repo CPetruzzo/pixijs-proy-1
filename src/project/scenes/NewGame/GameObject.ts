@@ -1,14 +1,14 @@
 import { Graphics } from "pixi.js";
 
 export abstract class GameObject extends Graphics {
+	public isOnGround: boolean = false;
+
 	protected constructor() {
 		super();
-		this.interactive = true; // Para detectar eventos
+		this.eventMode = "static";
 	}
 
-	// Método abstracto para actualizar el objeto
 	public abstract update(dt: number): void;
 
-	// Método abstracto para manejar eventos como el clic
-	public abstract handleEvent(): void;
+	public abstract handleEvent(_something?: any): void;
 }

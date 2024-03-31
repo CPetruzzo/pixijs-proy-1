@@ -65,5 +65,9 @@ export const PLAYER_WALK_SPEED: number = 0.05;
 export const LEVEL_SCALE: number = 3.5;
 export const PLAYER_SCALE: number = 0.09;
 
+export const PAUSE_OBSTACULE: number = 2000;
+export const PLAYER_SPEED: number = 0.5;
+export const OBJECT_SPEED: number = 0.5;
+
 
 
