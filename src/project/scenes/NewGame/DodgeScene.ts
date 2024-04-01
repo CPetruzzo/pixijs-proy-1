@@ -31,6 +31,7 @@ export class DodgeScene extends PixiScene {
 	private maxHealth: number = 3;
 	private currentHealth: number = this.maxHealth;
 	private gameOver: boolean = false;
+	private eventContainer: Graphics;
 
 	constructor() {
 		super();
@@ -46,20 +47,23 @@ export class DodgeScene extends PixiScene {
 		this.background.addChild(buttonPopUp);
 		buttonPopUp.eventMode = "static";
 		buttonPopUp.on("pointertap", () => {
-			Manager.openPopup(BasePopup);
+			Manager.openPopup(BasePopup, [this.score]);
 		})
 
 		this.player = new Player();
 		this.player.y = this.background.height - this.player.height;
 		this.background.addChild(this.player);
 
-		this.scoreText = new Text(`Score: ${this.score}`, { fontSize: 24, fill: 0xffffff });
+		this.scoreText = new Text(`Score: ${this.score}`, { fontSize: 55, fill: 0xffffff });
 		this.scoreText.anchor.set(0.5);
-		this.scoreText.position.set(0, -this.background.height * 0.5);
+		this.scoreText.position.set(0, -this.background.height * 0.6);
 		this.addChild(this.scoreText);
 
 		this.background.eventMode = "static";
-		this.background.on("pointertap", this.onMouseMove, this);
+		this.eventMode = "static";
+
+		this.background.on("pointerdown", this.onMouseMove, this);
+		this.background.on("pointerup", this.onMouseStop, this);
 
 		this.healthBar = new Sprite(Texture.WHITE);
 		this.healthBar.width = 99;
@@ -78,6 +82,14 @@ export class DodgeScene extends PixiScene {
 			this.healthSprites.push(healthSprite);
 			this.addChild(healthSprite);
 		}
+
+		// Crear un contenedor invisible para eventos debajo del background
+		this.eventContainer = new Graphics();
+		this.eventContainer.beginFill(0xff5ff, 0.1); // Color transparente
+		this.eventContainer.drawRect(0, this.background.height, this.background.width, 200); // Misma dimensión que el background
+		this.eventContainer.endFill();
+		this.eventContainer.eventMode = "static";
+		this.background.addChild(this.eventContainer); // Agregar el contenedor al fondo
 	}
 
 	private updateHealthBar(): void {
@@ -113,6 +125,9 @@ export class DodgeScene extends PixiScene {
 		}
 	}
 
+	private onMouseStop(): void {
+		this.moveTween.pause();
+	}
 
 	public override update(dt: number): void {
 		if (this.gameOver) {
@@ -177,7 +192,7 @@ export class DodgeScene extends PixiScene {
 				break;
 			case "OTHER":
 				this.increaseScore(10);
-				this.increaseHealth(); // Cambiar a la función para incrementar la vida
+				this.increaseHealth();
 				break;
 			case "COIN":
 				this.collectCoin(50);
@@ -254,7 +269,7 @@ export class DodgeScene extends PixiScene {
 	}
 
 	public override onResize(newW: number, newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this, newW, newH);
+		ScaleHelper.setScaleRelativeToIdeal(this, newW * 1.7, newH);
 		this.x = newW * 0.5;
 		this.y = newH * 0.5;
 	}
@@ -288,12 +303,24 @@ export class DodgeScene extends PixiScene {
 				break;
 		}
 
-		object.x = Random.shared.randomInt(0, this.background.width);
+		object.x = Random.shared.randomInt(object.width * 0.5, this.background.width - object.width * 0.5);
 		this.objects.push(object);
 		this.background.addChild(object);
 	}
-	private openGameOverPopup(): void {
+
+	private async openGameOverPopup(): Promise<void> {
 		this.gameOver = true;
-		Manager.openPopup(BasePopup);
+		try {
+			const popupInstance = await Manager.openPopup(BasePopup, [this.score]);
+			if (popupInstance instanceof BasePopup) {
+				popupInstance.showHighscores(this.score);
+			} else {
+				console.error('Error al abrir el popup: no se pudo obtener la instancia de BasePopup.');
+			}
+		} catch (error) {
+			console.error('Error al abrir el popup:', error);
+		}
 	}
+
+
 }
