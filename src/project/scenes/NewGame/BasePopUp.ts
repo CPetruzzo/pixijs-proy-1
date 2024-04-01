@@ -195,7 +195,7 @@ export class BasePopup extends PixiScene {
 		this.fadeAndBlocker.width = _newW;
 		this.fadeAndBlocker.height = _newH;
 
-		ScaleHelper.setScaleRelativeToScreen(this, _newW, _newH, 0.1, 0.1, ScaleHelper.FILL);
+		ScaleHelper.setScaleRelativeToIdeal(this, _newW * 0.1, _newH * 0.1, 720, 1600, ScaleHelper.FIT);
 		this.x = _newW * 0.5;
 		this.y = _newH * 0.5;
 	}

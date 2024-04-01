@@ -24,7 +24,8 @@
         "flow",
         "engine",
         "game",
-        "background"
+        "background",
+        "changes fit screen and background"
     ],
     "conventionalCommits.autoCommit": false,
     "conventionalCommits.emojiFormat": "emoji",

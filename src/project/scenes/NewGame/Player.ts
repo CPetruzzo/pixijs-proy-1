@@ -1,4 +1,4 @@
-import { Texture } from "pixi.js";
+import { Graphics, Texture } from "pixi.js";
 import { StateMachineAnimator } from "../../../engine/animation/StateMachineAnimation";
 import { Timer } from "../../../engine/tweens/Timer";
 import { PLAYER_SPEED } from "../../../utils/constants";
@@ -7,6 +7,7 @@ export class Player extends StateMachineAnimator {
 	public canMove: boolean = true;
 	public movingLeft: boolean = false;
 	public speed: number;
+	public aux: Graphics;
 
 	constructor() {
 		super();
@@ -33,6 +34,12 @@ export class Player extends StateMachineAnimator {
 		);
 
 		this.playState("idle");
+
+		this.aux = new Graphics();
+		this.aux.beginFill(0x0000ff, 0.05);
+		this.aux.drawRect(-35, 50, 70, 100);
+		this.aux.endFill();
+		this.addChild(this.aux);
 	}
 
 	public stopMovement(): void {

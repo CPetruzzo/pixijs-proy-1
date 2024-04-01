@@ -57,7 +57,7 @@ export class DodgeScene extends PixiScene {
 
 		this.scoreText = new Text(`Score: ${this.score}`, { fontSize: 55, fill: 0xffffff });
 		this.scoreText.anchor.set(0.5);
-		this.scoreText.position.set(0, -this.background.height * 0.52);
+		this.scoreText.position.set(0, -this.background.height * 0.48);
 		this.addChild(this.scoreText);
 
 		this.background.eventMode = "static";
@@ -172,9 +172,9 @@ export class DodgeScene extends PixiScene {
 
 		this.scoreText.text = `Score: ${this.score}`;
 
-		if (this.score > 200) {
-			this.background.texture = Texture.from("DODGE-BACKGROUND2");
-		}
+		// if (this.score > 200) {
+		// 	this.background.texture = Texture.from("DODGE-BACKGROUND2");
+		// }
 	}
 
 	private increaseHealth(): void {
@@ -258,7 +258,7 @@ export class DodgeScene extends PixiScene {
 	}
 
 	private checkCollision(player: Player, enemy: GameObject): boolean {
-		const playerBounds = player.getBounds();
+		const playerBounds = player.aux.getBounds();
 		const enemyBounds = enemy.getBounds();
 
 		return (
@@ -270,7 +270,7 @@ export class DodgeScene extends PixiScene {
 	}
 
 	public override onResize(newW: number, newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this, newW * 1.7, newH);
+		ScaleHelper.setScaleRelativeToIdeal(this, newW * 0.7, newH * 0.7, 720, 1600, ScaleHelper.FIT);
 		this.x = newW * 0.5;
 		this.y = newH * 0.5;
 	}
