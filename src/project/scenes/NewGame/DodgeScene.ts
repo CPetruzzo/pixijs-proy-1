@@ -44,19 +44,20 @@ export class DodgeScene extends PixiScene {
 		buttonPopUp.beginFill(0x808080);
 		buttonPopUp.drawRect(0, 0, 45, 45);
 		buttonPopUp.endFill();
-		this.background.addChild(buttonPopUp);
+		// this.background.addChild(buttonPopUp);
 		buttonPopUp.eventMode = "static";
 		buttonPopUp.on("pointertap", () => {
 			Manager.openPopup(BasePopup, [this.score]);
 		})
 
 		this.player = new Player();
+		this.player.x = this.background.width * 0.5;
 		this.player.y = this.background.height - this.player.height;
 		this.background.addChild(this.player);
 
 		this.scoreText = new Text(`Score: ${this.score}`, { fontSize: 55, fill: 0xffffff });
 		this.scoreText.anchor.set(0.5);
-		this.scoreText.position.set(0, -this.background.height * 0.6);
+		this.scoreText.position.set(0, -this.background.height * 0.52);
 		this.addChild(this.scoreText);
 
 		this.background.eventMode = "static";
@@ -86,7 +87,7 @@ export class DodgeScene extends PixiScene {
 		// Crear un contenedor invisible para eventos debajo del background
 		this.eventContainer = new Graphics();
 		this.eventContainer.beginFill(0xff5ff, 0.1); // Color transparente
-		this.eventContainer.drawRect(0, this.background.height, this.background.width, 200); // Misma dimensión que el background
+		this.eventContainer.drawRect(0, this.background.height, this.background.width, 400); // Misma dimensión que el background
 		this.eventContainer.endFill();
 		this.eventContainer.eventMode = "static";
 		this.background.addChild(this.eventContainer); // Agregar el contenedor al fondo
