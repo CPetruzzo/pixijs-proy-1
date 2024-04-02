@@ -1,4 +1,4 @@
-import { Graphics, Sprite, Text, Texture } from "pixi.js";
+import { Container, Graphics, Sprite, Text, Texture } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import Random from "../../../engine/random/Random";
@@ -12,8 +12,9 @@ import { Manager } from "../../..";
 import { BasePopup } from "./BasePopUp";
 
 export class DodgeScene extends PixiScene {
-	public static readonly BUNDLES = ["package-1", "sfx"];
+	public static readonly BUNDLES = ["fallrungame", "sfx"];
 
+	private backgroundContainer: Container = new Container();
 	private background: Sprite;
 
 	private scoreText: Text;
@@ -31,14 +32,23 @@ export class DodgeScene extends PixiScene {
 	private maxHealth: number = 3;
 	private currentHealth: number = this.maxHealth;
 	private gameOver: boolean = false;
-	private eventContainer: Graphics;
-
+	private bottomEventContainer: Graphics;
+	private bleedingBackgroundContainer: Container = new Container();
+	private rightEventContainer: Graphics;
+	private leftEventContainer: Graphics;
 	constructor() {
 		super();
 
+		this.addChild(this.bleedingBackgroundContainer);
+		this.addChild(this.backgroundContainer);
+
+		const bleedBG = Sprite.from("DODGE-BACKGROUND2");
+		bleedBG.anchor.set(0.5)
+		this.bleedingBackgroundContainer.addChild(bleedBG);
+
 		this.background = Sprite.from("DODGE-BACKGROUND");
 		this.background.position.set(-this.background.width * 0.5, - this.background.height * 0.5);
-		this.addChild(this.background);
+		this.backgroundContainer.addChild(this.background);
 
 		const buttonPopUp = new Graphics();
 		buttonPopUp.beginFill(0x808080);
@@ -58,7 +68,7 @@ export class DodgeScene extends PixiScene {
 		this.scoreText = new Text(`Score: ${this.score}`, { fontSize: 55, fill: 0xffffff });
 		this.scoreText.anchor.set(0.5);
 		this.scoreText.position.set(0, -this.background.height * 0.48);
-		this.addChild(this.scoreText);
+		this.backgroundContainer.addChild(this.scoreText);
 
 		this.background.eventMode = "static";
 		this.eventMode = "static";
@@ -71,7 +81,7 @@ export class DodgeScene extends PixiScene {
 		this.healthBar.height = 20;
 		this.healthBar.tint = 0xff0000; // Color rojo
 		this.healthBar.position.set(-this.healthBar.width * 0.5, this.background.height * 0.5 - 50);
-		this.addChild(this.healthBar);
+		this.backgroundContainer.addChild(this.healthBar);
 
 		this.healthSprites = [];
 		for (let i = 0; i < this.maxHealth; i++) {
@@ -81,16 +91,31 @@ export class DodgeScene extends PixiScene {
 			healthSprite.tint = 0x00ff00; // Color verde
 			healthSprite.position.set(this.healthBar.x + i * healthSprite.width, this.healthBar.y);
 			this.healthSprites.push(healthSprite);
-			this.addChild(healthSprite);
+			this.backgroundContainer.addChild(healthSprite);
 		}
 
 		// Crear un contenedor invisible para eventos debajo del background
-		this.eventContainer = new Graphics();
-		this.eventContainer.beginFill(0xff5ff, 0.1); // Color transparente
-		this.eventContainer.drawRect(0, this.background.height, this.background.width, 400); // Misma dimensión que el background
-		this.eventContainer.endFill();
-		this.eventContainer.eventMode = "static";
-		this.background.addChild(this.eventContainer); // Agregar el contenedor al fondo
+		this.bottomEventContainer = new Graphics();
+		this.bottomEventContainer.beginFill(0xff5ff, 0.01); // Color transparente
+		this.bottomEventContainer.drawRect(0, this.background.height, this.background.width, 400); // Misma dimensión que el background
+		this.bottomEventContainer.endFill();
+		this.bottomEventContainer.eventMode = "static";
+
+		// Crear un contenedor invisible para eventos debajo del background
+		this.rightEventContainer = new Graphics();
+		this.rightEventContainer.beginFill(0xff5ff, 0.01); // Color transparente
+		this.rightEventContainer.drawRect(this.background.width, 0, this.background.width * 0.3, this.background.height); // Misma dimensión que el background
+		this.rightEventContainer.endFill();
+		this.rightEventContainer.eventMode = "static";
+
+		// Crear un contenedor invisible para eventos debajo del background
+		this.leftEventContainer = new Graphics();
+		this.leftEventContainer.beginFill(0xff5ff, 0.01); // Color transparente
+		this.leftEventContainer.drawRect(-this.background.width * 0.3, 0, this.background.width * 0.3, this.background.height); // Misma dimensión que el background
+		this.leftEventContainer.endFill();
+		this.leftEventContainer.eventMode = "static";
+
+		this.background.addChild(this.bottomEventContainer, this.leftEventContainer, this.rightEventContainer); // Agregar el contenedor al fondo
 	}
 
 	private updateHealthBar(): void {
@@ -105,7 +130,7 @@ export class DodgeScene extends PixiScene {
 
 	private onMouseMove(event: any): void {
 		const globalMousePosition = this.background.toLocal(event.data.global);
-		const targetX = globalMousePosition.x;
+		const targetX = Math.max(Math.min(globalMousePosition.x - this.player.width * 0.3, this.background.width - this.player.width * 0.3), this.player.width * 0.3);
 		const distance = targetX - this.player.x;
 		this.player.movingLeft = distance < 0;
 		this.player.setDirection(this.player.movingLeft);
@@ -163,10 +188,6 @@ export class DodgeScene extends PixiScene {
 			} else if (this.checkCollision(this.player, obj)) {
 				this.doSomething(obj);
 				obj.handleEvent(this.player);
-
-				if (obj.name === "OBSTACLE") {
-					this.collideWithObstacle();
-				}
 			}
 		});
 
@@ -189,7 +210,7 @@ export class DodgeScene extends PixiScene {
 		switch (obj.name) {
 			case "ENEMY":
 				this.decreaseScore(50);
-				this.decreseHealth();
+				this.decreaseHealth();
 				break;
 			case "OTHER":
 				this.increaseScore(10);
@@ -203,6 +224,7 @@ export class DodgeScene extends PixiScene {
 				break;
 			case "OBSTACLE":
 				this.collideWithObstacle();
+				this.decreaseHealth();
 				break;
 			default:
 				console.log("that object didn't have a name", obj);
@@ -234,10 +256,9 @@ export class DodgeScene extends PixiScene {
 		if (this.moveTween != undefined) {
 			this.moveTween.pause();
 		}
-		this.decreseHealth();
 	}
 
-	private decreseHealth(): void {
+	private decreaseHealth(): void {
 		if (this.currentHealth > 0) { // Verifica si el jugador todavía tiene vida
 			this.currentHealth--; // Reducir la vida
 			this.updateHealthBar(); // Actualizar la barra de vida
@@ -270,7 +291,11 @@ export class DodgeScene extends PixiScene {
 	}
 
 	public override onResize(newW: number, newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this, newW * 0.7, newH * 0.7, 720, 1600, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, newW * 0.7, newH * 0.7, 720, 1600, ScaleHelper.FIT);
+		// this.backgroundContainer.x = newW * 0.5;
+		// this.backgroundContainer.y = newH * 0.5;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.bleedingBackgroundContainer, newW * 3, newH * 2, 720, 1600, ScaleHelper.FILL);
 		this.x = newW * 0.5;
 		this.y = newH * 0.5;
 	}

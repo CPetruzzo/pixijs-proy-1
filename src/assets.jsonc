@@ -93,8 +93,7 @@
 				"powerup": "./img/powerup.png",
 				"enemy": "./img/enemy.png",
 				"coin": "./img/monedita.png",
-				"obstacule": "./img/obstacule.png"
-				
+				"obstacule": "./img/obstacule.png"				
 			}
 		},
 		{
@@ -104,6 +103,19 @@
 				"pocho": "./models/cheers2.png",
 				"package 2 background": "./img/big_placeholder/background-2.jpg"
 			}
+		},
+		{
+			"name": "fallrungame",
+			"assets": {
+				"DODGE-BACKGROUND": "./img/BACKGROUND.jpg",
+				"DODGE-BACKGROUND2": "./img/BACKGROUND2.jpg",
+				"player1": "./img/player1.png",
+				"player2": "./img/player2.png",
+				"player3": "./img/player3.png",
+				"powerup": "./img/powerup.png",
+				"enemy": "./img/enemy.png",
+				"coin": "./img/monedita.png",
+				"obstacule": "./img/obstacule.png"			}
 		},
 		{
 			"name": "3d",

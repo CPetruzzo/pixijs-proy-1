@@ -25,6 +25,8 @@ export interface PopupOptions {
 }
 
 export class BasePopup extends PixiScene {
+	public static readonly BUNDLES = ["fallrungame", "sfx"];
+
 	private fadeAndBlocker: Graphics;
 	public background: Sprite;
 	public buttons: Button[];
