@@ -16,7 +16,8 @@ interface HighscoreEntry {
 	score: number;
 }
 
-const highscores: HighscoreEntry[] = [];
+const localStorageKey = "highscores";
+let highscores: HighscoreEntry[] = [];
 
 export interface PopupOptions {
 	title: string;
@@ -89,6 +90,13 @@ export class BasePopup extends PixiScene {
 	}
 
 	public override onStart(): void {
+
+		// Recuperar highscores del localStorage al iniciar el popup
+		const storedHighscores = localStorage.getItem(localStorageKey);
+		if (storedHighscores) {
+			highscores = JSON.parse(storedHighscores);
+		}
+
 		this.background.interactiveChildren = false;
 
 		this.fadeAndBlocker.alpha = 0;
@@ -133,6 +141,8 @@ export class BasePopup extends PixiScene {
 		// Ordenar highscores por puntaje de mayor a menor
 		highscores.sort((a, b) => b.score - a.score);
 
+		// Guardar highscores en localStorage
+		localStorage.setItem(localStorageKey, JSON.stringify(highscores));
 		// Mostrar los highscores en la tabla
 		const startY = 50;
 		const lineHeight = 90;
@@ -213,4 +223,5 @@ export class BasePopup extends PixiScene {
 				Manager.changeScene(DodgeScene);
 			});
 	}
+
 }
