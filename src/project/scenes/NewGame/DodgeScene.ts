@@ -4,12 +4,13 @@ import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import Random from "../../../engine/random/Random";
 import { Tween } from "tweedle.js";
 import { Player } from "./Player";
-import { GameObject } from "./GameObject";
+import type { GameObject } from "./GameObject";
 import { CoinObject, EnemyObject, NegativeObject, ObstacleObject, PowerUpObject } from "./Objects";
 import { Timer } from "../../../engine/tweens/Timer";
 import { PLAYER_SPEED } from "../../../utils/constants";
 import { Manager } from "../../..";
 import { BasePopup } from "./BasePopUp";
+import { SoundLib } from "../../../engine/sound/SoundLib";
 
 export class DodgeScene extends PixiScene {
 	public static readonly BUNDLES = ["fallrungame", "sfx"];
@@ -39,15 +40,17 @@ export class DodgeScene extends PixiScene {
 	constructor() {
 		super();
 
+		SoundLib.playMusic("sound_BGM", { volume: 0.05 });
+
 		this.addChild(this.bleedingBackgroundContainer);
 		this.addChild(this.backgroundContainer);
 
 		const bleedBG = Sprite.from("DODGE-BACKGROUND2");
-		bleedBG.anchor.set(0.5)
+		bleedBG.anchor.set(0.5);
 		this.bleedingBackgroundContainer.addChild(bleedBG);
 
 		this.background = Sprite.from("DODGE-BACKGROUND");
-		this.background.position.set(-this.background.width * 0.5, - this.background.height * 0.5);
+		this.background.position.set(-this.background.width * 0.5, -this.background.height * 0.5);
 		this.backgroundContainer.addChild(this.background);
 
 		const buttonPopUp = new Graphics();
@@ -58,7 +61,7 @@ export class DodgeScene extends PixiScene {
 		buttonPopUp.eventMode = "static";
 		buttonPopUp.on("pointertap", () => {
 			Manager.openPopup(BasePopup, [this.score]);
-		})
+		});
 
 		this.player = new Player();
 		this.player.x = this.background.width * 0.5;
@@ -130,7 +133,7 @@ export class DodgeScene extends PixiScene {
 
 	private onMouseMove(event: any): void {
 		const globalMousePosition = this.background.toLocal(event.data.global);
-		const targetX = Math.max(Math.min(globalMousePosition.x - this.player.width * 0.3, this.background.width - this.player.width * 0.3), this.player.width * 0.3);
+		const targetX = Math.max(Math.min(globalMousePosition.x, this.background.width - this.player.width * 0.3), this.player.width * 0.3);
 		const distance = targetX - this.player.x;
 		this.player.movingLeft = distance < 0;
 		this.player.setDirection(this.player.movingLeft);
@@ -166,7 +169,7 @@ export class DodgeScene extends PixiScene {
 		if (this.timeSinceLastSpawn >= this.spawnInterval) {
 			this.timeSinceLastSpawn = 0;
 			this.spawnObject();
-			this.spawnInterval = Random.shared.randomInt(500, 1500);
+			this.adjustSpawnInterval(); // Ajustar el intervalo de aparición según la dificultad
 		}
 
 		this.objects.forEach((obj) => {
@@ -211,20 +214,25 @@ export class DodgeScene extends PixiScene {
 			case "ENEMY":
 				this.decreaseScore(50);
 				this.decreaseHealth();
+				SoundLib.playSound("sound_hit", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;
 			case "OTHER":
 				this.increaseScore(10);
 				this.increaseHealth();
+				SoundLib.playSound("sound_award", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;
 			case "COIN":
 				this.collectCoin(50);
+				SoundLib.playSound("sound_collectable", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;
 			case "POWER_UP":
 				this.activatePowerUp();
+				SoundLib.playSound("sound_big_award", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;
 			case "OBSTACLE":
 				this.collideWithObstacle();
 				this.decreaseHealth();
+				SoundLib.playSound("sound_block", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;
 			default:
 				console.log("that object didn't have a name", obj);
@@ -245,9 +253,12 @@ export class DodgeScene extends PixiScene {
 		console.log("El jugador activó un power-up. +50 puntos");
 		this.score += 50;
 		this.player.speed += 0.25;
-		new Timer().to(5500).start().onComplete(() => {
-			this.player.speed = PLAYER_SPEED;
-		})
+		new Timer()
+			.to(5500)
+			.start()
+			.onComplete(() => {
+				this.player.speed = PLAYER_SPEED;
+			});
 	}
 
 	private collideWithObstacle(): void {
@@ -259,7 +270,8 @@ export class DodgeScene extends PixiScene {
 	}
 
 	private decreaseHealth(): void {
-		if (this.currentHealth > 0) { // Verifica si el jugador todavía tiene vida
+		if (this.currentHealth > 0) {
+			// Verifica si el jugador todavía tiene vida
 			this.currentHealth--; // Reducir la vida
 			this.updateHealthBar(); // Actualizar la barra de vida
 			if (this.currentHealth <= 0) {
@@ -300,9 +312,32 @@ export class DodgeScene extends PixiScene {
 		this.y = newH * 0.5;
 	}
 
+	private adjustSpawnInterval(): void {
+		// Ajustar el intervalo de aparición según la dificultad y el puntaje
+		if (this.score >= 4000) {
+			this.spawnInterval = Random.shared.randomInt(150, 300);
+		} else if (this.score >= 3000) {
+			this.spawnInterval = Random.shared.randomInt(250, 500);
+		} else if (this.score >= 2000) {
+			this.spawnInterval = Random.shared.randomInt(300, 800);
+		} else if (this.score >= 1000) {
+			this.spawnInterval = Random.shared.randomInt(400, 1000);
+		} else if (this.score >= 500) {
+			this.spawnInterval = Random.shared.randomInt(700, 1500);
+		} else {
+			this.spawnInterval = Random.shared.randomInt(500, 1500);
+		}
+	}
 	private spawnObject(): void {
-		const objectType = Random.shared.randomInt(0, 5); // Ahora hay más tipos de objetos
 		let object: GameObject;
+		let objectType: number;
+		if (this.score >= 1000) {
+			objectType = Random.shared.randomInt(0, 5); // Aumentar la variedad de objetos
+		} else if (this.score >= 500) {
+			objectType = Random.shared.randomInt(0, 4);
+		} else {
+			objectType = Random.shared.randomInt(0, 3);
+		}
 
 		switch (objectType) {
 			case 0:
@@ -341,12 +376,10 @@ export class DodgeScene extends PixiScene {
 			if (popupInstance instanceof BasePopup) {
 				popupInstance.showHighscores(this.score);
 			} else {
-				console.error('Error al abrir el popup: no se pudo obtener la instancia de BasePopup.');
+				console.error("Error al abrir el popup: no se pudo obtener la instancia de BasePopup.");
 			}
 		} catch (error) {
-			console.error('Error al abrir el popup:', error);
+			console.error("Error al abrir el popup:", error);
 		}
 	}
-
-
 }

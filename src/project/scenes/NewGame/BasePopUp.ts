@@ -6,7 +6,7 @@ import { Graphics } from "@pixi/graphics";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { Manager } from "../../..";
 import { Timer } from "../../../engine/tweens/Timer";
-import { Button } from "@pixi/ui";
+import type { Button } from "@pixi/ui";
 import { SoundLib } from "../../../engine/sound/SoundLib";
 import { DodgeScene } from "./DodgeScene";
 import { Text } from "pixi.js";
@@ -18,12 +18,6 @@ interface HighscoreEntry {
 
 const localStorageKey = "highscores";
 let highscores: HighscoreEntry[] = [];
-
-export interface PopupOptions {
-	title: string;
-	buttonLabels: string[];
-	buttonCallbacks: (() => void)[];
-}
 
 export class BasePopup extends PixiScene {
 	public static readonly BUNDLES = ["fallrungame", "sfx"];
@@ -37,8 +31,6 @@ export class BasePopup extends PixiScene {
 	public levelNumber: number;
 	public pauseScene: boolean = false;
 	public levelTime: number;
-	private scoreText: Text;
-	private score: number;
 	private resetButton: Graphics;
 
 	constructor(_score?: number) {
@@ -56,42 +48,22 @@ export class BasePopup extends PixiScene {
 		this.background.anchor.set(0.5);
 		this.background.scale.set(0.5);
 		this.addChild(this.background);
-
-		const buttonPopUp = new Graphics();
-		buttonPopUp.beginFill(0x808080);
-		buttonPopUp.drawRect(0, 0, 45, 45);
-		buttonPopUp.endFill();
-		this.background.addChild(buttonPopUp);
-		buttonPopUp.eventMode = "static";
-		buttonPopUp.on("pointertap", () => {
-			this.closePopup();
-		});
-
-		if (_score) {
-			this.score = _score;
-			this.scoreText = new Text(`Score: ${this.score}`, { fontSize: 80, fill: 0xffffff });
-			this.scoreText.anchor.set(0.5);
-			this.scoreText.position.set(0, -this.background.height * 0.5);
-			this.addChild(this.scoreText);
-		}
 	}
 
 	// Método para manejar el clic en el botón de reinicio
 	private handleResetClick(): void {
-		// Lógica para reiniciar el juego, por ejemplo:
-		this.restart = true; // Marca la bandera para reiniciar el juego
-		this.closePopup(); // Cierra el popup para que el juego se reinicie
+		this.restart = true;
+		SoundLib.playSound("sound_confirm", { allowOverlap: false, singleInstance: true, loop: false });
+		this.closePopup();
 	}
 
-	// Método para mostrar el cuadro de diálogo para ingresar el nombre del jugador
+	// eslint-disable-next-line @typescript-eslint/require-await
 	private async showNameInputDialog(): Promise<string> {
 		const playerName = prompt("Enter your name:");
 		return playerName || "Player"; // Si no se ingresa un nombre, se usa "Player" por defecto
 	}
 
 	public override onStart(): void {
-
-		// Recuperar highscores del localStorage al iniciar el popup
 		const storedHighscores = localStorage.getItem(localStorageKey);
 		if (storedHighscores) {
 			highscores = JSON.parse(storedHighscores);
@@ -120,41 +92,32 @@ export class BasePopup extends PixiScene {
 	}
 
 	public async showHighscores(playerScore: number): Promise<void> {
-		const playerName = await this.showNameInputDialog(); // Obtener el nombre del jugador
+		const playerName = await this.showNameInputDialog();
 
-		const table = new Graphics();
-		table.beginFill(0xffffff);
-		table.drawRect(0, 0, 1000, 1000);
-		table.endFill();
-		table.pivot.set(table.width * 0.5, table.height * 0.5);
-		table.position.set(this.background.x, this.background.y);
-		this.background.addChild(table);
-
-		const title = new Text("Highscores", { fontSize: 100, fill: 0x000000 });
+		const title = new Text("Highscores", { fontSize: 100, fill: 0xffffff });
 		title.anchor.set(0.5);
-		title.position.set(table.width * 0.5, 50);
-		table.addChild(title);
+		title.position.set(this.background.width * 0.5, -330);
+		this.background.addChild(title);
 
 		// Guardar el puntaje del jugador actual
 		highscores.push({ playerName, score: playerScore });
 
-		// Ordenar highscores por puntaje de mayor a menor
 		highscores.sort((a, b) => b.score - a.score);
-
-		// Guardar highscores en localStorage
 		localStorage.setItem(localStorageKey, JSON.stringify(highscores));
+
 		// Mostrar los highscores en la tabla
 		const startY = 50;
 		const lineHeight = 90;
 		for (let i = 0; i < Math.min(highscores.length, 5); i++) {
 			const entry = highscores[i];
-			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 80, fill: 0x000000 });
+			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 80, fill: 0xffffff, align: "center" });
 			entryText.anchor.set(0, 0.5);
-			entryText.position.set(20, startY + i * lineHeight + 200);
-			table.addChild(entryText);
+			entryText.position.set(-220, startY + i * lineHeight - 220);
+			this.background.addChild(entryText);
 			if (entry.score === playerScore) {
-				// Tintar de rojo el puntaje actual del jugador
 				entryText.tint = 0xff0000;
+				new Tween(entryText).to({ alpha: 0 }, 500).start().repeat(Infinity).yoyo(true).yoyoEasing(Easing.Linear.None);
+				entryText.style.align = "center";
 			}
 		}
 
@@ -165,11 +128,11 @@ export class BasePopup extends PixiScene {
 		this.resetButton.endFill();
 		this.resetButton.pivot.set(this.resetButton.width * 0.5, this.resetButton.height * 0.5);
 		this.resetButton.eventMode = "static";
-		this.resetButton.position.set(table.width * 0.5, table.height - 150); // Posiciona el botón según sea necesario
+		this.resetButton.position.set(this.background.width * 0.5, this.background.height + 350); // Posiciona el botón según sea necesario
 		this.resetButton.on("pointertap", this.handleResetClick, this); // Agrega un manejador de eventos al hacer clic en el botón
-		table.addChild(this.resetButton); // Agrega el botón al contenedor del popup
+		this.background.addChild(this.resetButton); // Agrega el botón al background
 
-		const tryagain = new Text("Try again", { fontSize: 80, fill: 0x000000 });
+		const tryagain = new Text("Try again", { fontSize: 80, fill: 0xffffff });
 		// tryagain.anchor.set(0.5);
 		this.resetButton.addChild(tryagain);
 	}
@@ -223,5 +186,4 @@ export class BasePopup extends PixiScene {
 				Manager.changeScene(DodgeScene);
 			});
 	}
-
 }

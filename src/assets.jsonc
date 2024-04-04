@@ -107,15 +107,26 @@
 		{
 			"name": "fallrungame",
 			"assets": {
+				"package 1 background": "./img/image.jpg",
 				"DODGE-BACKGROUND": "./img/BACKGROUND.jpg",
 				"DODGE-BACKGROUND2": "./img/BACKGROUND2.jpg",
 				"player1": "./img/player1.png",
 				"player2": "./img/player2.png",
 				"player3": "./img/player3.png",
 				"powerup": "./img/powerup.png",
+				"star": "./img/star.png",
 				"enemy": "./img/enemy.png",
 				"coin": "./img/monedita.png",
-				"obstacule": "./img/obstacule.png"			}
+				"obstacule": "./img/obstacule.png",
+				"sound_BGM": "./sfx/sceneBGM.mp3",
+				"sound_collectable": "./sfx/uiCollectable.mp3",
+				"sound_award": "./sfx/Fruitcollect1.wav",
+				"sound_big_award": "./sfx/BigEggcollect1.wav",
+				"sound_hit": "./sfx/Bosshit1.wav",
+				"sound_cancel": "./sfx/Cancel1.wav",
+				"sound_confirm": "./sfx/Confirm1.wav",
+				"sound_block": "./sfx/BlockBreak1.wav"
+			}
 		},
 		{
 			"name": "3d",
