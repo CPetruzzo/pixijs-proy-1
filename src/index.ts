@@ -42,6 +42,9 @@ forceFocus();
 export const Manager = new SceneManager(new PixiRenderer(pixiSettings));
 export const cameraControl = new CameraOrbitControl(pixiSettings.view);
 
+export const isMobile: boolean = DataManager.getValue(JoystickEmits.MOBILE);
+
+DataManager.initialize(new ForagePersistanceProvider(), SAVEDATA_VERSION);
 if (navigator.userAgent.includes("Mobile")) {
 	DataManager.setValue(JoystickEmits.MOBILE, true);
 	console.log("Estás accediendo desde un dispositivo móvil.");
@@ -50,10 +53,6 @@ if (navigator.userAgent.includes("Mobile")) {
 	console.log("Estás accediendo desde una computadora.");
 }
 DataManager.save();
-
-export const isMobile: boolean = DataManager.getValue(JoystickEmits.MOBILE);
-
-DataManager.initialize(new ForagePersistanceProvider(), SAVEDATA_VERSION);
 DataManager.load();
 
 if (DEBUG) {

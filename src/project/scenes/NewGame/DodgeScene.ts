@@ -37,10 +37,12 @@ export class DodgeScene extends PixiScene {
 	private bleedingBackgroundContainer: Container = new Container();
 	private rightEventContainer: Graphics;
 	private leftEventContainer: Graphics;
+	private isMoving: boolean = false;
+
 	constructor() {
 		super();
 
-		SoundLib.playMusic("sound_BGM", { volume: 0.05 });
+		SoundLib.playMusic("sound_BGM", { volume: 0.05, loop: true });
 
 		this.addChild(this.bleedingBackgroundContainer);
 		this.addChild(this.backgroundContainer);
@@ -132,30 +134,34 @@ export class DodgeScene extends PixiScene {
 	}
 
 	private onMouseMove(event: any): void {
-		const globalMousePosition = this.background.toLocal(event.data.global);
-		const targetX = Math.max(Math.min(globalMousePosition.x, this.background.width - this.player.width * 0.3), this.player.width * 0.3);
-		const distance = targetX - this.player.x;
-		this.player.movingLeft = distance < 0;
-		this.player.setDirection(this.player.movingLeft);
+		if (!this.isMoving) {
+			const globalMousePosition = this.background.toLocal(event.data.global);
+			const targetX = Math.max(Math.min(globalMousePosition.x, this.background.width - this.player.width * 0.3), this.player.width * 0.3);
+			const distance = targetX - this.player.x;
+			this.player.movingLeft = distance < 0;
+			this.player.setDirection(this.player.movingLeft);
 
-		const duration = Math.abs(distance) / this.player.speed;
-		this.player.playState("move");
+			const duration = Math.abs(distance) / this.player.speed;
+			this.player.playState("move");
 
-		this.moveTween = new Tween(this.player).to({ x: targetX }, duration).onComplete(() => {
-			this.player.playState("idle");
-		});
+			this.moveTween = new Tween(this.player).to({ x: targetX }, duration).onComplete(() => {
+				this.player.playState("idle");
+			});
 
-		if (this.moveTween != undefined) {
-			if (this.player.canMove) {
-				this.moveTween.start();
-			} else {
-				this.moveTween.pause();
+			if (this.moveTween != undefined) {
+				if (this.player.canMove) {
+					this.moveTween.start();
+				} else {
+					this.moveTween.pause();
+				}
 			}
+
+			this.isMoving = true; // Establecer la bandera de movimiento a verdadero
 		}
 	}
-
 	private onMouseStop(): void {
 		this.moveTween.pause();
+		this.isMoving = false; // Establecer la bandera de movimiento a falso cuando se detiene el movimiento
 	}
 
 	public override update(dt: number): void {
@@ -214,6 +220,7 @@ export class DodgeScene extends PixiScene {
 			case "ENEMY":
 				this.decreaseScore(50);
 				this.decreaseHealth();
+				this.vibrateMobileDevice();
 				SoundLib.playSound("sound_hit", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;
 			case "OTHER":
@@ -232,6 +239,7 @@ export class DodgeScene extends PixiScene {
 			case "OBSTACLE":
 				this.collideWithObstacle();
 				this.decreaseHealth();
+				this.vibrateMobileDevice();
 				SoundLib.playSound("sound_block", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;
 			default:
@@ -380,6 +388,15 @@ export class DodgeScene extends PixiScene {
 			}
 		} catch (error) {
 			console.error("Error al abrir el popup:", error);
+		}
+	}
+
+	private vibrateMobileDevice(): void {
+		if ("vibrate" in navigator) {
+			navigator.vibrate(500);
+			console.log("Vibrando.");
+		} else {
+			console.log("La vibración no es compatible con este dispositivo.");
 		}
 	}
 }
