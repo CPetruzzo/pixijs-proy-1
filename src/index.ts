@@ -13,7 +13,7 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
-import { DodgeScene } from "./project/scenes/NewGame/DodgeScene";
+import { DodgeScene } from "./project/scenes/RunFall/DodgeScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
