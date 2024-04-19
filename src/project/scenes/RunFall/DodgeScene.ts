@@ -11,6 +11,7 @@ import { PLAYER_SPEED } from "../../../utils/constants";
 import { Manager } from "../../..";
 import { BasePopup } from "./BasePopUp";
 import { SoundLib } from "../../../engine/sound/SoundLib";
+import { SmokeEmitter } from "./SmokeEmitter";
 
 export class DodgeScene extends PixiScene {
 	public static readonly BUNDLES = ["fallrungame", "sfx"];
@@ -38,6 +39,13 @@ export class DodgeScene extends PixiScene {
 	private rightEventContainer: Graphics;
 	private leftEventContainer: Graphics;
 	private isMoving: boolean = false;
+
+
+	private smokeContainers: Container[] = [];
+	private smokeParticles: SmokeEmitter[] = [];
+
+	// private smokeContainer: Container;
+	// private smoke: SmokeEmitter;
 
 	constructor() {
 		super();
@@ -121,6 +129,13 @@ export class DodgeScene extends PixiScene {
 		this.leftEventContainer.eventMode = "static";
 
 		this.background.addChild(this.bottomEventContainer, this.leftEventContainer, this.rightEventContainer); // Agregar el contenedor al fondo
+
+		// this.smokeContainer = new Container();
+		// this.smoke = new SmokeEmitter(this.smokeContainer);
+		// this.backgroundContainer.addChild(this.smokeContainer);
+		// this.smoke.start();
+
+
 	}
 
 	private updateHealthBar(): void {
@@ -180,6 +195,9 @@ export class DodgeScene extends PixiScene {
 
 		this.objects.forEach((obj) => {
 			obj.update(dt);
+			// obj.particles?.update(dt); // Actualizar las partículas del objeto
+
+			// obj.particles.start();
 
 			if (obj.y >= this.background.height - obj.height) {
 				if (obj.name === "OBSTACLE") {
@@ -202,9 +220,11 @@ export class DodgeScene extends PixiScene {
 
 		this.scoreText.text = `Score: ${this.score}`;
 
-		// if (this.score > 200) {
-		// 	this.background.texture = Texture.from("DODGE-BACKGROUND2");
-		// }
+		// this.smoke.update(dt);
+
+		for (const smoke of this.smokeParticles) {
+			smoke.update(dt);
+		}
 	}
 
 	private increaseHealth(): void {
@@ -238,6 +258,12 @@ export class DodgeScene extends PixiScene {
 				break;
 			case "OBSTACLE":
 				this.collideWithObstacle();
+				const smokeContainer = new Container();
+				const smoke = new SmokeEmitter(smokeContainer);
+				this.smokeContainers.push(smokeContainer);
+				this.smokeParticles.push(smoke);
+				obj.addChild(smokeContainer);
+				smoke.start();
 				this.decreaseHealth();
 				this.vibrateMobileDevice();
 				SoundLib.playSound("sound_block", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
@@ -359,6 +385,12 @@ export class DodgeScene extends PixiScene {
 			case 2:
 				object = new CoinObject();
 				object.name = "COIN";
+				// const smokeContainer = new Container();
+				// const smoke = new SmokeEmitter(smokeContainer);
+				// this.smokeContainers.push(smokeContainer);
+				// this.smokeParticles.push(smoke);
+				// object.addChild(smokeContainer);
+				// smoke.start();
 				break;
 			case 3:
 				object = new PowerUpObject();
