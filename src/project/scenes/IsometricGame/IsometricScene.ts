@@ -1,33 +1,22 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { Assets } from "@pixi/assets";
 import type { AABB, CameraOrbitControl, StandardMaterial } from "pixi3d/pixi7";
-import { Light, LightingEnvironment, Model, LightType, Color, Point3D, ShadowCastingLight, ShadowQuality, Mesh3D } from "pixi3d/pixi7";
+import { Light, LightingEnvironment, Model, LightType, Color, Point3D } from "pixi3d/pixi7";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Manager, cameraControl } from "../../..";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { Tween } from "tweedle.js";
-import { Container, Graphics, Renderer, Text, TextStyle, Texture } from "pixi.js";
+import { Container, Graphics, Text, TextStyle, Texture } from "pixi.js";
 import { LoseScene } from "../BallCollisionGame/LoseScene";
-import { Loli } from "./Loli";
 import Random from "../../../engine/random/Random";
 import { ProgressBar } from "@pixi/ui";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
-import {
-	// CAMERA_MOVE_SPEED,
-	DRAGON_SPEED,
-	HAND_MOVEMENT_AMPLITUDE,
-	HAND_MOVEMENT_FREQUENCY,
-	MINIMAP_HEIGHT,
-	MINIMAP_WIDTH,
-	VEHICULE_SPEED,
-} from "../../../utils/constants";
-import { PhysicsContainer3d } from "./3DPhysicsContainer";
-import { UI } from "./UI";
+import { CAMERA_MOVE_SPEED, DRAGON_SPEED, HAND_MOVEMENT_AMPLITUDE, HAND_MOVEMENT_FREQUENCY, MINIMAP_HEIGHT, MINIMAP_WIDTH, VEHICULE_SPEED } from "../../../utils/constants";
+import { Loli } from "../3dgame/Loli";
+// import { SoundLib } from "../../../engine/sound/SoundLib";
 
-export class Scene3D extends PixiScene {
+export class IsometricScene extends PixiScene {
 	public static readonly BUNDLES = ["3d", "package-1"];
-
-	private ui: UI;
 
 	// Models
 	private impala: Model;
@@ -38,7 +27,7 @@ export class Scene3D extends PixiScene {
 	private road5: Model;
 	private road6: Model;
 	private hauntedhouse: Model;
-	private firstperson: PhysicsContainer3d;
+	private firstperson: Model;
 	private dragon: Model;
 
 	// hitboxs
@@ -60,15 +49,12 @@ export class Scene3D extends PixiScene {
 	private miniMapBackground = new Graphics();
 	public cameraIndicator: Graphics;
 
-	// private gravity = 0.1; // Define la fuerza de la gravedad
-	private flashlight: Light;
-	private textContainer: Container = new Container();
-	private uiContainer: Container = new Container();
-
 	constructor() {
 		super();
 
-		this.firstperson = new PhysicsContainer3d("firstperson");
+		// SoundLib.playMusic("");
+
+		this.firstperson = Model.from(Assets.get("firstperson"));
 		this.firstperson.name = "firstperson";
 		this.impala = Model.from(Assets.get("impala"));
 		this.impala.name = "impala";
@@ -107,17 +93,12 @@ export class Scene3D extends PixiScene {
 			this.road6,
 			// this.hauntedhouse,
 			this.firstperson,
-			this.dragon,
-			// this.textContainer,
-			this.uiContainer
+			this.dragon
 		);
 		this.sortableChildren = true;
 		this.hauntedhouse.zIndex = -1;
 
-		const ground = this.addChild(Mesh3D.createPlane());
-		ground.y = -0.8;
-		ground.scale.set(100, 1, 100);
-
+		// const loli = new Sprite3D(Texture.from("loli"));
 		// loli.billboardType = SpriteBillboardType.spherical;
 		for (let i = 0; i < 50; i++) {
 			const loli = new Loli(Texture.from("loli"), MINIMAP_WIDTH, new Point3D(5, 5, 5));
@@ -127,7 +108,9 @@ export class Scene3D extends PixiScene {
 		}
 
 		this.impalaBox = this.impala.getBoundingBox();
+		console.log("impalaBox", this.impalaBox);
 		this.dragonBox = this.dragon.getBoundingBox();
+		console.log("dragonBox", this.dragonBox);
 
 		this.makeDemoText();
 
@@ -136,35 +119,26 @@ export class Scene3D extends PixiScene {
 			fill: "bar",
 			progress: 100,
 		});
-		this.hpBar.scale.set(0.6);
-		this.hpBar.position.set(0, -35);
+		this.hpBar.scale.set(0.3);
+		this.hpBar.position.set(0, 320);
 
-		this.uiContainer.addChild(this.hpBar);
+		this.addChild(this.hpBar);
 
-		this.flashlight = new Light();
-		this.flashlight.type = LightType.spot; // Usamos spot para simular un cono de luz
-		this.flashlight.range = 100;
-		this.flashlight.color = new Color(1, 1, 0.5);
-		this.flashlight.intensity = 100;
-
-		const wallA = this.addChild(Mesh3D.createCube());
-		wallA.z = 200;
-
-		const wallB = this.addChild(Mesh3D.createCube());
-		wallB.z = 200;
-		wallB.y = 2;
-
-		const wallC = this.addChild(Mesh3D.createCube());
-		wallC.z = 203;
+		// Crea una luz para simular la linterna (puedes usar point o spot, ajusta según tus necesidades)
+		const flashlight = new Light();
+		flashlight.type = LightType.spot; // Usamos spot para simular un cono de luz
+		flashlight.range = 30; // Rango de alcance de la linterna
+		flashlight.color = new Color(1, 1, 0.5); // Color de la luz (amarillo en este ejemplo)
+		flashlight.intensity = 100; // Intensidad de la luz (ajusta según lo necesites)
 
 		// Asigna la posición de la linterna para que coincida con la posición de firstperson
-		this.flashlight.position.set(this.firstperson.position.x, this.firstperson.model.position.y, this.firstperson.position.z);
+		flashlight.position.set(this.firstperson.position.x, this.firstperson.position.y, this.firstperson.position.z);
 
 		// Ajusta la rotación de la linterna según la dirección de firstperson si es necesario
-		this.flashlight.rotationQuaternion.copyFrom(this.firstperson.rotationQuaternion);
+		flashlight.rotationQuaternion.copyFrom(this.firstperson.rotationQuaternion);
 
 		// Agrega la linterna a LightingEnvironment para que afecte a la escena
-		LightingEnvironment.main.lights.push(this.flashlight);
+		LightingEnvironment.main.lights.push(flashlight);
 
 		// light for background
 		const dirLight = new Light();
@@ -173,26 +147,12 @@ export class Scene3D extends PixiScene {
 		dirLight.color = new Color(1, 1, 1);
 		dirLight.rotationQuaternion.setEulerAngles(45, -75, 0);
 		LightingEnvironment.main.lights.push(dirLight);
-
 		const dirLight3 = new Light();
 		dirLight3.type = LightType.directional;
 		dirLight3.intensity = 5;
 		dirLight3.color = new Color(1, 1, 1);
 		dirLight3.rotationQuaternion.setEulerAngles(-80, 0, -45);
 		LightingEnvironment.main.lights.push(dirLight3);
-
-		const renderer = new Renderer({
-			width: 800,
-			height: 600,
-			antialias: true,
-			resolution: 1,
-			autoDensity: true,
-			backgroundColor: 0x1099bb,
-		});
-
-		const shadowCastingLight = new ShadowCastingLight(renderer, this.flashlight, { shadowTextureSize: 1024, quality: ShadowQuality.medium });
-		shadowCastingLight.softness = 1;
-		shadowCastingLight.shadowArea = 15;
 
 		this.cameraControl = cameraControl;
 		this.cameraControl.distance = 0;
@@ -221,7 +181,7 @@ export class Scene3D extends PixiScene {
 
 		this.miniMapContainer.width = MINIMAP_WIDTH;
 		this.miniMapContainer.height = MINIMAP_HEIGHT;
-		this.miniMapContainer.position.set(500, 500);
+		this.miniMapContainer.position.set(500, 500); // Ajusta la posición según sea necesario
 		this.miniMapContainer.scale.set(3);
 		this.miniMapContainer.pivot.set();
 		this.addChild(this.miniMapContainer);
@@ -235,29 +195,6 @@ export class Scene3D extends PixiScene {
 
 		// Llama a esta función en el constructor después de crear el fondo del minimapa
 		// this.createCameraIndicator();
-		// Crear instancia de la clase UI
-		this.ui = new UI(this.uiContainer);
-	}
-
-	public toggleFlashlight(): void {
-		if (this.flashlight.intensity === 0) {
-			// Encender la linterna
-			this.flashlight.intensity = 100; // O cualquier otro valor que desees
-		} else {
-			// Apagar la linterna
-			this.flashlight.intensity = 0;
-		}
-	}
-
-	// Función para actualizar el texto en la UI
-	public updateUIText(): void {
-		const movementInstructions = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to Jump`;
-		const carInstructions = `It's onCar: ${this.onCar}\nUse E to get in and out of the car`;
-		const carControlInstructions = `Use R/F to move car faster`;
-		const generalInstructions = `camera angle: ${this.cameraControl.angles.x}\nIt's on floor: ${this.colliding}\n Distance to floor: ${this.firstperson.model.y}\n canJump: ${this.firstperson.canJump} \n Acceleration: ${this.firstperson.acceleration.y}\n speed: ${this.firstperson.speed.y}    `;
-
-		// Llamar a la función updateText de la clase UI
-		this.ui.updateText(movementInstructions, carInstructions, carControlInstructions, generalInstructions);
 	}
 
 	private getInCar(): void {
@@ -267,6 +204,8 @@ export class Scene3D extends PixiScene {
 	private updateMiniMapScale(): void {
 		// Obtén la cantidad de objetos en la escena principal
 		const objectCount = this.children.length;
+		console.log("objectCount", objectCount);
+
 		// Define un valor máximo y mínimo para la escala del minimapa
 		const maxScale = 1;
 		const minScale = 1;
@@ -342,24 +281,24 @@ export class Scene3D extends PixiScene {
 
 		if (this.onCar) {
 			this.explanationText = new Text(
-				`Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to Jump \ncamera angle: ${this.cameraControl.angles.x} \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`,
+				`Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \ncamera angle: ${this.cameraControl.angles.x} \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`,
 				textStyle
 			);
-			this.textContainer.addChild(this.explanationText);
+			this.addChild(this.explanationText);
 		} else {
 			this.explanationText = new Text(
-				(this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to Jump \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}\nUse E to get in and out of the car\n Distance to floor: ${this.firstperson.model.y}\n canJump: ${this.firstperson.canJump}\n Acceleration: ${this.firstperson.acceleration.y}\n speed: ${this.firstperson.speed.y} `),
+				(this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}\nUse E to get in and out of the car`),
 				textStyle
 			);
-			this.textContainer.addChild(this.explanationText);
+			this.addChild(this.explanationText);
 		}
 	}
 
 	private updateText(): void {
-		const movementInstructions = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to Jump`;
+		const movementInstructions = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to go up`;
 		const carInstructions = `camera angle: ${this.cameraControl.angles.x} \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`;
 		const carControlInstructions = `Use R/F to move car faster`;
-		const generalInstructions = `camera angle: ${this.cameraControl.angles.x}\nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}\nUse E to get in and out of the car,\n Distance to floor: ${this.firstperson.model.y}\n canJump: ${this.firstperson.canJump} \n Acceleration: ${this.firstperson.acceleration.y}\n speed: ${this.firstperson.speed.y}    `;
+		const generalInstructions = `camera angle: ${this.cameraControl.angles.x}\nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}\nUse E to get in and out of the car`;
 
 		this.explanationText.text = this.onCar ? `${movementInstructions}\n${carInstructions}\n${carControlInstructions}` : `${movementInstructions}\n${generalInstructions}`;
 	}
@@ -370,40 +309,52 @@ export class Scene3D extends PixiScene {
 
 	private updateHPBar(): void {
 		if (this.hpBar.progress <= 0) {
+			console.log("you lose");
 			Manager.changeScene(LoseScene);
 		} else {
-			// console.log(this.hpBar.progress);
+			console.log(this.hpBar.progress);
 		}
 	}
 
 	private pauseOnOff(): void {
 		this.isPaused = !this.isPaused;
+		console.log("this.isPaused", this.isPaused);
 	}
 
 	public createCameraIndicator(): void {
+		// Crea el indicador de la cámara (puedes personalizar esto según tus preferencias)
 		this.cameraIndicator = new Graphics();
-		this.cameraIndicator.lineStyle(2, 0xffffff);
+		this.cameraIndicator.lineStyle(2, 0xffffff); // Línea blanca de grosor 2
 		this.cameraIndicator.moveTo(0, 0);
-		this.cameraIndicator.lineTo(20, 0);
+		this.cameraIndicator.lineTo(20, 0); // Longitud del indicador
 		this.miniMapContainer.addChild(this.cameraIndicator);
 	}
 
 	public updateCameraIndicator(): void {
-		const rotationSpeed = -Math.PI / 180;
+		const rotationSpeed = -Math.PI / 180; // Experimenta con diferentes valores
 
-		const cameraDirection = new Point3D(1, 1, 1);
+		// Actualiza la posición y rotación del indicador según la dirección de la cámara
+		const cameraDirection = new Point3D(1, 1, 1); // Dirección inicial
 
+		// Normaliza la dirección para asegurarse de que la línea tenga la longitud correcta
 		cameraDirection.normalize();
 
+		// Establece la posición y rotación del indicador en el minimapa
 		const indicatorX = this.cameraControl.target.x * (this.miniMapContainer.width / this.width);
 		const indicatorZ = this.cameraControl.target.z * (this.miniMapContainer.height / this.height);
-		const indicatorLength = 30;
+		const indicatorLength = 30; // Longitud del indicador en el minimapa
 
+		// Calcula las coordenadas finales del indicador con ajuste de velocidad
 		const indicatorEndX = indicatorX + cameraDirection.x * Math.cos(this.cameraControl.angles.y * rotationSpeed + Math.PI / 2) * indicatorLength;
 		const indicatorEndZ = indicatorZ + cameraDirection.z * Math.sin(this.cameraControl.angles.y * rotationSpeed + Math.PI / 2) * indicatorLength;
 
 		console.log("Indicator Coordinates:", indicatorX, indicatorZ);
 		console.log("Indicator End Coordinates:", indicatorEndX, indicatorEndZ);
+
+		// this.cameraIndicator.clear();
+		// this.cameraIndicator.lineStyle(2, 0xffffff); // Línea blanca de grosor 2
+		// this.cameraIndicator.moveTo(indicatorX, indicatorZ);
+		// this.cameraIndicator.lineTo(indicatorEndX, indicatorEndZ);
 	}
 
 	public override update(dt: number): void {
@@ -415,19 +366,17 @@ export class Scene3D extends PixiScene {
 		} else {
 			super.update(dt);
 
-			this.updateUIText();
-
 			this.updateHPBar();
-			this.firstperson.update(dt);
 
 			this.lolis.forEach((loli) => {
 				const cameraTarget = this.cameraControl.target;
 				loli.update();
-				loli.moveTowards(cameraTarget, Random.shared.random(0.05, 0.08));
+				loli.moveTowards(cameraTarget, Random.shared.random(0.05, 0.08)); // Puedes ajustar la velocidad según sea necesario
 				if (loli.distanceFromCamera() <= 2) {
+					console.log("loli.distanceFromCamera()", loli.distanceFromCamera());
 					if (this.hpBar.progress >= 1) {
 						// Scene3D.vehiculeSpeed *= Scene3D.loliSlowdownFactor;
-						// console.log("Scene3D.vehiculeSpeed", VEHICULE_SPEED);
+						console.log("Scene3D.vehiculeSpeed", VEHICULE_SPEED);
 						// Reduce la barra de progreso y disminuye la velocidad si te alcanza la loli
 						this.hpBar.progress = this.hpBar.progress - 1;
 						navigator.vibrate([100, 100, 500, 100, 100]);
@@ -447,9 +396,6 @@ export class Scene3D extends PixiScene {
 				this.updateText();
 			}
 
-			if (Keyboard.shared.justPressed("KeyL")) {
-				this.toggleFlashlight();
-			}
 			const angleYRad = cameraControl.angles.y * (Math.PI / 180);
 			const angleXRad = cameraControl.angles.x * (Math.PI / 180);
 			const moveCarX = VEHICULE_SPEED * Math.sin(angleYRad);
@@ -510,9 +456,8 @@ export class Scene3D extends PixiScene {
 				}
 			}
 
-			if (Keyboard.shared.justPressed("Space")) {
-				// cameraControl.target.y += CAMERA_MOVE_SPEED;
-				this.firstperson.jump();
+			if (Keyboard.shared.isDown("Space")) {
+				cameraControl.target.y += CAMERA_MOVE_SPEED;
 			}
 
 			if (Keyboard.shared.isDown("ArrowUp")) {
@@ -606,7 +551,7 @@ export class Scene3D extends PixiScene {
 			this.dragonBox = this.dragon.getBoundingBox();
 
 			this.impalaBox;
-			const firstpersonBox = this.firstperson.model.getBoundingBox();
+			const firstpersonBox = this.firstperson.getBoundingBox();
 			const collisionfirstperson = this.intersect(firstpersonBox, this.dragonBox);
 			if (collisionfirstperson && !this.colliding) {
 				this.colliding = true;
@@ -616,36 +561,10 @@ export class Scene3D extends PixiScene {
 			const collision = this.intersect(this.dragonBox, this.impalaBox);
 			if (collision && !this.colliding) {
 				this.colliding = true;
+				console.log("this.colliding", this.colliding);
 				Manager.changeScene(LoseScene);
 				this.updateText();
 			}
-
-			const crashToCar = this.intersect(firstpersonBox, this.impalaBox);
-			if (crashToCar) {
-				this.firstperson.position.x -= this.firstperson.speed.x * dt;
-				this.firstperson.position.z -= this.firstperson.speed.z * dt;
-			}
-
-			// // Calcula el ángulo de dirección del jugador respecto al eje z (norte)
-			// const playerDirection = Math.atan2(this.firstperson.rotationQuaternion.z, this.firstperson.rotationQuaternion.x);
-
-			// // Define la distancia hacia adelante que quieres mover la linterna
-			// const offsetDistance = 1;
-
-			// Calcula la nueva posición de la linterna
-			const newPosition = new Point3D(
-				this.firstperson.position.x,
-				// + playerDirection * offsetDistance
-				this.firstperson.position.y,
-				this.firstperson.position.z
-				// + playerDirection * offsetDistance
-			);
-
-			// Establece la posición de la linterna
-			this.flashlight.position.copyFrom(newPosition);
-
-			// Copia la rotación del jugador a la linterna
-			this.flashlight.rotationQuaternion.copyFrom(this.firstperson.rotationQuaternion);
 		}
 
 		this.updateMiniMapScale();
@@ -657,13 +576,5 @@ export class Scene3D extends PixiScene {
 		ScaleHelper.setScaleRelativeToIdeal(this.miniMapContainer, newW, newH, 1920, 1080, ScaleHelper.FIT);
 		this.miniMapContainer.x = newW * 0.8;
 		this.miniMapContainer.y = newH * 0.2;
-
-		ScaleHelper.setScaleRelativeToIdeal(this.textContainer, newW, newH, 1920, 1080, ScaleHelper.FIT);
-		this.textContainer.x = newW * 0.05;
-		this.textContainer.y = newH * 0.05;
-
-		ScaleHelper.setScaleRelativeToIdeal(this.uiContainer, newW, newH, 1920, 1080, ScaleHelper.FIT);
-		this.uiContainer.x = newW * 0.05;
-		this.uiContainer.y = newH * 0.05;
 	}
 }

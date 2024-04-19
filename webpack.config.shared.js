@@ -203,13 +203,16 @@ exports.config = {
         ]
     },
     resolve: {
-        extensions: ['.tsx', '.ts', '.js'], alias: {
+        extensions: ['.tsx', '.ts', '.js'],
+        alias: {
             root: __dirname,
             src: path.resolve(__dirname, 'src'),
         },
         fallback: {
             path: false,
             fs: false,
+            zlib: require.resolve("browserify-zlib"),
+            http: require.resolve("stream-http")
         }
     },
     plugins: [
