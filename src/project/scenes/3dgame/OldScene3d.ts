@@ -6,7 +6,7 @@ import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Manager, cameraControl } from "../../..";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { Tween } from "tweedle.js";
-import { Container, Graphics, Renderer, Text, Texture } from "pixi.js";
+import { Container, Graphics, Renderer, Text, TextStyle, Texture } from "pixi.js";
 import { LoseScene } from "../BallCollisionGame/LoseScene";
 import { Loli } from "./Loli";
 import Random from "../../../engine/random/Random";
@@ -25,7 +25,7 @@ import { PhysicsContainer3d } from "./3DPhysicsContainer";
 import { UI } from "./UI";
 import { Maze } from "./Maze";
 
-export class Scene3D extends PixiScene {
+export class OldScene3D extends PixiScene {
 	public static readonly BUNDLES = ["3d", "package-1"];
 
 	private ui: UI;
@@ -132,6 +132,8 @@ export class Scene3D extends PixiScene {
 		this.impalaBox = this.impala.getBoundingBox();
 		this.dragonBox = this.dragon.getBoundingBox();
 
+		this.makeDemoText();
+
 		this.hpBar = new ProgressBar({
 			bg: "barBG",
 			fill: "bar",
@@ -230,7 +232,7 @@ export class Scene3D extends PixiScene {
 		this.miniMapBackground.pivot.set(this.miniMapBackground.width / 2, this.miniMapBackground.height / 2);
 		this.miniMapContainer.addChild(this.miniMapBackground);
 
-		this.maze = new Maze(50, 100); // Por ejemplo, un laberinto de 10x10
+		this.maze = new Maze(10, 10); // Por ejemplo, un laberinto de 10x10
 		this.createWallsFromMaze(this.maze);
 
 		// Llama a esta función en el constructor después de crear el fondo del minimapa
@@ -327,6 +329,34 @@ export class Scene3D extends PixiScene {
 			this.miniMapContainer.addChild(marker);
 		}
 	}
+
+	/**
+	 * Method to make the text explaining the demo. Nothing to see here.
+	 */
+	private makeDemoText(): void {
+		const textStyle = new TextStyle({
+			fill: "white",
+			fontFamily: "Arial Rounded MT",
+			stroke: "black",
+			strokeThickness: 10,
+			lineJoin: "round",
+		});
+
+		if (this.onCar) {
+			this.explanationText = new Text(
+				`Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to Jump \ncamera angle: ${this.cameraControl.angles.x} \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`,
+				textStyle
+			);
+			this.textContainer.addChild(this.explanationText);
+		} else {
+			this.explanationText = new Text(
+				(this.explanationText.text = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to Jump \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}\nUse E to get in and out of the car\n Distance to floor: ${this.firstperson.model.y}\n canJump: ${this.firstperson.canJump}\n Acceleration: ${this.firstperson.acceleration.y}\n speed: ${this.firstperson.speed.y} `),
+				textStyle
+			);
+			this.textContainer.addChild(this.explanationText);
+		}
+	}
+
 	private updateText(): void {
 		const movementInstructions = `Use A/S/D/W to move, \nUse ←↕→ or mouse to rotate camera, \nUse +- or mousewheel to zoom in/out camera, \nUse Space to Jump`;
 		const carInstructions = `camera angle: ${this.cameraControl.angles.x} \nIt's colliding: ${this.colliding}\nIt's onCar: ${this.onCar}`;
@@ -649,14 +679,14 @@ export class Scene3D extends PixiScene {
 		const wallSize = 1; // Tamaño de cada celda del laberinto
 		const wallWidth = 1; // Ancho de la pared
 		const wallHeight = 3; // Altura de la pared
-		const wallDepth = 0.2; // Profundidad de la pared
+		const wallDepth = 0.1; // Profundidad de la pared
 
 		for (let i = 0; i < maze.height; i++) {
 			for (let j = 0; j < maze.width; j++) {
 				if (maze.grid[i][j]) {
 					// Si la celda está marcada como visitada en el laberinto
 					// Calcula las coordenadas de la posición de la pared en la escena 3D
-					const wallPosition = new Point3D(j * wallSize * 2, 0, i * wallSize * 2);
+					const wallPosition = new Point3D(j * wallSize, 0, i * wallSize);
 
 					// Crea la pared en la posición calculada
 					this.createWall(wallPosition, wallWidth, wallHeight, wallDepth);
