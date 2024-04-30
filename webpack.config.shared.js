@@ -180,8 +180,13 @@ exports.config = {
         },
         port: 3000, hot: true, host: '0.0.0.0'
     },
+    experiments: {
+        asyncWebAssembly: true,
+        syncWebAssembly: true,
+    },
     module:
     {
+
         rules: [
             // Typescript
             {

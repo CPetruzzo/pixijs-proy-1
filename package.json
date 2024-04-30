@@ -59,7 +59,7 @@
     "axios": "^1.4.0",
     "box2d-wasm": "^7.0.0",
     "browserify-zlib": "^0.2.0",
-    "i18next": "22.4.14",
+    "i18next": "22.4.14", 
     "localforage": "1.10.0",
     "ml-xsadd": "^2.0.0",
     "papaparse": "^5.4.1",
@@ -69,6 +69,7 @@
     "socket.io": "^4.6.1",
     "stats.js": "^0.17.0",
     "stream-http": "^3.2.0",
-    "tweedle.js": "2.1.0"
+    "tweedle.js": "2.1.0",
+    "@dimforge/rapier2d": "0.12.0"
   }
 }

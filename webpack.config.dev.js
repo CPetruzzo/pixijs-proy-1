@@ -20,3 +20,4 @@ for (let l of PACKAGE.languages ?? []) {
 }
 
 module.exports = sharedConfig.config;
+
