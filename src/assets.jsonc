@@ -132,6 +132,12 @@
 			}
 		},
 		{
+			"name": "topdown",
+			"assets": {
+				"package 1 background": "./img/image.jpg"
+			}
+		},
+		{
 			"name": "3d",
 			"assets": {
 				"duckModel": "./models/duck/Duck.gltf",

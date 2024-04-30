@@ -13,7 +13,7 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
-import { RapierScene } from "./project/scenes/RapierScene";
+import { RapierScene } from "./project/scenes/SnowSurfer/RapierScene";
 
 settings.RENDER_OPTIONS.hello = false;
 

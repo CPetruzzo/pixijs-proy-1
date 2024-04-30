@@ -1,12 +1,12 @@
 import { Graphics } from "@pixi/graphics";
-import { ObjectPool } from "../../engine/objectpool/ObjectPool";
-import { PixiScene } from "../../engine/scenemanager/scenes/PixiScene";
+import { ObjectPool } from "../../../engine/objectpool/ObjectPool";
+import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import type { RigidBody } from "@dimforge/rapier2d";
 import { ColliderDesc, RigidBodyDesc, World } from "@dimforge/rapier2d";
 import { Color, Point, Texture } from "@pixi/core";
 import { Container } from "@pixi/display";
-import { ScaleHelper } from "../../engine/utils/ScaleHelper";
-import { Keyboard } from "../../engine/input/Keyboard";
+import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
+import { Keyboard } from "../../../engine/input/Keyboard";
 import { TilingSprite } from "@pixi/sprite-tiling";
 import { Sprite } from "pixi.js";
 
@@ -57,12 +57,12 @@ export class RapierScene extends PixiScene {
 
 		// Create the ground
 		const groundColliderDesc = ColliderDesc.cuboid(10000.0, 1);
-		groundColliderDesc.setRotation(RapierScene.PI * 0.1);
+		groundColliderDesc.setRotation(RapierScene.PI * 0.05);
 		this.world.createCollider(groundColliderDesc).setTranslation({ x: 40.0, y: 90.0 });
 
-		// const groundColliderDesc2 = ColliderDesc.cuboid(1000.0, 1);
-		// groundColliderDesc2.setRotation(RapierScene.PI * 0.05);
-		// this.world.createCollider(groundColliderDesc2).setTranslation({ x: 40.0, y: 50.0 });
+		const groundColliderDesc2 = ColliderDesc.cuboid(1000.0, 1);
+		groundColliderDesc2.setRotation(RapierScene.PI * 0.05);
+		this.world.createCollider(groundColliderDesc2).setTranslation({ x: 40.0, y: 50.0 });
 
 		const groundColliderDesc3 = ColliderDesc.cuboid(150.0, 1);
 		groundColliderDesc3.setRotation(-RapierScene.PI * 0.05);

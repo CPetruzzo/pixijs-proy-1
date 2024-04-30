@@ -1,7 +1,7 @@
 const sharp = require("sharp");
 const fs = require("fs");
 
-const inputImagePath = "player1.png"; // Ruta de la imagen de entrada
+const inputImagePath = "mate.png"; // Ruta de la imagen de entrada
 const outputIcoPath = "favicon.ico"; // Ruta del archivo .ico de salida
 
 // Función para convertir la imagen en un archivo .ico

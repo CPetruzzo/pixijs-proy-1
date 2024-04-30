@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { Assets } from "@pixi/assets";
-import type { AABB, CameraOrbitControl, StandardMaterial } from "pixi3d/pixi7";
+import { AABB, CameraOrbitControl, StandardMaterial } from "pixi3d/pixi7";
 import { Light, LightingEnvironment, Model, LightType, Color, Point3D, ShadowCastingLight, ShadowQuality, Mesh3D } from "pixi3d/pixi7";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Manager, cameraControl } from "../../..";
@@ -23,7 +23,9 @@ import {
 } from "../../../utils/constants";
 import { PhysicsContainer3d } from "./3DPhysicsContainer";
 import { UI } from "./UI";
-import { Maze } from "./Maze";
+// import { Maze } from "./Maze";
+import { MazeFixed } from "./MazeFixed";
+import { GameObjectFactory } from "./GameObject";
 
 export class Scene3D extends PixiScene {
 	public static readonly BUNDLES = ["3d", "package-1"];
@@ -61,17 +63,18 @@ export class Scene3D extends PixiScene {
 	private miniMapBackground = new Graphics();
 	public cameraIndicator: Graphics;
 
-	// private gravity = 0.1; // Define la fuerza de la gravedad
 	private flashlight: Light;
 	private textContainer: Container = new Container();
 	private uiContainer: Container = new Container();
 
-	private maze: Maze;
+	// private maze: Maze;
+	private maze: MazeFixed; // Cambia el tipo de la variable para usar MazeFixed
+
 
 	constructor() {
 		super();
 
-		this.firstperson = new PhysicsContainer3d("firstperson");
+		this.firstperson = GameObjectFactory.createPlayer();
 		this.firstperson.name = "firstperson";
 		this.impala = Model.from(Assets.get("impala"));
 		this.impala.name = "impala";
@@ -148,11 +151,11 @@ export class Scene3D extends PixiScene {
 		this.flashlight.color = new Color(1, 1, 0.5);
 		this.flashlight.intensity = 100;
 
-		this.createWall(new Point3D(0, 0, 0), 10);
-		this.createWall(new Point3D(0, 0, 5), 1, 3, 10);
-		this.createWall(new Point3D(5, 0, 5), 1, 3, 10);
-		this.createWall(new Point3D(0, 0, 15), 10);
-		this.createWall(new Point3D(-5, 0, 15), 1, 3, 10);
+		// this.createWall(new Point3D(0, 0, 0), 10);
+		// this.createWall(new Point3D(0, 0, 5), 1, 3, 10);
+		// this.createWall(new Point3D(5, 0, 5), 1, 3, 10);
+		// this.createWall(new Point3D(0, 0, 15), 10);
+		// this.createWall(new Point3D(-5, 0, 15), 1, 3, 10);
 
 		// Asigna la posición de la linterna para que coincida con la posición de firstperson
 		this.flashlight.position.set(this.firstperson.position.x, this.firstperson.model.position.y, this.firstperson.position.z);
@@ -193,7 +196,7 @@ export class Scene3D extends PixiScene {
 
 		this.cameraControl = cameraControl;
 		this.cameraControl.distance = 0;
-		(this.cameraControl.target.x = 0), (this.cameraControl.target.y = 2), (this.cameraControl.target.z = 50);
+		(this.cameraControl.target.x = 20), (this.cameraControl.target.y = 2), (this.cameraControl.target.z = 50);
 
 		this.hauntedhouse.animations[0].loop = true;
 		this.hauntedhouse.animations[0].play();
@@ -230,14 +233,23 @@ export class Scene3D extends PixiScene {
 		this.miniMapBackground.pivot.set(this.miniMapBackground.width / 2, this.miniMapBackground.height / 2);
 		this.miniMapContainer.addChild(this.miniMapBackground);
 
-		this.maze = new Maze(50, 100); // Por ejemplo, un laberinto de 10x10
-		this.createWallsFromMaze(this.maze);
+		// this.maze = new Maze(10, 10); // Por ejemplo, un laberinto de 10x10
+		// this.createWallsFromMaze(this.maze);
 
 		// Llama a esta función en el constructor después de crear el fondo del minimapa
 		// this.createCameraIndicator();
 		// Crear instancia de la clase UI
+
+		// Creamos una instancia de MazeFixed con las dimensiones deseadas
+		this.maze = new MazeFixed(15, 10); // Por ejemplo, un laberinto de 10x10
+		// Generamos el laberinto
+		this.maze.generate();
+		// Agregamos las paredes del laberinto a la escena
+		this.addWallsFromMaze(this.maze);
+
 		this.ui = new UI(this.uiContainer);
 	}
+
 
 	public toggleFlashlight(): void {
 		if (this.flashlight.intensity === 0) {
@@ -301,6 +313,20 @@ export class Scene3D extends PixiScene {
 		this.addMiniMapMarker(this.impala, 0xffff00); // Marcador de impala en amarillo
 		// Agregar el marcador del personaje (cámara)
 		this.addMiniMapMarker(this.cameraControl.target, 0x00ff00); // Marcador de personaje en verde
+
+		this.drawMazeOnMiniMap(this.maze);
+
+		// for (let i = 0; i < this.maze.rows; i++) {
+		// 	for (let j = 0; j < this.maze.cols; j++) {
+		// 		// Si la celda está ocupada (pared), dibuja un marcador en el minimapa
+		// 		if (this.maze.grid[i][j] === "wall") {
+		// 			const x = j * (this.miniMapContainer.width / this.maze.cols);
+		// 			const y = i * (this.miniMapContainer.height / this.maze.rows);
+		// 			this.addMiniMapMarker({ x, y }, 0xffffff); // Puedes ajustar el color según lo desees
+		// 		}
+		// 	}
+		// }
+
 	}
 
 	/**
@@ -639,29 +665,110 @@ export class Scene3D extends PixiScene {
 		this.uiContainer.y = newH * 0.05;
 	}
 
-	private createWall(point: Point3D, sizeX: number, sizeY: number = 3, sizeZ: number = 1): Mesh3D {
-		const wall = this.addChild(Mesh3D.createCube());
-		wall.scale.set(sizeX, sizeY, sizeZ);
-		wall.position.set(point.x, point.y + sizeY / 2, point.z);
-		return wall;
-	}
-	private createWallsFromMaze(maze: Maze): void {
-		const wallSize = 1; // Tamaño de cada celda del laberinto
-		const wallWidth = 1; // Ancho de la pared
-		const wallHeight = 3; // Altura de la pared
-		const wallDepth = 0.2; // Profundidad de la pared
 
-		for (let i = 0; i < maze.height; i++) {
-			for (let j = 0; j < maze.width; j++) {
-				if (maze.grid[i][j]) {
-					// Si la celda está marcada como visitada en el laberinto
-					// Calcula las coordenadas de la posición de la pared en la escena 3D
-					const wallPosition = new Point3D(j * wallSize * 2, 0, i * wallSize * 2);
+	private addWallsFromMaze(maze: MazeFixed): void {
+		const wallSize = 10; // Tamaño de cada celda del laberinto en la escena
 
-					// Crea la pared en la posición calculada
-					this.createWall(wallPosition, wallWidth, wallHeight, wallDepth);
+		for (let row = 0; row < maze.rows; row++) {
+			for (let col = 0; col < maze.cols; col++) {
+				if (maze.grid[row][col] === "empty") {
+					// Si la celda está vacía en el laberinto, determinar la dirección del pasillo
+					let direction = Math.floor(Math.random() * 3); // 0: adelante, 1: izquierda, 2: derecha
+					if (direction === 0) {
+						// Avanzar hacia adelante
+						for (let i = col; i < maze.cols; i++) {
+							if (maze.grid[row][i] === "wall") {
+								const wall = Mesh3D.createCube();
+								wall.position.set(i * wallSize, wallSize / 2, row * wallSize);
+								wall.scale.set(wallSize, wallSize, wallSize / 4);
+								this.addChild(wall);
+								break;
+							}
+						}
+					} else if (direction === 1) {
+						// Avanzar hacia la izquierda
+						for (let i = row; i < maze.rows; i++) {
+							if (maze.grid[i][col] === "wall") {
+								const wall = Mesh3D.createCube();
+								wall.position.set(col * wallSize, wallSize / 2, i * wallSize);
+								wall.scale.set(wallSize, wallSize, wallSize / 4);
+								this.addChild(wall);
+								break;
+							}
+						}
+					} else {
+						// Avanzar hacia la derecha
+						for (let i = row; i < maze.rows; i++) {
+							if (maze.grid[i][col] === "wall") {
+								const wall = Mesh3D.createCube();
+								wall.position.set(col * wallSize, wallSize / 2, i * wallSize);
+								wall.scale.set(wallSize, wallSize, wallSize / 4);
+								this.addChild(wall);
+								break;
+							}
+						}
+					}
 				}
+
+				let direction = Math.floor(Math.random() * 3); // 0: adelante, 1: izquierda, 2: derecha
+				if (direction === 0) {
+					// Avanzar hacia adelante
+					for (let i = col; i < maze.cols; i++) {
+						if (maze.grid[row][i] === "wall") {
+							const wall = Mesh3D.createCube();
+							wall.position.set(i * wallSize, wallSize / 2, row * wallSize);
+							wall.scale.set(wallSize, wallSize, wallSize / 4);
+							this.addChild(wall);
+							break;
+						}
+					}
+				} else if (direction === 1) {
+
+				} else {
+					// Avanzar hacia la derecha
+					for (let i = row; i < maze.rows; i++) {
+						if (maze.grid[i][col] === "wall") {
+							const wall = Mesh3D.createCube();
+							wall.position.set(col * wallSize, wallSize / 2, i * wallSize);
+							wall.scale.set(wallSize / 4, wallSize, wallSize);
+							this.addChild(wall);
+							break;
+						}
+					}
+				}
+
+
 			}
 		}
+	}
+
+	private drawMazeOnMiniMap(maze: MazeFixed): void {
+		const cellWidth = maze.cols;
+		const cellHeight = maze.rows;
+
+		const emptyColor = 0x000000; // Color de las celdas vacías en el minimapa
+		const wallColor = 0x00000f; // Color de las paredes en el minimapa
+
+		const graphics = new Graphics();
+
+		for (let row = 0; row < maze.rows; row++) {
+			for (let col = 0; col < maze.cols; col++) {
+				const x = col * cellWidth;
+				const y = row * cellHeight;
+
+				if (maze.grid[row][col] === "wall") {
+					graphics.beginFill(wallColor);
+					graphics.drawRect(x, y, cellWidth, cellHeight);
+					graphics.endFill();
+				} else if (maze.grid[row][col] === "empty") {
+					graphics.beginFill(emptyColor);
+					graphics.drawRect(x, y, cellWidth, cellHeight);
+					graphics.endFill();
+				}
+				// Puedes agregar más condiciones aquí para otros tipos de celdas, si es necesario
+			}
+		}
+
+		this.miniMapContainer.addChild(graphics);
 	}
 }

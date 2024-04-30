@@ -694,4 +694,31 @@ export class OldScene3D extends PixiScene {
 			}
 		}
 	}
+
+
+	// private createWall(point: Point3D, sizeX: number, sizeY: number = 3, sizeZ: number = 1): Mesh3D {
+	// 	const wall = this.addChild(Mesh3D.createCube());
+	// 	wall.scale.set(sizeX, sizeY, sizeZ);
+	// 	wall.position.set(point.x, point.y + sizeY / 2, point.z);
+	// 	return wall;
+	// }
+	// private createWallsFromMaze(maze: Maze): void {
+	// 	const wallSize = 1; // Tamaño de cada celda del laberinto
+	// 	const wallWidth = 1; // Ancho de la pared
+	// 	const wallHeight = 3; // Altura de la pared
+	// 	const wallDepth = 1; // Profundidad de la pared
+
+	// 	for (let i = 0; i < maze.height; i++) {
+	// 		for (let j = 0; j < maze.width; j++) {
+	// 			if (maze.grid[i][j]) {
+	// 				// Si la celda está marcada como visitada en el laberinto
+	// 				// Calcula las coordenadas de la posición de la pared en la escena 3D
+	// 				const wallPosition = new Point3D(j * wallSize * 3, 0, i * wallSize * 3);
+
+	// 				// Crea la pared en la posición calculada
+	// 				this.createWall(wallPosition, wallWidth, wallHeight, wallDepth);
+	// 			}
+	// 		}
+	// 	}
+	// }
 }
