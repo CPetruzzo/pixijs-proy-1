@@ -94,7 +94,7 @@ export class BasePopup extends PixiScene {
 	public async showHighscores(playerScore: number): Promise<void> {
 		const playerName = await this.showNameInputDialog();
 
-		const title = new Text("Highscores", { fontSize: 100, fill: 0xffffff });
+		const title = new Text("Highscores", { fontSize: 100, fill: 0xffffff, fontFamily: "Darling Coffee" });
 		title.anchor.set(0.5);
 		title.position.set(this.background.width * 0.5, -330);
 		this.background.addChild(title);
@@ -110,7 +110,7 @@ export class BasePopup extends PixiScene {
 		const lineHeight = 90;
 		for (let i = 0; i < Math.min(highscores.length, 5); i++) {
 			const entry = highscores[i];
-			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 80, fill: 0xffffff, align: "center" });
+			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 80, fill: 0xffffff, align: "center", fontFamily: "Darling Coffee" });
 			entryText.anchor.set(0, 0.5);
 			entryText.position.set(-220, startY + i * lineHeight - 220);
 			this.background.addChild(entryText);
@@ -124,7 +124,7 @@ export class BasePopup extends PixiScene {
 		// Mostrar el botón de reinicio
 		this.resetButton = new Graphics();
 		this.resetButton.beginFill(0x808080);
-		this.resetButton.drawRect(0, 0, 350, 150);
+		this.resetButton.drawRoundedRect(0, 0, 350, 150, 10);
 		this.resetButton.endFill();
 		this.resetButton.pivot.set(this.resetButton.width * 0.5, this.resetButton.height * 0.5);
 		this.resetButton.eventMode = "static";
@@ -132,7 +132,8 @@ export class BasePopup extends PixiScene {
 		this.resetButton.on("pointertap", this.handleResetClick, this); // Agrega un manejador de eventos al hacer clic en el botón
 		this.background.addChild(this.resetButton); // Agrega el botón al background
 
-		const tryagain = new Text("Try again", { fontSize: 80, fill: 0xffffff });
+		const tryagain = new Text("Try again", { fontSize: 70, fill: 0xffffff, fontFamily: "Darling Coffee" });
+		tryagain.y = 5;
 		// tryagain.anchor.set(0.5);
 		this.resetButton.addChild(tryagain);
 	}

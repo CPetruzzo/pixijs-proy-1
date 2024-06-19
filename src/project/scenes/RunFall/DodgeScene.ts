@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Text, Texture } from "pixi.js";
+import { Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import Random from "../../../engine/random/Random";
@@ -12,6 +12,8 @@ import { Manager } from "../../..";
 import { BasePopup } from "./BasePopUp";
 import { SoundLib } from "../../../engine/sound/SoundLib";
 import { SmokeEmitter } from "./SmokeEmitter";
+import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
+import { MenuScene } from "./MenuScene";
 
 export class DodgeScene extends PixiScene {
 	public static readonly BUNDLES = ["fallrungame", "sfx"];
@@ -40,9 +42,10 @@ export class DodgeScene extends PixiScene {
 	private leftEventContainer: Graphics;
 	private isMoving: boolean = false;
 
-
 	private smokeContainers: Container[] = [];
 	private smokeParticles: SmokeEmitter[] = [];
+	public isPaused: boolean = false;
+	private pausebuttonText: Text;
 
 	// private smokeContainer: Container;
 	// private smoke: SmokeEmitter;
@@ -50,6 +53,7 @@ export class DodgeScene extends PixiScene {
 	constructor() {
 		super();
 
+		SoundLib.stopAllMusic();
 		SoundLib.playMusic("sound_BGM", { volume: 0.05, loop: true });
 
 		this.addChild(this.bleedingBackgroundContainer);
@@ -78,7 +82,7 @@ export class DodgeScene extends PixiScene {
 		this.player.y = this.background.height - this.player.height;
 		this.background.addChild(this.player);
 
-		this.scoreText = new Text(`Score: ${this.score}`, { fontSize: 55, fill: 0xffffff });
+		this.scoreText = new Text(`Score: ${this.score}`, { fontSize: 55, fill: 0xffffff, fontFamily: "Darling Coffee" });
 		this.scoreText.anchor.set(0.5);
 		this.scoreText.position.set(0, -this.background.height * 0.48);
 		this.backgroundContainer.addChild(this.scoreText);
@@ -135,7 +139,62 @@ export class DodgeScene extends PixiScene {
 		// this.backgroundContainer.addChild(this.smokeContainer);
 		// this.smoke.start();
 
+		// Creación del botón
+		const button = new Container();
+		const buttonText = new Text("Back", new TextStyle({ fill: "#ffffff", fontFamily: "Darling Coffee" }));
+		buttonText.anchor.set(0.5);
+		buttonText.scale.set(1);
 
+		const buttonBackground = new Graphics();
+		buttonBackground.beginFill(0x252525);
+		buttonBackground.drawRoundedRect(-buttonText.width / 2 - 10, -buttonText.height / 2 - 5, buttonText.width + 20, buttonText.height + 10, 10);
+		buttonBackground.endFill();
+		buttonBackground.scale.set(2);
+
+		button.addChild(buttonBackground);
+		button.addChild(buttonText);
+		button.eventMode = "static";
+		button.position.set(this.background.width / 2 - button.width * 0.5, -this.background.height / 2 + button.height * 0.5);
+		button.alpha = 0.5;
+
+		button.on("pointerdown", () => {
+			Manager.changeScene(MenuScene, { transitionClass: FadeColorTransition, transitionParams: [] });
+		});
+
+		// Creación del botón
+		const pausebutton = new Container();
+		this.pausebuttonText = new Text("Pause", new TextStyle({ fill: "#ffffff", fontFamily: "Darling Coffee" }));
+		this.pausebuttonText.anchor.set(0.5);
+		this.pausebuttonText.scale.set(1);
+
+		const pausebuttonBackground = new Graphics();
+		pausebuttonBackground.beginFill(0x252525);
+		pausebuttonBackground.drawRoundedRect(
+			-this.pausebuttonText.width * 0.5 - 10,
+			-this.pausebuttonText.height * 0.5 - 5,
+			this.pausebuttonText.width + 20,
+			this.pausebuttonText.height + 10,
+			10
+		);
+		pausebuttonBackground.endFill();
+		pausebuttonBackground.scale.set(2);
+
+		pausebutton.addChild(pausebuttonBackground);
+		pausebutton.addChild(this.pausebuttonText);
+		pausebutton.alpha = 0.5;
+		pausebutton.eventMode = "static";
+		pausebutton.position.set(-this.background.width * 0.5 + button.width * 0.5 + 15, -this.background.height * 0.5 + button.height * 0.5);
+
+		pausebutton.on("pointerdown", () => {
+			if (!this.isPaused) {
+				this.isPaused = true;
+			} else {
+				this.pausebuttonText.text = "Pause";
+				this.isPaused = false;
+			}
+		});
+
+		this.backgroundContainer.addChild(pausebutton, button);
 	}
 
 	private updateHealthBar(): void {
@@ -181,6 +240,10 @@ export class DodgeScene extends PixiScene {
 
 	public override update(dt: number): void {
 		if (this.gameOver) {
+			return;
+		}
+		if (this.isPaused) {
+			this.pausebuttonText.text = "Game Paused";
 			return;
 		}
 		this.player.update(dt);

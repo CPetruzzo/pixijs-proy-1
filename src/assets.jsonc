@@ -53,6 +53,17 @@
 					}
 				},
 				{
+					"name": "RunFallFont",
+					"srcs": "./fonts/Darling Coffee.ttf",
+					"data": {
+						"family": "Darling Coffee",
+						"weight": [
+							"normal",
+							"bold"
+						]
+					}
+				},
+				{
 					"name": "defaultSDFFont",
 					"srcs": "./fonts/roundedelegance.json"
 				}
