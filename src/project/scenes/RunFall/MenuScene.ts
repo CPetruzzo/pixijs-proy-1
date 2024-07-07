@@ -7,7 +7,7 @@ import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 
 export class MenuScene extends PixiScene {
-	public static readonly BUNDLES = ["package-1", "sfx", "music"];
+	public static readonly BUNDLES = ["package-1", "sfx", "music", "fallrungame"];
 
 	private backgroundContainer: Container;
 	private bleedingBackgroundContainer: Container;
