@@ -54,7 +54,7 @@ export class DodgeScene extends PixiScene {
 		super();
 
 		SoundLib.stopAllMusic();
-		SoundLib.playMusic("sound_BGM", { volume: 0.05, loop: true });
+		SoundLib.playMusic("sound_BGM", { volume: 0.03, loop: true });
 
 		this.addChild(this.bleedingBackgroundContainer);
 		this.addChild(this.backgroundContainer);
@@ -96,7 +96,7 @@ export class DodgeScene extends PixiScene {
 		this.healthBar = new Sprite(Texture.WHITE);
 		this.healthBar.width = 99;
 		this.healthBar.height = 20;
-		this.healthBar.tint = 0xff0000; // Color rojo
+		this.healthBar.tint = 0xff0000;
 		this.healthBar.position.set(-this.healthBar.width * 0.5, this.background.height * 0.5 - 50);
 		this.backgroundContainer.addChild(this.healthBar);
 
@@ -105,7 +105,7 @@ export class DodgeScene extends PixiScene {
 			const healthSprite = new Sprite(Texture.WHITE);
 			healthSprite.width = 33;
 			healthSprite.height = 20;
-			healthSprite.tint = 0x00ff00; // Color verde
+			healthSprite.tint = 0x00ff00;
 			healthSprite.position.set(this.healthBar.x + i * healthSprite.width, this.healthBar.y);
 			this.healthSprites.push(healthSprite);
 			this.backgroundContainer.addChild(healthSprite);
@@ -161,7 +161,6 @@ export class DodgeScene extends PixiScene {
 			Manager.changeScene(MenuScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});
 
-		// Creación del botón
 		const pausebutton = new Container();
 		this.pausebuttonText = new Text("Pause", new TextStyle({ fill: "#ffffff", fontFamily: "Darling Coffee" }));
 		this.pausebuttonText.anchor.set(0.5);
@@ -188,8 +187,10 @@ export class DodgeScene extends PixiScene {
 		pausebutton.on("pointerdown", () => {
 			if (!this.isPaused) {
 				this.isPaused = true;
+				this.background.eventMode = "none";
 			} else {
 				this.pausebuttonText.text = "Pause";
+				this.background.eventMode = "static";
 				this.isPaused = false;
 			}
 		});
@@ -276,7 +277,7 @@ export class DodgeScene extends PixiScene {
 					this.background.removeChild(obj);
 				}
 			} else if (this.checkCollision(this.player, obj)) {
-				this.doSomething(obj);
+				this.eventOnPlayerCollision(obj);
 				obj.handleEvent(this.player);
 			}
 		});
@@ -298,7 +299,7 @@ export class DodgeScene extends PixiScene {
 		}
 	}
 
-	private doSomething(obj: GameObject): void {
+	private eventOnPlayerCollision(obj: GameObject): void {
 		switch (obj.name) {
 			case "ENEMY":
 				this.decreaseScore(50);
@@ -306,14 +307,14 @@ export class DodgeScene extends PixiScene {
 				this.vibrateMobileDevice();
 				SoundLib.playSound("sound_hit", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;
-			case "OTHER":
+			case "POTION":
 				this.increaseScore(10);
 				this.increaseHealth();
 				SoundLib.playSound("sound_award", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;
 			case "COIN":
 				this.collectCoin(50);
-				SoundLib.playSound("sound_collectable", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
+				SoundLib.playSound("sound_collectable", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.1 });
 				break;
 			case "POWER_UP":
 				this.activatePowerUp();
@@ -443,7 +444,7 @@ export class DodgeScene extends PixiScene {
 				break;
 			case 1:
 				object = new NegativeObject();
-				object.name = "OTHER";
+				object.name = "POTION";
 				break;
 			case 2:
 				object = new CoinObject();
