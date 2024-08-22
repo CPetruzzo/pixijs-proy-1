@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
+import { Container, filters, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import Random from "../../../engine/random/Random";
@@ -7,7 +7,7 @@ import { Player } from "./Player";
 import type { GameObject } from "./GameObject";
 import { CoinObject, EnemyObject, NegativeObject, ObstacleObject, PowerUpObject } from "./Objects";
 import { Timer } from "../../../engine/tweens/Timer";
-import { PLAYER_SPEED } from "../../../utils/constants";
+import { BLUR_TIME, PLAYER_SPEED } from "../../../utils/constants";
 import { Manager } from "../../..";
 import { BasePopup } from "./BasePopUp";
 import { SoundLib } from "../../../engine/sound/SoundLib";
@@ -66,6 +66,8 @@ export class DodgeScene extends PixiScene {
 		this.background = Sprite.from("DODGE-BACKGROUND");
 		this.background.position.set(-this.background.width * 0.5, -this.background.height * 0.5);
 		this.backgroundContainer.addChild(this.background);
+
+		this.background.filters = [];
 
 		const buttonPopUp = new Graphics();
 		buttonPopUp.beginFill(0x808080);
@@ -304,6 +306,7 @@ export class DodgeScene extends PixiScene {
 			case "ENEMY":
 				this.decreaseScore(50);
 				this.decreaseHealth();
+				this.causeBlur();
 				this.vibrateMobileDevice();
 				SoundLib.playSound("sound_hit", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;
@@ -340,6 +343,22 @@ export class DodgeScene extends PixiScene {
 		const objIndex = this.objects.indexOf(obj);
 		this.objects.splice(objIndex, 1);
 		this.background.removeChild(obj);
+	}
+
+	private causeBlur(): void {
+		const blurFilter = new filters.BlurFilter(20);
+		this.background.filters = [blurFilter];
+
+		new Timer()
+			.to(BLUR_TIME)
+			.start()
+			.onComplete(() => {
+				this.recoverFromBlur();
+			});
+	}
+
+	private recoverFromBlur(): void {
+		this.background.filters = [];
 	}
 
 	private collectCoin(amount: number): void {

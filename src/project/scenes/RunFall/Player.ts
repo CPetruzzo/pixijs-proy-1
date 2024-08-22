@@ -14,24 +14,12 @@ export class Player extends StateMachineAnimator {
 
 		this.speed = PLAYER_SPEED;
 
-		this.anchor.set(0.5, 0)
+		this.anchor.set(0.5, 0);
 		this.eventMode = "none";
 
-		this.addState("idle", [
-			Texture.from("player1"),
-			Texture.from("player2"),
-		],
-			0.2,
-			true
-		);
+		this.addState("idle", [Texture.from("player1"), Texture.from("player2")], 0.2, true);
 
-		this.addState("move", [
-			Texture.from("player2"),
-			Texture.from("player3"),
-		],
-			0.2,
-			true
-		);
+		this.addState("move", [Texture.from("player2"), Texture.from("player3")], 0.2, true);
 
 		this.playState("idle");
 
@@ -44,13 +32,15 @@ export class Player extends StateMachineAnimator {
 
 	public stopMovement(): void {
 		this.canMove = false;
-		new Timer().to(2000).start().onComplete(() => {
-			this.canMove = true;
-		})
+		new Timer()
+			.to(2000)
+			.start()
+			.onComplete(() => {
+				this.canMove = true;
+			});
 	}
 
 	public setDirection(movingLeft: boolean): void {
 		this.scale.x = movingLeft ? -1 : 1;
 	}
-
 }

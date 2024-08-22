@@ -69,5 +69,4 @@ export const PAUSE_OBSTACULE: number = 2000;
 export const PLAYER_SPEED: number = 0.5;
 export const OBJECT_SPEED: number = 0.5;
 
-
-
+export const BLUR_TIME: number = 1500;
