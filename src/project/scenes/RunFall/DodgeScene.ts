@@ -96,18 +96,18 @@ export class DodgeScene extends PixiScene {
 		this.background.on("pointerup", this.onMouseStop, this);
 
 		this.healthBar = new Sprite(Texture.WHITE);
-		this.healthBar.width = 99;
-		this.healthBar.height = 20;
-		this.healthBar.tint = 0xff0000;
+		this.healthBar.width = 350;
+		this.healthBar.height = 30;
+		this.healthBar.tint = 0x273257;
 		this.healthBar.position.set(-this.healthBar.width * 0.5, this.background.height * 0.5 - 50);
 		this.backgroundContainer.addChild(this.healthBar);
 
 		this.healthSprites = [];
 		for (let i = 0; i < this.maxHealth; i++) {
 			const healthSprite = new Sprite(Texture.WHITE);
-			healthSprite.width = 33;
-			healthSprite.height = 20;
-			healthSprite.tint = 0x00ff00;
+			healthSprite.width = 116.5;
+			healthSprite.height = 30;
+			healthSprite.tint = 0xc53570;
 			healthSprite.position.set(this.healthBar.x + i * healthSprite.width, this.healthBar.y);
 			this.healthSprites.push(healthSprite);
 			this.backgroundContainer.addChild(healthSprite);
