@@ -3,7 +3,6 @@ import {
 	Container,
 	// filters,
 	Graphics,
-	Point,
 	Sprite,
 	Text,
 	TextStyle,
