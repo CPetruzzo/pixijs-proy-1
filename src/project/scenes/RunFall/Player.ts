@@ -37,6 +37,7 @@ export class Player extends StateMachineAnimator {
 			.start()
 			.onComplete(() => {
 				this.canMove = true;
+				// this.filters = [];
 			});
 	}
 

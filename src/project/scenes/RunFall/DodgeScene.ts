@@ -1,4 +1,14 @@
-import { Container, filters, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
+import {
+	BlurFilter,
+	Container,
+	// filters,
+	Graphics,
+	Point,
+	Sprite,
+	Text,
+	TextStyle,
+	Texture,
+} from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import Random from "../../../engine/random/Random";
@@ -14,6 +24,8 @@ import { SoundLib } from "../../../engine/sound/SoundLib";
 import { SmokeEmitter } from "./SmokeEmitter";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 import { MenuScene } from "./MenuScene";
+import { GlowFilter } from "@pixi/filter-glow";
+// import type { ShockwaveFilter } from "@pixi/filter-shockwave";
 
 export class DodgeScene extends PixiScene {
 	public static readonly BUNDLES = ["fallrungame", "sfx"];
@@ -46,6 +58,12 @@ export class DodgeScene extends PixiScene {
 	private smokeParticles: SmokeEmitter[] = [];
 	public isPaused: boolean = false;
 	private pausebuttonText: Text;
+	private glow: GlowFilter;
+	private healthGlow: GlowFilter;
+	public blurFilter: BlurFilter;
+
+	private currentHealthContainer: Container = new Container();
+	// private shockwave: ShockwaveFilter;
 
 	// private smokeContainer: Container;
 	// private smoke: SmokeEmitter;
@@ -101,6 +119,16 @@ export class DodgeScene extends PixiScene {
 		this.healthBar.tint = 0x273257;
 		this.healthBar.position.set(-this.healthBar.width * 0.5, this.background.height * 0.5 - 50);
 		this.backgroundContainer.addChild(this.healthBar);
+		this.backgroundContainer.addChild(this.currentHealthContainer);
+
+		this.glow = new GlowFilter();
+		this.healthGlow = new GlowFilter({ color: 0x273257 });
+		this.blurFilter = new BlurFilter(20);
+
+		// this.shockwave = new ShockwaveFilter(new Point(350, 1050));
+		// this.background.filters = [this.shockwave];
+
+		this.healthBar.filters = [this.glow];
 
 		this.healthSprites = [];
 		for (let i = 0; i < this.maxHealth; i++) {
@@ -110,7 +138,8 @@ export class DodgeScene extends PixiScene {
 			healthSprite.tint = 0xc53570;
 			healthSprite.position.set(this.healthBar.x + i * healthSprite.width, this.healthBar.y);
 			this.healthSprites.push(healthSprite);
-			this.backgroundContainer.addChild(healthSprite);
+			this.currentHealthContainer.addChild(healthSprite);
+			this.currentHealthContainer.filters = [this.healthGlow];
 		}
 
 		// Crear un contenedor invisible para eventos debajo del background
@@ -210,6 +239,8 @@ export class DodgeScene extends PixiScene {
 		}
 	}
 
+	// #region PLAYERMOVEMENTS
+
 	private onMouseMove(event: any): void {
 		if (!this.isMoving) {
 			const globalMousePosition = this.background.toLocal(event.data.global);
@@ -236,12 +267,19 @@ export class DodgeScene extends PixiScene {
 			this.isMoving = true; // Establecer la bandera de movimiento a verdadero
 		}
 	}
+
 	private onMouseStop(): void {
 		this.moveTween.pause();
 		this.isMoving = false; // Establecer la bandera de movimiento a falso cuando se detiene el movimiento
 	}
+	// #endregion PLAYERMOVEMENTS
 
 	public override update(dt: number): void {
+		// if (this.shockwave != null || this.shockwave != undefined) {
+		// 	this.shockwave.time = this.shockwave.time >= 5 ? 0 : this.shockwave.time + 0.01;
+		// }
+		// this.shockwave.enabled = true;
+
 		if (this.gameOver) {
 			return;
 		}
@@ -346,8 +384,7 @@ export class DodgeScene extends PixiScene {
 	}
 
 	private causeBlur(): void {
-		const blurFilter = new filters.BlurFilter(20);
-		this.background.filters = [blurFilter];
+		this.background.filters = [this.blurFilter];
 
 		new Timer()
 			.to(BLUR_TIME)
@@ -370,17 +407,23 @@ export class DodgeScene extends PixiScene {
 		console.log("El jugador activó un power-up. +50 puntos");
 		this.score += 50;
 		this.player.speed += 0.25;
+
+		this.player.filters = [this.glow];
+
 		new Timer()
 			.to(5500)
 			.start()
 			.onComplete(() => {
 				this.player.speed = PLAYER_SPEED;
+				this.player.filters = [];
 			});
 	}
 
 	private collideWithObstacle(): void {
 		console.log("El jugador chocó con un obstáculo.");
 		this.player.stopMovement();
+		// const playerBlur = new BlurFilter(5);
+		// this.player.filters = [playerBlur];
 		if (this.moveTween != undefined) {
 			this.moveTween.pause();
 		}
