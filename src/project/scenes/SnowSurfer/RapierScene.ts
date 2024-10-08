@@ -56,7 +56,7 @@ export class RapierScene extends PixiScene {
 		this.world = new World(gravity);
 
 		// Create the ground
-		const groundColliderDesc = ColliderDesc.cuboid(10000.0, 1);
+		const groundColliderDesc = ColliderDesc.cuboid(10000.0, 1).setRestitution(-20);
 		groundColliderDesc.setRotation(RapierScene.PI * 0.05);
 		this.world.createCollider(groundColliderDesc).setTranslation({ x: 40.0, y: 90.0 });
 
@@ -88,7 +88,7 @@ export class RapierScene extends PixiScene {
 		this.skyPlayer.anchor.set(0.5, 1);
 
 		// Create a cuboid collider attached to the dynamic rigidBody.
-		const colliderDesc = ColliderDesc.ball(1);
+		const colliderDesc = ColliderDesc.capsule(1, 0.5).setTranslation(0, 0);
 		this.world.createCollider(colliderDesc, this.rigidBody);
 
 		const tiling1 = new TilingSprite(Texture.from("img/big_placeholder/background-1.jpg"), ScaleHelper.IDEAL_WIDTH * 100, ScaleHelper.IDEAL_HEIGHT * 100);

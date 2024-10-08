@@ -27,6 +27,14 @@ export class SceneManager<R extends IRenderer> {
 	public pauseSoundOnFocusLost: boolean = true;
 
 	/**
+	 * Should the update method pause when we lose focus?
+	 */
+	public pauseUpdateOnFocusLost: boolean = true;
+	/**
+	 * Should tweens pause when we lose focus?
+	 */
+	public pauseTweenOnFocusLost: boolean = true;
+	/**
 	 * Destroy all tweens on scene change.
 	 * This gives us some peace of mind when doing a `changeScene`
 	 */
@@ -930,7 +938,7 @@ export class SceneManager<R extends IRenderer> {
 	 * @param sceneToDestroy
 	 */
 	private destroyScene(sceneToDestroy: IScene): void {
-		sceneToDestroy.closeHandler = () => {};
+		sceneToDestroy.closeHandler = () => { };
 		sceneToDestroy.destroy();
 	}
 	/** Sets the default transition for the {@link changeScene} method */

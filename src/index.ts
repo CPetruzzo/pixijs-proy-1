@@ -13,7 +13,8 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
-import { MenuScene } from "./project/scenes/RunFall/MenuScene";
+import { LoaderScene } from "./project/scenes/RunFall/LoaderScene";
+import { SimpleLockScene } from "./engine/scenemanager/scenes/SimpleLockScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -62,6 +63,7 @@ if (DEBUG) {
 	}
 	console.groupEnd();
 }
+Manager.setRotateScene("portrait", SimpleLockScene, ["rotateDevice"]);
 
 window.addEventListener("resize", () => {
 	const w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
@@ -74,7 +76,7 @@ window.dispatchEvent(new Event("resize"));
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
 	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
-	Manager.changeScene(MenuScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(LoaderScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

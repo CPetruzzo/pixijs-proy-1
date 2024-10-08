@@ -41,6 +41,10 @@
 					"srcs": "./lang/en.i18.json"
 				},
 				{
+					"name": "preloaderVideo",
+					"srcs": "./preloader/initialvideo.mp4" // Aquí se agrega el archivo de video
+				},
+				{
 					"name": "defaultFont",
 					"srcs": "./fonts/Rounded_Elegance.{woff2,woff,ttf}",
 					"data": {
