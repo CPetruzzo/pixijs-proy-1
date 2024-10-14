@@ -28,9 +28,9 @@ export const SUBSTEP_COUNT = 16;
 export const MAX_SLINGSHOT_CHARGE = 300;
 export const SPEED_DIVISOR = MAX_SLINGSHOT_CHARGE * 0.75;
 export const JOYSTICK_MAXPOWER = 130; // used in joystickShoot
-export const JOYSTICK_STRENGTH_FACTOR = 0.6; // used to change shoot strength (if higher --> stronger, and viceversa)
+export const JOYSTICK_STRENGTH_FACTOR = 0.7; // used to change shoot strength (if higher --> stronger, and viceversa)
 export const DEADZONERANGE = 0.5; // limits walk mobile movement until you surpass this percentage
-export const TRAJECTORY_POINTS = 2000;
+export const TRAJECTORY_POINTS = 2500;
 export const TRAJECTORY_AVERAGE_DT = 0.1005;
 export const AIM_ANIMATION_DURATION = 350;
 // Character

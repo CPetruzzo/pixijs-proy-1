@@ -81,7 +81,9 @@ export class JoystickTestScene extends PixiScene {
 		this.createObstacle(90, 65);
 
 		// Crear un cuerpo dinámico (afectado por la gravedad)
-		this.createBreakableObstacle(90, 60);
+		this.createBreakableObstacle(90, 60, 0.01);
+		this.createBreakableObstacle(90, 55, 0.05);
+		this.createBreakableObstacle(90, 50, 10);
 
 		// Crear el aim
 		this.aim = new Aim();
@@ -112,7 +114,7 @@ export class JoystickTestScene extends PixiScene {
 		this.world.createCollider(blockCollider).setTranslation({ x, y });
 	}
 	// Método para crear bloques dinámicos (que se desarman al golpearse)
-	private createBreakableObstacle(x: number, y: number): void {
+	private createBreakableObstacle(x: number, y: number, mass: number): void {
 		const block = new Graphics();
 		block.beginFill(0x654321); // Color marrón para los bloques
 		block.drawRect(-2.5, -2.5, 5, 5); // Bloques de 5x5 metros
@@ -122,7 +124,7 @@ export class JoystickTestScene extends PixiScene {
 		// Crear un cuerpo dinámico (afectado por la gravedad)
 		const dynamicBodyDesc = RigidBodyDesc.dynamic(); // Cuerpo dinámico
 		const dynamicBody = this.world.createRigidBody(dynamicBodyDesc);
-		dynamicBody.mass = () => 0.05;
+		dynamicBody.mass = () => mass;
 
 		// Crear un nuevo collider dinámico
 		const blockCollider = ColliderDesc.cuboid(2.5, 2.5).setRestitution(1);

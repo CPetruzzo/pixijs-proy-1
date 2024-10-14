@@ -18,7 +18,7 @@ export class JoystickPlayer extends Container {
 		const rigidBodyDesc = RigidBodyDesc.dynamic()
 			.setTranslation(this.x / JoystickTestScene.METER_TO_PIXEL, this.y / JoystickTestScene.METER_TO_PIXEL)
 			.lockRotations(); // Esto bloquea las rotaciones del cuerpo rígido
-		// rigidBodyDesc.mass = 1; // Ajusta la masa según sea necesario
+		// rigidBodyDesc.mass = 0.4; // Ajusta la masa según sea necesario
 		this.rigidBody = world.createRigidBody(rigidBodyDesc);
 
 		const colliderDesc = ColliderDesc.roundCuboid(0.5, 2, 2);
