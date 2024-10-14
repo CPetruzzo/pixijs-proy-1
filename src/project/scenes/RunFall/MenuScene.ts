@@ -1,7 +1,7 @@
 import i18next from "i18next";
 import { Sprite, Text, TextStyle, Container, Graphics } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
-import { DodgeScene } from "./DodgeScene"; // Asegúrate de que la ruta a DodgeScene sea correcta
+import { DodgeScene } from "./DodgeScene";
 import { Manager } from "../../..";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";

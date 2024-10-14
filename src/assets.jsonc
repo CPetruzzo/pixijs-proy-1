@@ -40,10 +40,10 @@
 					"name": "strings-en",
 					"srcs": "./lang/en.i18.json"
 				},
-				{
-					"name": "preloaderVideo",
-					"srcs": "./preloader/initialvideo.mp4" // Aquí se agrega el archivo de video
-				},
+				// {
+				// 	"name": "preloaderVideo",
+				// 	"srcs": "./preloader/initialvideo.mp4" // Aquí se agrega el archivo de video
+				// },
 				{
 					"name": "defaultFont",
 					"srcs": "./fonts/Rounded_Elegance.{woff2,woff,ttf}",
@@ -186,6 +186,15 @@
 				"blackboard2": "./img/engine/blackboard.png",
 				"blackboard": "./img/engine/blackboard2.png"
 
+			}
+		},
+		{
+			"name": "joystick",
+			"assets": {
+				"inner":"./img/joystick/joystick-handle.png",
+				"outer":"./img/joystick/joystick.png",
+				"big_background": "./img/joystick/bg_game.png",
+				"collectable": "./img/joystick/Collectable.png"
 			}
 		}
 	]

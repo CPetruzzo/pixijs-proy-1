@@ -16,7 +16,7 @@ import { Player } from "./Player";
 import type { GameObject } from "./GameObject";
 import { CoinObject, EnemyObject, NegativeObject, ObstacleObject, PowerUpObject } from "./Objects";
 import { Timer } from "../../../engine/tweens/Timer";
-import { BLUR_TIME, PLAYER_SPEED } from "../../../utils/constants";
+import { BLUR_TIME, PLAYER_SPEED, STUN_TIME } from "../../../utils/constants";
 import { Manager } from "../../..";
 import { BasePopup } from "./BasePopUp";
 import { SoundLib } from "../../../engine/sound/SoundLib";
@@ -24,6 +24,8 @@ import { SmokeEmitter } from "./SmokeEmitter";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 import { MenuScene } from "./MenuScene";
 import { GlowFilter } from "@pixi/filter-glow";
+import { Keyboard } from "../../../engine/input/Keyboard";
+import { Joystick } from "../ThisIsArgentina/Joystick";
 // import type { ShockwaveFilter } from "@pixi/filter-shockwave";
 
 export class DodgeScene extends PixiScene {
@@ -60,12 +62,14 @@ export class DodgeScene extends PixiScene {
 	private glow: GlowFilter;
 	private healthGlow: GlowFilter;
 	public blurFilter: BlurFilter;
-
+	public stunFilter: GlowFilter;
 	private currentHealthContainer: Container = new Container();
 	// private shockwave: ShockwaveFilter;
 
 	// private smokeContainer: Container;
 	// private smoke: SmokeEmitter;
+
+	private joystick: Joystick;
 
 	constructor() {
 		super();
@@ -110,7 +114,9 @@ export class DodgeScene extends PixiScene {
 		this.eventMode = "static";
 
 		this.background.on("pointerdown", this.onMouseMove, this);
-		this.background.on("pointerup", this.onMouseStop, this);
+		if (!this.isMoving) {
+			this.background.on("pointerup", this.onMouseStop, this);
+		}
 
 		this.healthBar = new Sprite(Texture.WHITE);
 		this.healthBar.width = 350;
@@ -123,6 +129,7 @@ export class DodgeScene extends PixiScene {
 		this.glow = new GlowFilter();
 		this.healthGlow = new GlowFilter({ color: 0x273257 });
 		this.blurFilter = new BlurFilter(20);
+		this.stunFilter = new GlowFilter({ color: 0xfff888 });
 
 		// this.shockwave = new ShockwaveFilter(new Point(350, 1050));
 		// this.background.filters = [this.shockwave];
@@ -215,15 +222,13 @@ export class DodgeScene extends PixiScene {
 		pausebutton.position.set(-this.background.width * 0.5 + button.width * 0.5 + 15, -this.background.height * 0.5 + button.height * 0.5);
 
 		pausebutton.on("pointerdown", () => {
-			if (!this.isPaused) {
-				this.isPaused = true;
-				this.background.eventMode = "none";
-			} else {
-				this.pausebuttonText.text = "Pause";
-				this.background.eventMode = "static";
-				this.isPaused = false;
-			}
+			this.isPaused = !this.isPaused;
+			this.pausebuttonText.text = this.isPaused ? "Resume" : "Pause";
+			this.background.eventMode = this.isPaused ? "none" : "static";
 		});
+
+		this.joystick = new Joystick(this.player);
+		this.backgroundContainer.addChild(this.joystick);
 
 		this.backgroundContainer.addChild(pausebutton, button);
 	}
@@ -239,6 +244,29 @@ export class DodgeScene extends PixiScene {
 	}
 
 	// #region PLAYERMOVEMENTS
+
+	private moveWithKeyboard(): void {
+		if (this.player.canMove) {
+			if (Keyboard.shared.isDown("KeyA")) {
+				this.isMoving = true;
+				this.player.movingLeft = true;
+				this.player.setDirection(this.player.movingLeft);
+				if (this.player.x > this.player.width * 0.3) {
+					this.player.x -= this.player.speed * 15;
+				}
+			} else if (Keyboard.shared.isDown("KeyD")) {
+				this.isMoving = true;
+				this.player.movingLeft = false;
+				this.player.setDirection(this.player.movingLeft);
+				if (this.player.x < this.background.width - this.player.width * 0.3) {
+					this.player.x += this.player.speed * 15;
+				}
+			} else {
+				this.isMoving = false;
+			}
+		}
+		console.log("this.isMoving", this.isMoving);
+	}
 
 	private onMouseMove(event: any): void {
 		if (!this.isMoving) {
@@ -265,6 +293,7 @@ export class DodgeScene extends PixiScene {
 
 			this.isMoving = true; // Establecer la bandera de movimiento a verdadero
 		}
+		console.log("this.isMoving", this.isMoving);
 	}
 
 	private onMouseStop(): void {
@@ -287,7 +316,6 @@ export class DodgeScene extends PixiScene {
 			return;
 		}
 		this.player.update(dt);
-
 		this.timeSinceLastSpawn += dt;
 
 		if (this.timeSinceLastSpawn >= this.spawnInterval) {
@@ -328,6 +356,7 @@ export class DodgeScene extends PixiScene {
 		for (const smoke of this.smokeParticles) {
 			smoke.update(dt);
 		}
+		this.moveWithKeyboard();
 	}
 
 	private increaseHealth(): void {
@@ -362,6 +391,7 @@ export class DodgeScene extends PixiScene {
 				break;
 			case "OBSTACLE":
 				this.collideWithObstacle();
+				this.causeStun();
 				const smokeContainer = new Container();
 				const smoke = new SmokeEmitter(smokeContainer);
 				this.smokeContainers.push(smokeContainer);
@@ -393,8 +423,23 @@ export class DodgeScene extends PixiScene {
 			});
 	}
 
+	private causeStun(): void {
+		this.player.filters = [this.stunFilter];
+
+		new Timer()
+			.to(STUN_TIME)
+			.start()
+			.onComplete(() => {
+				this.recoverFromStun();
+			});
+	}
+
 	private recoverFromBlur(): void {
 		this.background.filters = [];
+	}
+
+	private recoverFromStun(): void {
+		this.player.filters = [];
 	}
 
 	private collectCoin(amount: number): void {

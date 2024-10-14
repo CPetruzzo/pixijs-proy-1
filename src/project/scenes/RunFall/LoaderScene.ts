@@ -21,7 +21,6 @@ export class LoaderScene extends PixiScene {
 		this.addChild(this.bleedingBackgroundContainer);
 		this.addChild(this.backgroundContainer);
 
-		// Agregar fondo que sangra
 		const bleedBG = Sprite.from("DODGE-BACKGROUND2");
 		bleedBG.anchor.set(0.5);
 		this.bleedingBackgroundContainer.addChild(bleedBG);
@@ -30,24 +29,21 @@ export class LoaderScene extends PixiScene {
 		background.position.set(-background.width * 0.5, -background.height * 0.5);
 		// this.backgroundContainer.addChild(background);
 
-		// Crear el elemento de video
 		this.video = document.createElement("video");
 		this.video.preload = "auto";
-		this.video.src = "../../../../../preloader/initialvideo.mp4"; // Asegúrate de que esta ruta sea correcta
+		this.video.src = "../../../../../preloader/initialvideo.mp4";
 		this.video.muted = true;
 
-		// Esperar a que el video esté listo
 		this.video.addEventListener("canplaythrough", () => {
 			this.video.play();
 			const videoTexture = Texture.from(this.video);
 			const videoSprite = new Sprite(videoTexture);
 			videoSprite.anchor.set(0.5);
 			// videoSprite.anchor.set(0.5, 0.325);
-			videoSprite.scale.set(1.9, 2.4); // Ajusta la escala según tus necesidades
+			videoSprite.scale.set(2.38);
 			this.backgroundContainer.addChild(videoSprite);
 		});
 
-		// Cambiar de escena cuando el video termine
 		this.video.addEventListener("ended", () => {
 			Manager.changeScene(MenuScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});

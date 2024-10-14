@@ -1,7 +1,7 @@
 import { Graphics, Texture } from "pixi.js";
 import { StateMachineAnimator } from "../../../engine/animation/StateMachineAnimation";
 import { Timer } from "../../../engine/tweens/Timer";
-import { PLAYER_SPEED } from "../../../utils/constants";
+import { PLAYER_SPEED, STUN_TIME } from "../../../utils/constants";
 
 export class Player extends StateMachineAnimator {
 	public canMove: boolean = true;
@@ -33,7 +33,7 @@ export class Player extends StateMachineAnimator {
 	public stopMovement(): void {
 		this.canMove = false;
 		new Timer()
-			.to(2000)
+			.to(STUN_TIME)
 			.start()
 			.onComplete(() => {
 				this.canMove = true;
