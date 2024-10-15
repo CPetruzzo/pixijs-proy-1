@@ -7,5 +7,5 @@ export function joystickComponentX(joystickData: { power: number; angle: number 
 
 /** returns strength (a number) of joystick vector component y */
 export function joystickComponentY(joystickData: { power: number; angle: number }): number {
-	return ((joystickData.power * JOYSTICK_STRENGTH_FACTOR) / (JOYSTICK_MAXPOWER - 20)) * Math.sin(joystickData.angle);
+	return ((joystickData.power * JOYSTICK_STRENGTH_FACTOR) / JOYSTICK_MAXPOWER) * Math.sin(joystickData.angle);
 }

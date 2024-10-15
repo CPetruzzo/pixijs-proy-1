@@ -17,25 +17,24 @@ export class JoystickPlayer extends Container {
 		this.pivot.set(this.width * 0.5, this.height * 0.5);
 		const rigidBodyDesc = RigidBodyDesc.dynamic()
 			.setTranslation(this.x / JoystickTestScene.METER_TO_PIXEL, this.y / JoystickTestScene.METER_TO_PIXEL)
-			.lockRotations(); // Esto bloquea las rotaciones del cuerpo rígido
-		rigidBodyDesc.mass = 25; // Ajusta la masa según sea necesario
+			.lockRotations();
+		rigidBodyDesc.mass = 25;
 		this.rigidBody = world.createRigidBody(rigidBodyDesc);
 
-		const colliderDesc = ColliderDesc.roundCuboid(0.5, 2, 2);
+		const colliderDesc = ColliderDesc.roundCuboid(0.5, 1, 2);
 		colliderDesc.rotation = 0;
 		this.world.createCollider(colliderDesc, this.rigidBody);
 	}
 
 	public shootHim(charge: { x: number; y: number }): void {
-		const force = new Vector2(-charge.x * 1500, -charge.y * 1500); // Aumenta el factor
-		console.log("force", force);
+		const force = new Vector2(-charge.x * 1283, -charge.y * 1283); // Aumenta el factor
 		this.rigidBody.applyImpulse(force, true);
 	}
 
 	public update(): void {
 		const position = this.rigidBody.translation();
-		this.position.set(position.x * JoystickTestScene.METER_TO_PIXEL, position.y * JoystickTestScene.METER_TO_PIXEL);
+		this.position.set(position.x * JoystickTestScene.METER_TO_PIXEL, position.y * JoystickTestScene.METER_TO_PIXEL + 10);
 		this.x = this.rigidBody.translation().x * JoystickTestScene.METER_TO_PIXEL;
-		this.y = this.rigidBody.translation().y * JoystickTestScene.METER_TO_PIXEL + 10;
+		this.y = this.rigidBody.translation().y * JoystickTestScene.METER_TO_PIXEL;
 	}
 }

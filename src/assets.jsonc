@@ -156,7 +156,8 @@
 				"sound_block": "./sfx/BlockBreak1.wav",
 				"smokeTexture": "./img/CartoonSmoke.png",
 				"fireTexture": "./img/Fire.png",
-				"sparksTexture": "./img/Sparks.png"
+				"sparksTexture": "./img/Sparks.png",
+				"frame": "./img/Laterales.png"
 			}
 		},
 		{

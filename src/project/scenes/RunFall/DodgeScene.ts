@@ -25,7 +25,6 @@ import { FadeColorTransition } from "../../../engine/scenemanager/transitions/Fa
 import { MenuScene } from "./MenuScene";
 import { GlowFilter } from "@pixi/filter-glow";
 import { Keyboard } from "../../../engine/input/Keyboard";
-import { Joystick } from "../ThisIsArgentina/Joystick";
 // import type { ShockwaveFilter } from "@pixi/filter-shockwave";
 
 export class DodgeScene extends PixiScene {
@@ -68,9 +67,6 @@ export class DodgeScene extends PixiScene {
 
 	// private smokeContainer: Container;
 	// private smoke: SmokeEmitter;
-
-	private joystick: Joystick;
-
 	constructor() {
 		super();
 
@@ -85,8 +81,14 @@ export class DodgeScene extends PixiScene {
 		this.bleedingBackgroundContainer.addChild(bleedBG);
 
 		this.background = Sprite.from("DODGE-BACKGROUND");
+		// this.background.scale.set(0.98);
 		this.background.position.set(-this.background.width * 0.5, -this.background.height * 0.5);
 		this.backgroundContainer.addChild(this.background);
+		// const frame = Sprite.from("frame");
+		// frame.scale.set(2);
+		// frame.position.set(-frame.width * 0.5, -frame.height * 0.58);
+
+		// this.backgroundContainer.addChild(frame);
 
 		this.background.filters = [];
 
@@ -103,6 +105,7 @@ export class DodgeScene extends PixiScene {
 		this.player = new Player();
 		this.player.x = this.background.width * 0.5;
 		this.player.y = this.background.height - this.player.height;
+		// this.player.y = this.background.height - this.player.height * 2;
 		this.background.addChild(this.player);
 
 		this.scoreText = new Text(`Score: ${this.score}`, { fontSize: 55, fill: 0xffffff, fontFamily: "Darling Coffee" });
@@ -226,9 +229,6 @@ export class DodgeScene extends PixiScene {
 			this.pausebuttonText.text = this.isPaused ? "Resume" : "Pause";
 			this.background.eventMode = this.isPaused ? "none" : "static";
 		});
-
-		this.joystick = new Joystick(this.player);
-		this.backgroundContainer.addChild(this.joystick);
 
 		this.backgroundContainer.addChild(pausebutton, button);
 	}
