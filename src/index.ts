@@ -67,6 +67,7 @@ if (DEBUG) {
 	console.groupEnd();
 }
 // Manager.setRotateScene("portrait", SimpleLockScene, ["rotateDevice"]);
+// Manager.setRotateScene("portrait", SimpleLockScene, ["rotateDevice"]);
 
 window.addEventListener("resize", () => {
 	const w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);

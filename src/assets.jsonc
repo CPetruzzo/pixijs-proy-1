@@ -107,7 +107,11 @@
 				"powerup": "./img/powerup.png",
 				"enemy": "./img/enemy.png",
 				"coin": "./img/monedita.png",
-				"obstacule": "./img/obstacule.png"
+				"obstacule": "./img/obstacule.png",
+				"runfall": "./img/runfall.png",
+				"playbutton": "./img/playbutton.png",
+				"popupimg": "./img/popupimg.jpg",
+				"soundbtn" : "./img/soundbtn.png"
 			}
 		},
 		{

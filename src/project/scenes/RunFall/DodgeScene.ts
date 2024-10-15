@@ -74,7 +74,7 @@ export class DodgeScene extends PixiScene {
 	constructor() {
 		super();
 
-		SoundLib.stopAllMusic();
+		// SoundLib.stopAllMusic();
 		SoundLib.playMusic("sound_BGM", { volume: 0.03, loop: true });
 
 		this.addChild(this.bleedingBackgroundContainer);

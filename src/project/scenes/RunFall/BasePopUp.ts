@@ -20,7 +20,7 @@ const localStorageKey = "highscores";
 let highscores: HighscoreEntry[] = [];
 
 export class BasePopup extends PixiScene {
-	public static readonly BUNDLES = ["fallrungame", "sfx"];
+	// public static readonly BUNDLES = ["fallrungame", "sfx"];
 
 	private fadeAndBlocker: Graphics;
 	public background: Sprite;
@@ -38,15 +38,16 @@ export class BasePopup extends PixiScene {
 
 		this.fadeAndBlocker = new Graphics();
 		this.fadeAndBlocker.beginFill(0x000000, 0.5);
-		this.fadeAndBlocker.drawRect(0, 0, 1, 1);
+		this.fadeAndBlocker.drawRect(0, 0, 1500, 1500);
 		this.fadeAndBlocker.endFill();
 		this.fadeAndBlocker.interactive = true;
 		this.fadeAndBlocker.pivot.set(this.fadeAndBlocker.width * 0.5, this.fadeAndBlocker.height * 0.5);
 		this.addChild(this.fadeAndBlocker);
+		this.fadeAndBlocker.scale.set(10);
 
-		this.background = Sprite.from("package 1 background");
+		this.background = Sprite.from("popupimg");
 		this.background.anchor.set(0.5);
-		this.background.scale.set(0.5);
+		// this.background.scale.set(0.7);
 		this.addChild(this.background);
 	}
 
@@ -57,6 +58,12 @@ export class BasePopup extends PixiScene {
 		this.closePopup();
 	}
 
+	// Método para manejar el clic en el botón de cerrar
+	private handleResetClickMenu(): void {
+		SoundLib.playSound("sound_confirm", { allowOverlap: false, singleInstance: true, loop: false });
+		this.closePopupMenu();
+	}
+
 	// eslint-disable-next-line @typescript-eslint/require-await
 	private async showNameInputDialog(): Promise<string> {
 		const playerName = prompt("Enter your name:");
@@ -65,6 +72,7 @@ export class BasePopup extends PixiScene {
 
 	public override onStart(): void {
 		const storedHighscores = localStorage.getItem(localStorageKey);
+		console.log('storedHighscores', storedHighscores)
 		if (storedHighscores) {
 			highscores = JSON.parse(storedHighscores);
 		}
@@ -74,9 +82,9 @@ export class BasePopup extends PixiScene {
 		this.fadeAndBlocker.alpha = 0;
 		this.background.scale.set(0);
 
+		const fadeScale = new Tween(this.fadeAndBlocker).to({ scale: { x: 35, y: 15 } });
 		const fadeAnimation = new Tween(this.fadeAndBlocker).to({ alpha: 1 }, 500);
-
-		const elasticAnimation = new Tween(this.background).to({ scale: { x: 4.5, y: 4.5 } }, 1000).easing(Easing.Elastic.Out);
+		const elasticAnimation = new Tween(this.background).to({ scale: { x: 7, y: 7 } }, 1000).easing(Easing.Elastic.Out);
 
 		elasticAnimation.onStart(() => {
 			SoundLib.playSound("beep", {});
@@ -89,6 +97,8 @@ export class BasePopup extends PixiScene {
 		});
 		fadeAnimation.chain(elasticAnimation);
 		fadeAnimation.start();
+		fadeScale.chain(fadeAnimation);
+		fadeScale.start();
 	}
 
 	public async showHighscores(playerScore: number): Promise<void> {
@@ -124,7 +134,7 @@ export class BasePopup extends PixiScene {
 		// Mostrar el botón de reinicio
 		this.resetButton = new Graphics();
 		this.resetButton.beginFill(0x808080);
-		this.resetButton.drawRoundedRect(0, 0, 350, 150, 10);
+		this.resetButton.drawRoundedRect(0, 0, 380, 150, 50);
 		this.resetButton.endFill();
 		this.resetButton.pivot.set(this.resetButton.width * 0.5, this.resetButton.height * 0.5);
 		this.resetButton.eventMode = "static";
@@ -132,8 +142,50 @@ export class BasePopup extends PixiScene {
 		this.resetButton.on("pointertap", this.handleResetClick, this); // Agrega un manejador de eventos al hacer clic en el botón
 		this.background.addChild(this.resetButton); // Agrega el botón al background
 
-		const tryagain = new Text("Try again", { fontSize: 70, fill: 0xffffff, fontFamily: "Darling Coffee" });
-		tryagain.y = 5;
+		const tryagain = new Text("Try Again", { fontSize: 70, fill: 0xffffff, fontFamily: "Darling Coffee" });
+		tryagain.y = this.resetButton.height * 0.5;
+		tryagain.x = this.resetButton.width * 0.5;
+		tryagain.anchor.set(0.5)
+		// tryagain.anchor.set(0.5);
+		this.resetButton.addChild(tryagain);
+	}
+
+	public async showHighscoresMenu(): Promise<void> {
+
+		const title = new Text("Highscores", { fontSize: 100, fill: 0xffffff, fontFamily: "Darling Coffee" });
+		title.anchor.set(0.5);
+		title.position.set(this.background.width * 0.5, -330);
+		this.background.addChild(title);
+
+		highscores.sort((a, b) => b.score - a.score);
+		localStorage.setItem(localStorageKey, JSON.stringify(highscores));
+
+		// Mostrar los highscores en la tabla
+		const startY = 50;
+		const lineHeight = 90;
+		for (let i = 0; i < Math.min(highscores.length, 5); i++) {
+			const entry = highscores[i];
+			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 80, fill: 0xffffff, align: "center", fontFamily: "Darling Coffee" });
+			entryText.anchor.set(0, 0.5);
+			entryText.position.set(-220, startY + i * lineHeight - 220);
+			this.background.addChild(entryText);
+		}
+
+		// Mostrar el botón de reinicio
+		this.resetButton = new Graphics();
+		this.resetButton.beginFill(0x808080);
+		this.resetButton.drawRoundedRect(0, 0, 350, 150, 50);
+		this.resetButton.endFill();
+		this.resetButton.pivot.set(this.resetButton.width * 0.5, this.resetButton.height * 0.5);
+		this.resetButton.eventMode = "static";
+		this.resetButton.position.set(this.background.width * 0.5, this.background.height + 350); // Posiciona el botón según sea necesario
+		this.resetButton.on("pointertap", this.handleResetClickMenu, this); // Agrega un manejador de eventos al hacer clic en el botón
+		this.background.addChild(this.resetButton); // Agrega el botón al background
+
+		const tryagain = new Text("Close", { fontSize: 70, fill: 0xffffff, fontFamily: "Darling Coffee" });
+		tryagain.y = this.resetButton.height * 0.5;
+		tryagain.x = this.resetButton.width * 0.5;
+		tryagain.anchor.set(0.5)
 		// tryagain.anchor.set(0.5);
 		this.resetButton.addChild(tryagain);
 	}
@@ -150,6 +202,7 @@ export class BasePopup extends PixiScene {
 				Keyboard.shared.pressed.off("Escape", this.closePopup.bind(this));
 				this.closeHandler(_doSomething);
 				resolve(true);
+
 				if (this.restart) {
 					Manager.changeScene(DodgeScene);
 				}
@@ -161,6 +214,13 @@ export class BasePopup extends PixiScene {
 	}
 
 	public closePopup(): void {
+		if (this.closing) {
+			return;
+		}
+		this.requestClose();
+	}
+
+	public closePopupMenu(): void {
 		if (this.closing) {
 			return;
 		}

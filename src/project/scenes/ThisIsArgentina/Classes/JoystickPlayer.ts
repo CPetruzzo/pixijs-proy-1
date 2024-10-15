@@ -18,7 +18,7 @@ export class JoystickPlayer extends Container {
 		const rigidBodyDesc = RigidBodyDesc.dynamic()
 			.setTranslation(this.x / JoystickTestScene.METER_TO_PIXEL, this.y / JoystickTestScene.METER_TO_PIXEL)
 			.lockRotations(); // Esto bloquea las rotaciones del cuerpo rígido
-		// rigidBodyDesc.mass = 0.4; // Ajusta la masa según sea necesario
+		rigidBodyDesc.mass = 25; // Ajusta la masa según sea necesario
 		this.rigidBody = world.createRigidBody(rigidBodyDesc);
 
 		const colliderDesc = ColliderDesc.roundCuboid(0.5, 2, 2);
@@ -27,7 +27,7 @@ export class JoystickPlayer extends Container {
 	}
 
 	public shootHim(charge: { x: number; y: number }): void {
-		const force = new Vector2(-charge.x * 180, -charge.y * 180); // Aumenta el factor
+		const force = new Vector2(-charge.x * 1500, -charge.y * 1500); // Aumenta el factor
 		console.log("force", force);
 		this.rigidBody.applyImpulse(force, true);
 	}

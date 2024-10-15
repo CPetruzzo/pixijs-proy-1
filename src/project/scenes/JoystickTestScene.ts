@@ -62,28 +62,35 @@ export class JoystickTestScene extends PixiScene {
 		const groundColliderDesc = ColliderDesc.cuboid(130.0, 1);
 		this.world.createCollider(groundColliderDesc).setTranslation({ x: 110.0, y: 110.0 });
 
-		// Crear una plataforma para que los bloques descansen encima
-		const platformDesc = ColliderDesc.cuboid(5, 1).setRestitution(2);
-		this.world.createCollider(platformDesc).setTranslation({ x: 40.0, y: 100.0 });
-		// Crear una plataforma para que los bloques descansen encima
-		const platformDesc2 = ColliderDesc.cuboid(5, 1).setRestitution(0.2);
-		this.world.createCollider(platformDesc2).setTranslation({ x: 55.0, y: 90.0 });
-
-		const platformDesc3 = ColliderDesc.cuboid(5, 1).setRestitution(0.2);
-		this.world.createCollider(platformDesc3).setTranslation({ x: 65.0, y: 80.0 });
-
-		const platformDesc4 = ColliderDesc.cuboid(5, 1).setRestitution(0.2);
-		this.world.createCollider(platformDesc4).setTranslation({ x: 75.0, y: 70.0 });
+		// Crear algunas plataformas con colores diferentes
+		const platformColor1 = 0x00FF00; // Verde
+		const platformColor2 = 0x0000FF; // Azul
+		this.createPlatform(40.0, 100.0, 10, 2, platformColor1, 2.0);
+		this.createPlatform(55.0, 90.0, 10, 2, platformColor2, 0.2);
+		this.createPlatform(65.0, 80.0, 10, 2, platformColor2, 0.2);
+		this.createPlatform(75.0, 70.0, 10, 2, platformColor1, 0.2);
 
 		// Crear algunos bloques (obstáculos) en la plataforma
 		this.createObstacle(80, 65); // Posición inicial del bloque
 		this.createObstacle(85, 65);
 		this.createObstacle(90, 65);
+		this.createObstacle(95, 65);
+		this.createObstacle(100, 65);
+		this.createObstacle(105, 65);
+		this.createObstacle(110, 65);
+		this.createObstacle(115, 65);
+		this.createObstacle(120, 65);
+		this.createObstacle(125, 65);
+		this.createObstacle(130, 65);
 
 		// Crear un cuerpo dinámico (afectado por la gravedad)
 		this.createBreakableObstacle(90, 60, 0.01);
 		this.createBreakableObstacle(90, 55, 0.05);
 		this.createBreakableObstacle(90, 50, 10);
+
+		this.createBreakableObstacle(85, 60, 0.01);
+		this.createBreakableObstacle(85, 55, 0.05);
+		this.createBreakableObstacle(85, 50, 10);
 
 		// Crear el aim
 		this.aim = new Aim();
@@ -102,23 +109,26 @@ export class JoystickTestScene extends PixiScene {
 		// this.worldContainer.pivot.y = this.player.y;
 	}
 
-	// Método para crear obstáculos en la escena
+	// Método para crear obstáculos estáticos (no afectados por gravedad)
 	private createObstacle(x: number, y: number): void {
 		const block = new Graphics();
-		block.beginFill(0x654321); // Color marrón para los bloques
-		block.drawRect(-2.5, -2.5, 5, 5); // Bloques de 5x5 metros
+		block.beginFill(0x8B4513); // Color marrón para los bloques
+		block.drawRect(-2.5 * JoystickTestScene.METER_TO_PIXEL, -2.5 * JoystickTestScene.METER_TO_PIXEL, 5 * JoystickTestScene.METER_TO_PIXEL, 5 * JoystickTestScene.METER_TO_PIXEL);
 		block.endFill();
+		block.position.set(x * JoystickTestScene.METER_TO_PIXEL, y * JoystickTestScene.METER_TO_PIXEL);
 		this.worldContainer.addChild(block);
 
 		const blockCollider = ColliderDesc.cuboid(2.5, 2.5).setRestitution(0.3);
 		this.world.createCollider(blockCollider).setTranslation({ x, y });
 	}
+
 	// Método para crear bloques dinámicos (que se desarman al golpearse)
 	private createBreakableObstacle(x: number, y: number, mass: number): void {
 		const block = new Graphics();
-		block.beginFill(0x654321); // Color marrón para los bloques
-		block.drawRect(-2.5, -2.5, 5, 5); // Bloques de 5x5 metros
+		block.beginFill(0xFF6347);
+		block.drawRect(-2.5 * JoystickTestScene.METER_TO_PIXEL, -2.5 * JoystickTestScene.METER_TO_PIXEL, 5 * JoystickTestScene.METER_TO_PIXEL, 5 * JoystickTestScene.METER_TO_PIXEL);
 		block.endFill();
+		block.position.set(x * JoystickTestScene.METER_TO_PIXEL, y * JoystickTestScene.METER_TO_PIXEL);
 		this.worldContainer.addChild(block);
 
 		// Crear un cuerpo dinámico (afectado por la gravedad)
@@ -128,12 +138,25 @@ export class JoystickTestScene extends PixiScene {
 
 		// Crear un nuevo collider dinámico
 		const blockCollider = ColliderDesc.cuboid(2.5, 2.5).setRestitution(1);
-		const collider = this.world.createCollider(blockCollider, dynamicBody);
-		console.log("collider", collider);
+		this.world.createCollider(blockCollider, dynamicBody);
 
 		// Establecer la posición del cuerpo dinámico
 		dynamicBody.setTranslation({ x, y }, true); // Ajustar la posición correctamente
 	}
+
+	// Método para crear plataformas coloreadas
+	private createPlatform(x: number, y: number, width: number, height: number, color: number, restitution: number): void {
+		const platform = new Graphics();
+		platform.beginFill(color);
+		platform.drawRect(-width * JoystickTestScene.METER_TO_PIXEL / 2, -height * JoystickTestScene.METER_TO_PIXEL / 2, width * JoystickTestScene.METER_TO_PIXEL, height * JoystickTestScene.METER_TO_PIXEL);
+		platform.endFill();
+		platform.position.set(x * JoystickTestScene.METER_TO_PIXEL, y * JoystickTestScene.METER_TO_PIXEL);
+		this.worldContainer.addChild(platform);
+
+		const platformCollider = ColliderDesc.cuboid(width / 2, height / 2).setRestitution(restitution);
+		this.world.createCollider(platformCollider).setTranslation({ x, y });
+	}
+
 	public override update(_dt: number): void {
 		this.debugDraw();
 		// this.camera.anchoredOnLevel(this.worldContainer, this.player);
@@ -175,6 +198,8 @@ export class JoystickTestScene extends PixiScene {
 	}
 
 	public override onResize(_newW: number, _newH: number): void {
-		ScaleHelper.setScaleRelativeToScreen(this.backgroundContainer, _newW, _newH, 1280, 720, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToIdeal(this.worldContainer, _newW * 0.9, _newH * 0.9);
+
+		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, _newW, _newH);
 	}
 }
