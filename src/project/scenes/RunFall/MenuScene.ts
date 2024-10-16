@@ -110,11 +110,24 @@ export class MenuScene extends PixiScene {
 			soundBtn.alpha = 1;
 		}
 
-		new Tween(title).from({ y: - 1500 }).to({ y: 0 }, 1200).start().easing(Easing.Bounce.Out).onComplete(() => {
-			new Tween(playButton).from({ x: 0, y: 1500 }).to({ x: 0, y: playY }, 800).start().onComplete(() => {
-				new Tween(playButton).to({ scale: { x: 1.05, y: 1.05 } }, 500).start().repeat(Infinity).yoyo(true);
+		new Tween(title)
+			.from({ y: -1500 })
+			.to({ y: 0 }, 1200)
+			.start()
+			.easing(Easing.Bounce.Out)
+			.onComplete(() => {
+				new Tween(playButton)
+					.from({ x: 0, y: 1500 })
+					.to({ x: 0, y: playY }, 800)
+					.start()
+					.onComplete(() => {
+						new Tween(playButton)
+							.to({ scale: { x: 1.05, y: 1.05 } }, 500)
+							.start()
+							.repeat(Infinity)
+							.yoyo(true);
+					});
 			});
-		});
 
 		const leaderboard = Sprite.from("enemy");
 		leaderboard.x = background.width * 0.5 - leaderboard.width * 0.5;
@@ -124,7 +137,7 @@ export class MenuScene extends PixiScene {
 		leaderboard.eventMode = "static";
 		leaderboard.on("pointertap", () => {
 			this.openGameOverPopup();
-		})
+		});
 		this.backgroundContainer.addChild(leaderboard);
 	}
 

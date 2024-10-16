@@ -90,3 +90,12 @@ if (ALL_FLAGS.USE_BOX2D) {
 } else {
 	initializeCb();
 }
+
+export function vibrateMobileDevice(): void {
+	if ("vibrate" in navigator) {
+		navigator.vibrate(500);
+		console.log("Vibrando.");
+	} else {
+		console.log("La vibración no es compatible con este dispositivo.");
+	}
+}
