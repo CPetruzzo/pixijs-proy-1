@@ -1,5 +1,5 @@
 import { Emitter, upgradeConfig } from "@pixi/particle-emitter";
-import fireparticle from "../../../../assets/img/emitter (4).json";
+import fireparticle from "../../../../../assets/img/emitter (4).json";
 import { Container, Texture } from "pixi.js";
 
 export class SmokeEmitter {

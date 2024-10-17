@@ -1,18 +1,19 @@
 import type { Container } from "pixi.js";
-import type { GameObject } from "./GameObject";
-import { CoinObject, EnemyObject, NegativeObject, ObstacleObject, PowerUpObject } from "./Objects";
+import type { GameObject } from "../Objects/GameObject";
+import { CoinObject, EnemyObject, PotionObject, ObstacleObject, PowerUpObject } from "../Objects/Objects";
 import type { ScoreManager } from "./ScoreManager";
-import Random from "../../../engine/random/Random";
+import Random from "../../../../engine/random/Random";
 
 export class SpawnManager {
 	private scoreManager: ScoreManager;
-	private spawnInterval: number;
+	// spawn values
+	private spawnInterval: number = Random.shared.randomInt(500, 1500);
+	private timeSinceLastSpawn: number = 0;
 	private static readonly SCORE_THRESHOLDS = [500, 1000, 2000, 3000, 4000];
 	private static readonly SPAWN_INTERVALS = [1500, 1000, 800, 500, 300, 150];
 
 	constructor(scoreManager: ScoreManager) {
 		this.scoreManager = scoreManager;
-		this.spawnInterval = Random.shared.randomInt(1500, 1500); // Valor inicial
 	}
 
 	public adjustSpawnInterval(): void {
@@ -38,7 +39,7 @@ export class SpawnManager {
 
 		const objectTypes = [
 			{ constructor: EnemyObject, name: "ENEMY" },
-			{ constructor: NegativeObject, name: "POTION" },
+			{ constructor: PotionObject, name: "POTION" },
 			{ constructor: CoinObject, name: "COIN" },
 			{ constructor: PowerUpObject, name: "POWER_UP" },
 			{ constructor: ObstacleObject, name: "OBSTACLE" },
@@ -56,5 +57,15 @@ export class SpawnManager {
 
 	public getSpawnInterval(): number {
 		return this.spawnInterval;
+	}
+
+	public update(dt: number, objects: GameObject[], background: Container): void {
+		this.timeSinceLastSpawn += dt;
+
+		if (this.timeSinceLastSpawn >= this.spawnInterval) {
+			this.timeSinceLastSpawn = 0;
+			this.spawnObject(objects, background);
+			this.adjustSpawnInterval();
+		}
 	}
 }

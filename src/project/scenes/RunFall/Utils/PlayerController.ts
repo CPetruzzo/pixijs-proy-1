@@ -1,6 +1,6 @@
 import { Tween } from "tweedle.js";
-import { Keyboard } from "../../../engine/input/Keyboard";
-import type { Player } from "./Player";
+import { Keyboard } from "../../../../engine/input/Keyboard";
+import type { Player } from "../Objects/Player";
 
 export class PlayerController {
 	private player: Player;

@@ -1,13 +1,13 @@
 import i18next from "i18next";
 import { Sprite, Text, TextStyle, Container, Graphics } from "pixi.js";
-import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
+import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { DodgeScene } from "./DodgeScene";
-import { Manager } from "../../..";
-import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
-import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
+import { Manager } from "../../../..";
+import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
+import { FadeColorTransition } from "../../../../engine/scenemanager/transitions/FadeColorTransition";
 import { Easing, Tween } from "tweedle.js";
-import { BasePopup } from "./BasePopUp";
-import { SoundLib } from "../../../engine/sound/SoundLib";
+import { HighScorePopUp } from "./HighScorePopUp";
+import { SoundLib } from "../../../../engine/sound/SoundLib";
 
 export class MenuScene extends PixiScene {
 	public static readonly BUNDLES = ["package-1", "sfx", "music", "fallrungame"];
@@ -143,8 +143,8 @@ export class MenuScene extends PixiScene {
 
 	private async openGameOverPopup(): Promise<void> {
 		try {
-			const popupInstance = await Manager.openPopup(BasePopup);
-			if (popupInstance instanceof BasePopup) {
+			const popupInstance = await Manager.openPopup(HighScorePopUp);
+			if (popupInstance instanceof HighScorePopUp) {
 				popupInstance.showHighscoresMenu();
 			} else {
 				console.error("Error al abrir el popup: no se pudo obtener la instancia de BasePopup.");

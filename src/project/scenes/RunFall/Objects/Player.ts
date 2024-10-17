@@ -1,23 +1,23 @@
 import type { Sprite } from "pixi.js";
 import { Graphics, Texture } from "pixi.js";
-import { StateMachineAnimator } from "../../../engine/animation/StateMachineAnimation";
-import { Timer } from "../../../engine/tweens/Timer";
-import { PLAYER_SPEED, STUN_TIME } from "../../../utils/constants";
-import type { ScoreManager } from "./ScoreManager";
+import { StateMachineAnimator } from "../../../../engine/animation/StateMachineAnimation";
+import { Timer } from "../../../../engine/tweens/Timer";
+import { PLAYER_SPEED, STUN_TIME } from "../../../../utils/constants";
+import type { ScoreManager } from "../Managers/ScoreManager";
 import type { HealthBar } from "./HealthBar";
-import { PlayerEffects } from "./PlayerEffects";
+import { EffectManager } from "../Managers/EffectManager";
 
 export class Player extends StateMachineAnimator {
 	public canMove: boolean = true;
 	public movingLeft: boolean = false;
 	public speed: number;
 	public aux: Graphics;
-	public effects: PlayerEffects;
+	public effectManager: EffectManager;
 	constructor(public scoreManager: ScoreManager, public healthBar: HealthBar, public background: Sprite) {
 		super();
 		this.scoreManager = scoreManager;
 		this.healthBar = healthBar;
-		this.effects = new PlayerEffects(this, background);
+		this.effectManager = new EffectManager(this, background);
 
 		this.speed = PLAYER_SPEED;
 
@@ -86,14 +86,8 @@ export class Player extends StateMachineAnimator {
 			});
 	}
 
-	public getSpeedEffect(): void {
-		this.effects.causeStun(1500);
-	}
-
 	public collideWithObstacle(): void {
 		console.log("El jugador chocó con un obstáculo.");
 		this.stopMovement();
-		// const playerBlur = new BlurFilter(5);
-		// this.player.filters = [playerBlur];
 	}
 }

@@ -1,7 +1,7 @@
 import { Sprite } from "pixi.js";
 import { GameObject } from "./GameObject";
 import { Player } from "./Player";
-import { OBJECT_SPEED } from "../../../utils/constants";
+import { OBJECT_SPEED } from "../../../../utils/constants";
 
 export class EnemyObject extends GameObject {
 	constructor() {
@@ -11,9 +11,6 @@ export class EnemyObject extends GameObject {
 		enemy.anchor.set(0.5, 0);
 		this.addChild(enemy);
 
-		// this.beginFill(0xff0000, 0);
-		// this.drawRect(0, 0, 40, 40);
-		// this.endFill();
 	}
 
 	public update(dt: number): void {
@@ -27,17 +24,13 @@ export class EnemyObject extends GameObject {
 	}
 }
 
-export class NegativeObject extends GameObject {
+export class PotionObject extends GameObject {
 	constructor() {
 		super();
 
-		// this.beginFill(0x0000ff, 0);
-		// this.drawRect(0, 0, 40, 40);
-		// this.endFill();
-
-		const powerup = Sprite.from("powerup");
-		powerup.anchor.set(0.5, 0);
-		this.addChild(powerup);
+		const potion = Sprite.from("powerup");
+		potion.anchor.set(0.5, 0);
+		this.addChild(potion);
 	}
 
 	public update(dt: number): void {
@@ -46,7 +39,7 @@ export class NegativeObject extends GameObject {
 
 	public handleEvent(_something: any): void {
 		if (_something instanceof Player) {
-			console.log("Otro objeto ha colisionado con el jugador.");
+			console.log("Una poción ha sido tomada por el jugador.");
 		}
 	}
 }
@@ -59,9 +52,6 @@ export class CoinObject extends GameObject {
 		coin.anchor.set(0.5, 0);
 		this.addChild(coin);
 
-		// this.beginFill(0xffff00, 0);
-		// this.drawRect(0, 0, 30, 30);
-		// this.endFill();
 	}
 
 	public update(dt: number): void {
@@ -78,13 +68,9 @@ export class CoinObject extends GameObject {
 export class PowerUpObject extends GameObject {
 	constructor() {
 		super();
-		// this.beginFill(0x00ff00);
-		// this.drawRect(0, 0, 35, 35);
-		// this.endFill();
 
 		const powerup = Sprite.from("star");
 		powerup.anchor.set(0.5, 0);
-		// powerup.tint = 0x0ffff;
 		this.addChild(powerup);
 	}
 
@@ -105,9 +91,6 @@ export class ObstacleObject extends GameObject {
 
 	constructor() {
 		super();
-		// this.beginFill(0x808080, 0);
-		// this.drawRect(0, 0, 45, 45);
-		// this.endFill();
 
 		const obstacule = Sprite.from("obstacule");
 		obstacule.anchor.set(0.5, 0);

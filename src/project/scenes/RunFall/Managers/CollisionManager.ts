@@ -1,6 +1,6 @@
-import type { GameObject } from "./GameObject";
-import type { Player } from "./Player";
-import { SoundLib } from "../../../engine/sound/SoundLib";
+import type { GameObject } from "../Objects/GameObject";
+import type { Player } from "../Objects/Player";
+import { SoundLib } from "../../../../engine/sound/SoundLib";
 
 export class CollisionManager {
 	public static gameOver: boolean = false;
@@ -23,7 +23,7 @@ export class CollisionManager {
 				// player.getStun();
 				player.scoreManager.decreaseScore(50); // Disminuir puntuación
 				player.takeDamage(); // Disminuir salud
-				player.effects.causeBlur(1500);
+				player.effectManager.causeBlur(1500);
 				SoundLib.playSound("sound_hit", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				if (player.healthBar.getCurrentHealth() <= 0) {
 					this.gameOver = true;
@@ -43,13 +43,13 @@ export class CollisionManager {
 
 			case "POWER_UP":
 				player.activatePowerUp(); // Activar power-up
-				player.effects.speedingPowerUp(5500); // Causar aturdimiento
+				player.effectManager.speedingPowerUp(5500); // Causar aturdimiento
 				SoundLib.playSound("sound_big_award", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;
 
 			case "OBSTACLE":
 				player.collideWithObstacle(); // Colisión con obstáculo
-				player.effects.causeStun(2000); // Causar aturdimiento
+				player.effectManager.causeStun(2000); // Causar aturdimiento
 				player.healthBar.decreaseHealth(); // Disminuir salud
 				SoundLib.playSound("sound_block", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
 				break;

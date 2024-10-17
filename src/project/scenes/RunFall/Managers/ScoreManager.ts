@@ -1,6 +1,6 @@
 // ScoreManager.ts
 import type { Text } from "pixi.js";
-import { SoundLib } from "../../../engine/sound/SoundLib";
+import { SoundLib } from "../../../../engine/sound/SoundLib";
 
 export class ScoreManager {
 	private score: number = 0;

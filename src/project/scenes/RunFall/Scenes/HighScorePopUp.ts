@@ -1,13 +1,13 @@
-import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
-import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
+import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
+import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
 import { Sprite } from "@pixi/sprite";
 import { Easing, Tween } from "tweedle.js";
 import { Graphics } from "@pixi/graphics";
-import { Keyboard } from "../../../engine/input/Keyboard";
-import { Manager } from "../../..";
-import { Timer } from "../../../engine/tweens/Timer";
+import { Keyboard } from "../../../../engine/input/Keyboard";
+import { Manager } from "../../../..";
+import { Timer } from "../../../../engine/tweens/Timer";
 import type { Button } from "@pixi/ui";
-import { SoundLib } from "../../../engine/sound/SoundLib";
+import { SoundLib } from "../../../../engine/sound/SoundLib";
 import { DodgeScene } from "./DodgeScene";
 import { Text } from "pixi.js";
 
@@ -19,19 +19,20 @@ interface HighscoreEntry {
 const localStorageKey = "highscores";
 let highscores: HighscoreEntry[] = [];
 
-export class BasePopup extends PixiScene {
-	// public static readonly BUNDLES = ["fallrungame", "sfx"];
-
+export class HighScorePopUp extends PixiScene {
+	// assets
 	private fadeAndBlocker: Graphics;
+	private resetButton: Graphics;
 	public background: Sprite;
 	public buttons: Button[];
-	public closing: boolean = false;
-	public restart: boolean = false;
+	// leveldata
 	public readonly level: any;
 	public levelNumber: number;
-	public pauseScene: boolean = false;
 	public levelTime: number;
-	private resetButton: Graphics;
+	// booleans
+	public closing: boolean = false;
+	public restart: boolean = false;
+	public pauseScene: boolean = false;
 
 	constructor(_score?: number) {
 		super();
@@ -47,7 +48,6 @@ export class BasePopup extends PixiScene {
 
 		this.background = Sprite.from("popupimg");
 		this.background.anchor.set(0.5);
-		// this.background.scale.set(0.7);
 		this.addChild(this.background);
 	}
 

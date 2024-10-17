@@ -1,8 +1,8 @@
 import { GlowFilter } from "@pixi/filter-glow";
-import { Timer } from "../../../engine/tweens/Timer";
+import { Timer } from "../../../../engine/tweens/Timer";
 import { BlurFilter } from "pixi.js";
 
-export class PlayerEffects {
+export class EffectManager {
 	private player: any;
 	private background: any;
 	private blurFilter: BlurFilter;

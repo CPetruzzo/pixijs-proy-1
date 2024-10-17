@@ -1,8 +1,8 @@
 import { Sprite, Container, Texture } from "pixi.js";
-import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
-import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
-import { Manager } from "../../..";
-import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
+import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
+import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
+import { Manager } from "../../../..";
+import { FadeColorTransition } from "../../../../engine/scenemanager/transitions/FadeColorTransition";
 import { MenuScene } from "./MenuScene";
 
 export class LoaderScene extends PixiScene {

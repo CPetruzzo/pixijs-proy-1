@@ -13,7 +13,7 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
-import { MenuScene } from "./project/scenes/RunFall/MenuScene";
+import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
 // import { LoaderScene } from "./project/scenes/RunFall/LoaderScene";
 // import { JoystickTestScene } from "./project/scenes/JoystickTestScene";
 // import { LoaderScene } from "./project/scenes/RunFall/LoaderScene";
