@@ -81,6 +81,22 @@
 			}
 		},
 		{
+			"name": "runfallsfx",
+			"assets": {
+				"sound1": "./sfx/runfall/bubble-popping.mp3",
+				"sound2": "./sfx/runfall/system-notification.mp3",
+				"sound3": "./sfx/runfall/notification-sound.mp3",
+				"sound4": "./sfx/runfall/notification-beep.mp3",
+				"sound5": "./sfx/runfall/level-up-2.mp3",
+				"sound6": "./sfx/runfall/icon-02.mp3",
+				"sound7": "./sfx/runfall/high-speed-2.mp3",
+				"sound8": "./sfx/runfall/going-to-the-next-level.mp3",
+				"sound9": "./sfx/runfall/enchanted-spell-casting.mp3",
+				"sound10": "./sfx/runfall/charming-twinkle-sound-for-fantasy-and-magic.mp3",
+				"sound11": "./sfx/runfall/camera-shutter.mp3"
+			}
+		},
+		{
 			"name": "music",
 			"assets": {
 				"music": "./music/musical.mp3",
@@ -157,7 +173,8 @@
 				"smokeTexture": "./img/CartoonSmoke.png",
 				"fireTexture": "./img/Fire.png",
 				"sparksTexture": "./img/Sparks.png",
-				"frame": "./img/Laterales.png"
+				"frame": "./img/Laterales.png",
+				"highscore": "./img/highscore_popup.png"
 			}
 		},
 		{
