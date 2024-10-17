@@ -1,6 +1,9 @@
 import type { GameObject } from "../Objects/GameObject";
 import type { Player } from "../Objects/Player";
 import { SoundLib } from "../../../../engine/sound/SoundLib";
+import { BLUR_TIME, COIN_POINTS, ENEMY_COUNTER_POINTS, POTION_POINTS, SOUNDPARAMS1, SOUNDPARAMS2 } from "../../../../utils/constants";
+import { ObjectsNames } from "../Objects/Objects";
+import { Sounds } from "./SoundManager";
 
 export class CollisionManager {
 	public static gameOver: boolean = false;
@@ -19,39 +22,39 @@ export class CollisionManager {
 
 	public static handleCollision(player: Player, obj: GameObject): void {
 		switch (obj.name) {
-			case "ENEMY":
-				// player.getStun();
-				player.scoreManager.decreaseScore(50); // Disminuir puntuación
-				player.takeDamage(); // Disminuir salud
-				player.effectManager.causeBlur(1500);
-				SoundLib.playSound("sound_hit", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
+			case ObjectsNames.ENEMY:
+				player.scoreManager.decreaseScore(ENEMY_COUNTER_POINTS);
+				player.takeDamage();
+				player.effectManager.causeBlur(BLUR_TIME);
+				SoundLib.playSound(Sounds.ENEMY, SOUNDPARAMS1);
 				if (player.healthBar.getCurrentHealth() <= 0) {
 					this.gameOver = true;
 				}
 				break;
 
-			case "POTION":
-				player.scoreManager.increaseScore(10); // Aumentar puntuación
+			case ObjectsNames.POTION:
+				player.scoreManager.increaseScore(POTION_POINTS);
 				player.heal(); // Curar
-				SoundLib.playSound("sound_award", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
+				SoundLib.playSound(Sounds.POTION, SOUNDPARAMS1);
 				break;
 
-			case "COIN":
-				player.collectCoin(50); // Recoger moneda y aumentar puntuación
-				SoundLib.playSound("sound_collectable", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.1 });
+			case ObjectsNames.COIN:
+				player.collectCoin(COIN_POINTS);
+				SoundLib.playSound(Sounds.COIN, SOUNDPARAMS2);
 				break;
 
-			case "POWER_UP":
-				player.activatePowerUp(); // Activar power-up
-				player.effectManager.speedingPowerUp(5500); // Causar aturdimiento
-				SoundLib.playSound("sound_big_award", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
+			case ObjectsNames.POWER_UP:
+				player.activatePowerUp();
+				SoundLib.playSound(Sounds.POWERUP, SOUNDPARAMS1);
 				break;
 
-			case "OBSTACLE":
+			case ObjectsNames.OBSTACLE:
 				player.collideWithObstacle(); // Colisión con obstáculo
-				player.effectManager.causeStun(2000); // Causar aturdimiento
-				player.healthBar.decreaseHealth(); // Disminuir salud
-				SoundLib.playSound("sound_block", { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 });
+				player.takeDamage();
+				if (player.healthBar.getCurrentHealth() <= 0) {
+					this.gameOver = true;
+				}
+				SoundLib.playSound(Sounds.OBSTACLE, SOUNDPARAMS1);
 				break;
 
 			default:

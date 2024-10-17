@@ -2,7 +2,7 @@ import type { Sprite } from "pixi.js";
 import { Graphics, Texture } from "pixi.js";
 import { StateMachineAnimator } from "../../../../engine/animation/StateMachineAnimation";
 import { Timer } from "../../../../engine/tweens/Timer";
-import { PLAYER_SPEED, STUN_TIME } from "../../../../utils/constants";
+import { PLAYER_SPEED, SPEEDUP_TIME, STUN_TIME } from "../../../../utils/constants";
 import type { ScoreManager } from "../Managers/ScoreManager";
 import type { HealthBar } from "./HealthBar";
 import { EffectManager } from "../Managers/EffectManager";
@@ -38,10 +38,12 @@ export class Player extends StateMachineAnimator {
 
 	public stopMovement(): void {
 		this.canMove = false;
+		this.speed = 0;
 		new Timer()
 			.to(STUN_TIME)
 			.start()
 			.onComplete(() => {
+				this.speed = PLAYER_SPEED;
 				this.canMove = true;
 				// this.filters = [];
 			});
@@ -77,6 +79,8 @@ export class Player extends StateMachineAnimator {
 	public activatePowerUp(): void {
 		this.speed += 0.25;
 		this.scoreManager.activatePowerUp();
+		this.effectManager.speedingPowerUp(SPEEDUP_TIME);
+
 		new Timer()
 			.to(5500)
 			.start()
@@ -87,7 +91,7 @@ export class Player extends StateMachineAnimator {
 	}
 
 	public collideWithObstacle(): void {
-		console.log("El jugador chocó con un obstáculo.");
+		this.effectManager.causeStun(STUN_TIME);
 		this.stopMovement();
 	}
 }

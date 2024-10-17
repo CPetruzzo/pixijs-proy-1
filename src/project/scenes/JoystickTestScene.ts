@@ -63,8 +63,8 @@ export class JoystickTestScene extends PixiScene {
 		this.world.createCollider(groundColliderDesc).setTranslation({ x: 110.0, y: 110.0 });
 
 		// Crear algunas plataformas con colores diferentes
-		const platformColor1 = 0x00FF00; // Verde
-		const platformColor2 = 0x0000FF; // Azul
+		const platformColor1 = 0x00ff00; // Verde
+		const platformColor2 = 0x0000ff; // Azul
 		this.createPlatform(40.0, 100.0, 10, 2, platformColor1, 2.0);
 		this.createPlatform(55.0, 90.0, 10, 2, platformColor2, 0.2);
 		this.createPlatform(65.0, 80.0, 10, 2, platformColor2, 0.2);
@@ -112,8 +112,13 @@ export class JoystickTestScene extends PixiScene {
 	// Método para crear obstáculos estáticos (no afectados por gravedad)
 	private createObstacle(x: number, y: number): void {
 		const block = new Graphics();
-		block.beginFill(0x8B4513); // Color marrón para los bloques
-		block.drawRect(-2.5 * JoystickTestScene.METER_TO_PIXEL, -2.5 * JoystickTestScene.METER_TO_PIXEL, 5 * JoystickTestScene.METER_TO_PIXEL, 5 * JoystickTestScene.METER_TO_PIXEL);
+		block.beginFill(0x8b4513); // Color marrón para los bloques
+		block.drawRect(
+			-2.5 * JoystickTestScene.METER_TO_PIXEL,
+			-2.5 * JoystickTestScene.METER_TO_PIXEL,
+			5 * JoystickTestScene.METER_TO_PIXEL,
+			5 * JoystickTestScene.METER_TO_PIXEL
+		);
 		block.endFill();
 		block.position.set(x * JoystickTestScene.METER_TO_PIXEL, y * JoystickTestScene.METER_TO_PIXEL);
 		this.worldContainer.addChild(block);
@@ -125,8 +130,13 @@ export class JoystickTestScene extends PixiScene {
 	// Método para crear bloques dinámicos (que se desarman al golpearse)
 	private createBreakableObstacle(x: number, y: number, mass: number): void {
 		const block = new Graphics();
-		block.beginFill(0xFF6347);
-		block.drawRect(-2.5 * JoystickTestScene.METER_TO_PIXEL, -2.5 * JoystickTestScene.METER_TO_PIXEL, 5 * JoystickTestScene.METER_TO_PIXEL, 5 * JoystickTestScene.METER_TO_PIXEL);
+		block.beginFill(0xff6347);
+		block.drawRect(
+			-2.5 * JoystickTestScene.METER_TO_PIXEL,
+			-2.5 * JoystickTestScene.METER_TO_PIXEL,
+			5 * JoystickTestScene.METER_TO_PIXEL,
+			5 * JoystickTestScene.METER_TO_PIXEL
+		);
 		block.endFill();
 		block.position.set(x * JoystickTestScene.METER_TO_PIXEL, y * JoystickTestScene.METER_TO_PIXEL);
 		this.worldContainer.addChild(block);
@@ -148,7 +158,12 @@ export class JoystickTestScene extends PixiScene {
 	private createPlatform(x: number, y: number, width: number, height: number, color: number, restitution: number): void {
 		const platform = new Graphics();
 		platform.beginFill(color);
-		platform.drawRect(-width * JoystickTestScene.METER_TO_PIXEL / 2, -height * JoystickTestScene.METER_TO_PIXEL / 2, width * JoystickTestScene.METER_TO_PIXEL, height * JoystickTestScene.METER_TO_PIXEL);
+		platform.drawRect(
+			(-width * JoystickTestScene.METER_TO_PIXEL) / 2,
+			(-height * JoystickTestScene.METER_TO_PIXEL) / 2,
+			width * JoystickTestScene.METER_TO_PIXEL,
+			height * JoystickTestScene.METER_TO_PIXEL
+		);
 		platform.endFill();
 		platform.position.set(x * JoystickTestScene.METER_TO_PIXEL, y * JoystickTestScene.METER_TO_PIXEL);
 		this.worldContainer.addChild(platform);

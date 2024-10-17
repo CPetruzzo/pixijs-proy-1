@@ -8,9 +8,10 @@ import { FadeColorTransition } from "../../../../engine/scenemanager/transitions
 import { Easing, Tween } from "tweedle.js";
 import { HighScorePopUp } from "./HighScorePopUp";
 import { SoundLib } from "../../../../engine/sound/SoundLib";
+import { Sounds } from "../Managers/SoundManager";
 
 export class MenuScene extends PixiScene {
-	public static readonly BUNDLES = ["package-1", "sfx", "music", "fallrungame"];
+	public static readonly BUNDLES = ["package-1", "sfx", "music", "fallrungame", "runfallsfx"];
 
 	private backgroundContainer: Container;
 	private bleedingBackgroundContainer: Container;
@@ -19,8 +20,7 @@ export class MenuScene extends PixiScene {
 	constructor() {
 		super();
 
-		// SoundLib.stopAllMusic();
-		SoundLib.playMusic("sound_BGM", { volume: 0.03, loop: true });
+		SoundLib.playMusic(Sounds.BG_MUSIC, { volume: 0.03, loop: true });
 
 		this.bleedingBackgroundContainer = new Container();
 		this.backgroundContainer = new Container();
@@ -36,11 +36,6 @@ export class MenuScene extends PixiScene {
 		background.position.set(-background.width * 0.5, -background.height * 0.5);
 		this.backgroundContainer.addChild(background);
 
-		// Creación del botón
-		// const button = new Container();
-
-		// const buttonSprite = Sprite.from("playbutton");
-		// button.addChild(buttonSprite);
 		const buttonText = new Text(i18next.t<string>("Start Game"), new TextStyle({ fill: "#ffffff", fontFamily: "Darling Coffee" }));
 		buttonText.anchor.set(0.5);
 		buttonText.scale.set(2);
@@ -58,17 +53,6 @@ export class MenuScene extends PixiScene {
 		buttonBackground.scale.set(2);
 		buttonBackground.alpha = 0.8;
 
-		// button.addChild(buttonBackgroundLine, buttonBackground);
-		// button.addChild(buttonText);
-		// button.eventMode = "static";
-		// button.position.set(0, 750);
-
-		// button.on("pointerdown", () => {
-		// 	Manager.changeScene(DodgeScene, { transitionClass: FadeColorTransition, transitionParams: [] });
-		// });
-
-		// this.backgroundContainer.addChild(button);
-
 		const title = Sprite.from("runfall");
 		title.anchor.set(0.5);
 		title.scale.set(0.75);
@@ -82,6 +66,7 @@ export class MenuScene extends PixiScene {
 		this.backgroundContainer.addChild(playButton);
 		playButton.eventMode = "static";
 		playButton.on("pointerdown", () => {
+			SoundLib.playSound(Sounds.START, { volume: 0.2 });
 			Manager.changeScene(DodgeScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});
 
@@ -92,13 +77,13 @@ export class MenuScene extends PixiScene {
 		this.backgroundContainer.addChild(soundBtn);
 		soundBtn.eventMode = "static";
 		soundBtn.on("pointerdown", () => {
-			// toggleSound()
+			// TODO toggleSound()
 			if (!this.musicPaused) {
-				SoundLib.pauseMusic("sound_BGM");
+				SoundLib.pauseMusic(Sounds.BG_MUSIC);
 				this.musicPaused = true;
 				soundBtn.alpha = 0.5;
 			} else {
-				SoundLib.resumeMusic("sound_BGM");
+				SoundLib.resumeMusic(Sounds.BG_MUSIC);
 				this.musicPaused = false;
 				soundBtn.alpha = 1;
 			}
@@ -136,12 +121,12 @@ export class MenuScene extends PixiScene {
 		new Tween(leaderboard).from({ angle: -5 }).to({ angle: 5 }, 500).start().yoyo(true).repeat(Infinity);
 		leaderboard.eventMode = "static";
 		leaderboard.on("pointertap", () => {
-			this.openGameOverPopup();
+			this.openHighScorePopup();
 		});
 		this.backgroundContainer.addChild(leaderboard);
 	}
 
-	private async openGameOverPopup(): Promise<void> {
+	private async openHighScorePopup(): Promise<void> {
 		try {
 			const popupInstance = await Manager.openPopup(HighScorePopUp);
 			if (popupInstance instanceof HighScorePopUp) {

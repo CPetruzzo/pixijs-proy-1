@@ -14,6 +14,8 @@ import { PlayerController } from "../Utils/PlayerController";
 import { ScoreManager } from "../Managers/ScoreManager";
 import { CollisionManager } from "../Managers/CollisionManager";
 import { SpawnManager } from "../Managers/SpawnManager";
+import { Sounds } from "../Managers/SoundManager";
+import { ObjectsNames } from "../Objects/Objects";
 
 export class DodgeScene extends PixiScene {
 	public static readonly BUNDLES = ["fallrungame", "sfx"];
@@ -39,7 +41,7 @@ export class DodgeScene extends PixiScene {
 	constructor() {
 		super();
 
-		SoundLib.playMusic("sound_BGM", { volume: 0.03, loop: true });
+		SoundLib.playMusic(Sounds.BG_MUSIC, { volume: 0.03, loop: true });
 
 		this.addChild(this.bleedingBackgroundContainer);
 		this.addChild(this.backgroundContainer);
@@ -54,7 +56,7 @@ export class DodgeScene extends PixiScene {
 
 		this.background.filters = [];
 
-		this.scoreText = new Text(`Score: 0`, { fontSize: 55, fill: 0xffffff, fontFamily: "Darling Coffee" });
+		this.scoreText = new Text(`Score: 0`, { fontSize: 55, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
 		this.scoreText.anchor.set(0.5);
 		this.scoreText.position.set(0, -this.background.height * 0.48);
 		this.backgroundContainer.addChild(this.scoreText);
@@ -86,6 +88,7 @@ export class DodgeScene extends PixiScene {
 
 		const pauseButton = new Button("Pause", 120, 60, () => {
 			this.isPaused = !this.isPaused;
+			SoundLib.playSound(Sounds.START, {});
 			pauseButton.setLabel(this.isPaused ? "Resume" : "Pause");
 		});
 		pauseButton.position.set(-this.background.width * 0.5 + pauseButton.width * 0.5 + 15, -this.background.height * 0.5 + pauseButton.height * 0.5);
@@ -94,15 +97,6 @@ export class DodgeScene extends PixiScene {
 
 		this.playerController = new PlayerController(this.player);
 		this.spawnManager = new SpawnManager(this.scoreManager);
-
-		if (!this.isPaused) {
-			this.background.on("pointerdown", (event) => this.playerController.onMouseMove(event, this.background));
-			this.background.on("pointerup", () => {
-				if (this.playerController.isPlayerMoving) {
-					this.playerController.onMouseStop();
-				}
-			});
-		}
 	}
 
 	private createEventContainer(x: number, y: number, width: number, height: number): Graphics {
@@ -119,27 +113,31 @@ export class DodgeScene extends PixiScene {
 			obj.update(dt);
 
 			if (obj.y >= this.background.height - obj.height) {
-				if (obj.name === "OBSTACLE") {
+				if (obj.name === ObjectsNames.OBSTACLE) {
 					if (obj.isOnGround) {
 						if (CollisionManager.checkCollision(this.player, obj)) {
 							this.player.collideWithObstacle();
-							this.player.effectManager.causeStun(2000);
+							if (this.playerController.isMoving) {
+								this.playerController.onMouseStop();
+							}
 						}
 					}
 					obj.handleEvent(this.player);
 				} else {
-					const index = this.objects.indexOf(obj);
-					this.objects.splice(index, 1);
-					this.background.removeChild(obj);
+					this.removeObject(obj);
 				}
 			} else if (CollisionManager.checkCollision(this.player, obj)) {
 				CollisionManager.handleCollision(this.player, obj);
 				obj.handleEvent(this.player);
-				const objIndex = this.objects.indexOf(obj);
-				this.objects.splice(objIndex, 1);
-				this.background.removeChild(obj);
+				this.removeObject(obj);
 			}
 		});
+	}
+
+	private removeObject(obj: GameObject): void {
+		const objIndex = this.objects.indexOf(obj);
+		this.objects.splice(objIndex, 1);
+		this.background.removeChild(obj);
 	}
 
 	private async openGameOverPopup(): Promise<void> {
@@ -175,6 +173,7 @@ export class DodgeScene extends PixiScene {
 
 		this.scoreText.text = `Score: ${this.scoreManager.getScore()}`;
 
+		this.playerController.mouseMovements(this.background);
 		this.playerController.onKeyDown(this.background);
 	}
 

@@ -3,6 +3,14 @@ import { GameObject } from "./GameObject";
 import { Player } from "./Player";
 import { OBJECT_SPEED } from "../../../../utils/constants";
 
+export enum ObjectsNames {
+	OBSTACLE = "OBSTACLE",
+	ENEMY = "ENEMY",
+	POTION = "POTION",
+	POWER_UP = "POWER_UP",
+	COIN = "COIN",
+}
+
 export class EnemyObject extends GameObject {
 	constructor() {
 		super();
@@ -10,7 +18,6 @@ export class EnemyObject extends GameObject {
 		const enemy = Sprite.from("enemy");
 		enemy.anchor.set(0.5, 0);
 		this.addChild(enemy);
-
 	}
 
 	public update(dt: number): void {
@@ -51,7 +58,6 @@ export class CoinObject extends GameObject {
 		const coin = Sprite.from("coin");
 		coin.anchor.set(0.5, 0);
 		this.addChild(coin);
-
 	}
 
 	public update(dt: number): void {

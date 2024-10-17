@@ -4,7 +4,7 @@ import type { Player } from "../Objects/Player";
 
 export class PlayerController {
 	private player: Player;
-	private isMoving: boolean = false;
+	public isMoving: boolean = false;
 	private moveTween: Tween<Player>;
 
 	constructor(player: Player) {
@@ -72,5 +72,14 @@ export class PlayerController {
 
 	public isPlayerMoving(): boolean {
 		return this.isMoving;
+	}
+
+	public mouseMovements(background: any): void {
+		background.on("pointerdown", (event: any) => this.onMouseMove(event, background));
+		background.on("pointerup", () => {
+			if (this.isMoving) {
+				this.onMouseStop();
+			}
+		});
 	}
 }

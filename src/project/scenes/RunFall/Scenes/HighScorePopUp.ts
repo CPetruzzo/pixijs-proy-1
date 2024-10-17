@@ -10,6 +10,7 @@ import type { Button } from "@pixi/ui";
 import { SoundLib } from "../../../../engine/sound/SoundLib";
 import { DodgeScene } from "./DodgeScene";
 import { Text } from "pixi.js";
+import { Sounds } from "../Managers/SoundManager";
 
 interface HighscoreEntry {
 	playerName: string;
@@ -46,7 +47,7 @@ export class HighScorePopUp extends PixiScene {
 		this.addChild(this.fadeAndBlocker);
 		this.fadeAndBlocker.scale.set(10);
 
-		this.background = Sprite.from("popupimg");
+		this.background = Sprite.from("highscore");
 		this.background.anchor.set(0.5);
 		this.addChild(this.background);
 	}
@@ -54,13 +55,13 @@ export class HighScorePopUp extends PixiScene {
 	// Método para manejar el clic en el botón de reinicio
 	private handleResetClick(): void {
 		this.restart = true;
-		SoundLib.playSound("sound_confirm", { allowOverlap: false, singleInstance: true, loop: false });
+		SoundLib.playSound(Sounds.CLOSEPOPUP, { allowOverlap: false, singleInstance: true, loop: false, volume: 0.2, speed: 0.5 });
 		this.closePopup();
 	}
 
 	// Método para manejar el clic en el botón de cerrar
 	private handleResetClickMenu(): void {
-		SoundLib.playSound("sound_confirm", { allowOverlap: false, singleInstance: true, loop: false });
+		SoundLib.playSound(Sounds.CLOSEPOPUP, { allowOverlap: false, singleInstance: true, loop: false, volume: 0.2, speed: 0.5 });
 		this.closePopupMenu();
 	}
 
@@ -72,7 +73,7 @@ export class HighScorePopUp extends PixiScene {
 
 	public override onStart(): void {
 		const storedHighscores = localStorage.getItem(localStorageKey);
-		console.log('storedHighscores', storedHighscores)
+		console.log("storedHighscores", storedHighscores);
 		if (storedHighscores) {
 			highscores = JSON.parse(storedHighscores);
 		}
@@ -87,7 +88,7 @@ export class HighScorePopUp extends PixiScene {
 		const elasticAnimation = new Tween(this.background).to({ scale: { x: 7, y: 7 } }, 1000).easing(Easing.Elastic.Out);
 
 		elasticAnimation.onStart(() => {
-			SoundLib.playSound("beep", {});
+			SoundLib.playSound(Sounds.OPENPOUP, {});
 		});
 		elasticAnimation.onComplete(() => {
 			this.background.interactiveChildren = true;
@@ -104,9 +105,9 @@ export class HighScorePopUp extends PixiScene {
 	public async showHighscores(playerScore: number): Promise<void> {
 		const playerName = await this.showNameInputDialog();
 
-		const title = new Text("Highscores", { fontSize: 100, fill: 0xffffff, fontFamily: "Darling Coffee" });
+		const title = new Text("Highscores", { fontSize: 90, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
 		title.anchor.set(0.5);
-		title.position.set(this.background.width * 0.5, -330);
+		title.position.set(this.background.width * 0.5, -270);
 		this.background.addChild(title);
 
 		// Guardar el puntaje del jugador actual
@@ -120,12 +121,12 @@ export class HighScorePopUp extends PixiScene {
 		const lineHeight = 90;
 		for (let i = 0; i < Math.min(highscores.length, 5); i++) {
 			const entry = highscores[i];
-			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 80, fill: 0xffffff, align: "center", fontFamily: "Darling Coffee" });
-			entryText.anchor.set(0, 0.5);
-			entryText.position.set(-220, startY + i * lineHeight - 220);
+			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 50, fill: 0xffffff, align: "center", dropShadow: true, fontFamily: "Darling Coffee" });
+			entryText.anchor.set(0.5, 0.5);
+			entryText.position.set(0, startY + i * lineHeight - 220);
 			this.background.addChild(entryText);
 			if (entry.score === playerScore) {
-				entryText.tint = 0xff0000;
+				entryText.tint = 0xe99f96;
 				new Tween(entryText).to({ alpha: 0 }, 500).start().repeat(Infinity).yoyo(true).yoyoEasing(Easing.Linear.None);
 				entryText.style.align = "center";
 			}
@@ -142,19 +143,19 @@ export class HighScorePopUp extends PixiScene {
 		this.resetButton.on("pointertap", this.handleResetClick, this); // Agrega un manejador de eventos al hacer clic en el botón
 		this.background.addChild(this.resetButton); // Agrega el botón al background
 
-		const tryagain = new Text("Try Again", { fontSize: 70, fill: 0xffffff, fontFamily: "Darling Coffee" });
+		const tryagain = new Text("Try Again", { fontSize: 70, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
 		tryagain.y = this.resetButton.height * 0.5;
 		tryagain.x = this.resetButton.width * 0.5;
-		tryagain.anchor.set(0.5)
+		tryagain.anchor.set(0.5);
 		// tryagain.anchor.set(0.5);
 		this.resetButton.addChild(tryagain);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	public async showHighscoresMenu(): Promise<void> {
-
-		const title = new Text("Highscores", { fontSize: 100, fill: 0xffffff, fontFamily: "Darling Coffee" });
+		const title = new Text("Highscores", { fontSize: 90, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
 		title.anchor.set(0.5);
-		title.position.set(this.background.width * 0.5, -330);
+		title.position.set(this.background.width * 0.5, -270);
 		this.background.addChild(title);
 
 		highscores.sort((a, b) => b.score - a.score);
@@ -165,9 +166,9 @@ export class HighScorePopUp extends PixiScene {
 		const lineHeight = 90;
 		for (let i = 0; i < Math.min(highscores.length, 5); i++) {
 			const entry = highscores[i];
-			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 80, fill: 0xffffff, align: "center", fontFamily: "Darling Coffee" });
-			entryText.anchor.set(0, 0.5);
-			entryText.position.set(-220, startY + i * lineHeight - 220);
+			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 50, fill: 0xffffff, align: "center", dropShadow: true, fontFamily: "Darling Coffee" });
+			entryText.anchor.set(0.5, 0.5);
+			entryText.position.set(0, startY + i * lineHeight - 220);
 			this.background.addChild(entryText);
 		}
 
@@ -182,10 +183,10 @@ export class HighScorePopUp extends PixiScene {
 		this.resetButton.on("pointertap", this.handleResetClickMenu, this); // Agrega un manejador de eventos al hacer clic en el botón
 		this.background.addChild(this.resetButton); // Agrega el botón al background
 
-		const tryagain = new Text("Close", { fontSize: 70, fill: 0xffffff, fontFamily: "Darling Coffee" });
+		const tryagain = new Text("Close", { fontSize: 70, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
 		tryagain.y = this.resetButton.height * 0.5;
 		tryagain.x = this.resetButton.width * 0.5;
-		tryagain.anchor.set(0.5)
+		tryagain.anchor.set(0.5);
 		// tryagain.anchor.set(0.5);
 		this.resetButton.addChild(tryagain);
 	}

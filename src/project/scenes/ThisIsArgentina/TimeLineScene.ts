@@ -1,14 +1,16 @@
-import { Container, FederatedPointerEvent, Graphics, Point, Sprite, Text, TextStyle, Texture } from 'pixi.js';
+/* eslint-disable @typescript-eslint/naming-convention */
+import type { FederatedPointerEvent } from "pixi.js";
+import { Container, Graphics, Point, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
-import { lerp } from '../../../engine/utils/MathUtils';
-import { Easing, Tween } from 'tweedle.js';
-import { Manager } from '../../..';
-import events from './events.json';
-import { GameScene } from './ArgentinaGameScene';
-import { FadeColorTransition } from '../../../engine/scenemanager/transitions/FadeColorTransition';
+import { lerp } from "../../../engine/utils/MathUtils";
+import { Easing, Tween } from "tweedle.js";
+import { Manager } from "../../..";
+import events from "./events.json";
+import { GameScene } from "./ArgentinaGameScene";
+import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 
 export class TimeLineScene extends PixiScene {
-	//#region VARIABLES
+	// #region VARIABLES
 	private timelineContainer: Container;
 	private draggable: Container;
 	private timelineLength: number = 35000;
@@ -17,8 +19,8 @@ export class TimeLineScene extends PixiScene {
 	private dragOverlay: Graphics;
 	private imageSprites: { [key: number]: Sprite } = {};
 	private imagesContainer: Container;
-	private allEventPositions: { x: number, year: number }[] = [];
-	//#endregion VARIABLES
+	private allEventPositions: { x: number; year: number }[] = [];
+	// #endregion VARIABLES
 	public static readonly BUNDLES = ["aurora"];
 
 	constructor() {
@@ -41,11 +43,10 @@ export class TimeLineScene extends PixiScene {
 		this.beginGame();
 	}
 
-
 	private loadImages(): void {
 		const imagePaths = {
-			1816: 'image1816',
-			1982: 'image1982',
+			1816: "image1816",
+			1982: "image1982",
 		};
 
 		for (const [year, path] of Object.entries(imagePaths)) {
@@ -77,7 +78,7 @@ export class TimeLineScene extends PixiScene {
 		}
 	}
 
-	//#region TIMELINE_EVENTS
+	// #region TIMELINE_EVENTS
 	private createTimeline(): void {
 		const timeline = new Graphics();
 		timeline.lineStyle(4, 0xffffff);
@@ -99,7 +100,7 @@ export class TimeLineScene extends PixiScene {
 
 	private mapYearToPosition(year: number, minYear: number, maxYear: number): number {
 		const ratio = (year - minYear) / (maxYear - minYear);
-		return 100 + ratio * (this.timelineLength);
+		return 100 + ratio * this.timelineLength;
 	}
 
 	private addEvent(x: number, date: string, description: string): void {
@@ -109,19 +110,19 @@ export class TimeLineScene extends PixiScene {
 		eventLine.lineTo(x, 350);
 		this.timelineContainer.addChild(eventLine);
 
-		const dateText = new Text(date, { fontFamily: 'Arial', fontSize: 14, fill: 0xffffff, wordWrap: true, wordWrapWidth: 100 });
+		const dateText = new Text(date, { fontFamily: "Arial", fontSize: 14, fill: 0xffffff, wordWrap: true, wordWrapWidth: 100 });
 		dateText.x = x - dateText.width / 2;
 		dateText.y = 360;
 		this.timelineContainer.addChild(dateText);
 
-		const descriptionText = new Text(description, { fontFamily: 'Arial', fontSize: 12, fill: 0xffffff, wordWrap: true, wordWrapWidth: 150, align: 'center' });
+		const descriptionText = new Text(description, { fontFamily: "Arial", fontSize: 12, fill: 0xffffff, wordWrap: true, wordWrapWidth: 150, align: "center" });
 		descriptionText.x = x - descriptionText.width / 2;
 		descriptionText.y = 380;
 		this.timelineContainer.addChild(descriptionText);
 	}
-	//#endregion TIMELINE_EVENTS
+	// #endregion TIMELINE_EVENTS
 
-	//#region TIMELINE_DRAG_MOVE
+	// #region TIMELINE_DRAG_MOVE
 	private createDragOverlay(): void {
 		this.dragOverlay = new Graphics();
 		this.dragOverlay.beginFill(0x000000, 0.01);
@@ -168,10 +169,10 @@ export class TimeLineScene extends PixiScene {
 		const tween = new Tween({ x: startX })
 			.to({ x: targetX }, tweenDuration)
 			.easing(Easing.Quadratic.Out)
-			.onUpdate(obj => {
+			.onUpdate((obj) => {
 				this.draggable.x = obj.x;
 				this.showImagesBasedOnPosition();
-			})
+			});
 
 		tween.start();
 	}
@@ -185,8 +186,8 @@ export class TimeLineScene extends PixiScene {
 		nextButton.interactive = true;
 		prevButton.interactive = true;
 
-		nextButton.on('pointerdown', this.moveToNextEvent.bind(this));
-		prevButton.on('pointerdown', this.moveToPreviousEvent.bind(this));
+		nextButton.on("pointerdown", this.moveToNextEvent.bind(this));
+		prevButton.on("pointerdown", this.moveToPreviousEvent.bind(this));
 
 		this.addChild(nextButton);
 		this.addChild(prevButton);
@@ -196,14 +197,14 @@ export class TimeLineScene extends PixiScene {
 	}
 
 	private getEventPositions(): number[] {
-		return this.allEventPositions.map(event => event.x);
+		return this.allEventPositions.map((event) => event.x);
 	}
 
 	private moveToNextEvent(): void {
 		const currentPos = -this.draggable.x;
 		const eventPositions = this.getEventPositions();
 
-		for (let pos of eventPositions) {
+		for (const pos of eventPositions) {
 			if (pos > currentPos) {
 				this.tweenToPosition(-pos);
 				break;
@@ -223,9 +224,9 @@ export class TimeLineScene extends PixiScene {
 			}
 		}
 	}
-	//#endregion TIMELINE_DRAG_MOVE
+	// #endregion TIMELINE_DRAG_MOVE
 
-	//#region BEGINGAME
+	// #region BEGINGAME
 	private beginGame(): void {
 		const startButton = new Container();
 		const buttonGraphics = new Graphics();
@@ -234,10 +235,13 @@ export class TimeLineScene extends PixiScene {
 		buttonGraphics.endFill();
 		startButton.addChild(buttonGraphics);
 
-		const buttonText = new Text("Start", new TextStyle({
-			fill: 0xffffff,
-			fontSize: 24
-		}));
+		const buttonText = new Text(
+			"Start",
+			new TextStyle({
+				fill: 0xffffff,
+				fontSize: 24,
+			})
+		);
 		buttonText.anchor.set(0.5);
 		buttonText.x = buttonGraphics.width / 2;
 		buttonText.y = buttonGraphics.height / 2;
@@ -247,7 +251,7 @@ export class TimeLineScene extends PixiScene {
 		startButton.y = Manager.height * 0.8 - buttonGraphics.height / 2;
 
 		startButton.eventMode = "static";
-		startButton.on('pointerdown', this.onStartButtonClick, this);
+		startButton.on("pointerdown", this.onStartButtonClick, this);
 
 		this.addChild(startButton);
 	}
@@ -257,5 +261,5 @@ export class TimeLineScene extends PixiScene {
 		Manager.changeScene(GameScene, { transitionClass: FadeColorTransition });
 	}
 
-	//#endregion BEGINGAME
+	// #endregion BEGINGAME
 }

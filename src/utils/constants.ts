@@ -43,3 +43,11 @@ export const OBJECT_SPEED: number = 0.5;
 
 export const BLUR_TIME: number = 1500;
 export const STUN_TIME: number = 2000;
+export const SPEEDUP_TIME: number = 5500;
+
+export const COIN_POINTS: number = 1000;
+export const POTION_POINTS: number = 1000;
+export const ENEMY_COUNTER_POINTS: number = 1000;
+
+export const SOUNDPARAMS1 = { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 };
+export const SOUNDPARAMS2 = { allowOverlap: false, singleInstance: true, loop: false, volume: 0.1 };
