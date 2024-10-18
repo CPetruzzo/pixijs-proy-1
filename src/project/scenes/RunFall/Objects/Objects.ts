@@ -2,7 +2,7 @@ import { Sprite } from "pixi.js";
 import { GameObject } from "./GameObject";
 import { Player } from "./Player";
 import { OBJECT_SPEED } from "../../../../utils/constants";
-import { Tween } from "tweedle.js";
+import { Easing, Tween } from "tweedle.js";
 import Random from "../../../../engine/random/Random";
 
 export enum ObjectsNames {
@@ -19,14 +19,15 @@ export class EnemyObject extends GameObject {
 
 		const enemy = Sprite.from("comet");
 		enemy.anchor.set(0.5, 0);
-		const enemyscale = Random.shared.randomIntCentered(0.55, 0.2);
+		const enemyscale = Random.shared.randomIntCentered(0.5, 0.3);
 		enemy.scale.set(enemyscale);
 		this.addChild(enemy);
 
 		new Tween(enemy)
-			.to({ scale: { y: enemyscale - 0.03 } }, 500)
+			.to({ scale: { y: enemyscale - 0.1 } }, 800)
 			.start()
 			.repeat(Infinity)
+			.easing(Easing.Quadratic.InOut)
 			.yoyo(true);
 	}
 
@@ -65,14 +66,9 @@ export class CoinObject extends GameObject {
 	constructor() {
 		super();
 
-		const coin = Sprite.from("coin");
+		const coin = Sprite.from("bronze1");
 		coin.anchor.set(0.5);
 		this.addChild(coin);
-
-		const runfall = Sprite.from("runfall");
-		runfall.scale.set(0.11);
-		runfall.anchor.set(0.44, 0.5);
-		this.addChild(runfall);
 	}
 
 	public update(dt: number): void {

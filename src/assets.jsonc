@@ -179,7 +179,8 @@
 				"comet": "./img/runfall/comet.png",
 				"medkit": "./img/runfall/medkit.png",
 				"capsule": "./img/runfall/capsule.png",
-				"runfallcoin": "./img/runfall/runfallcoin.png"
+				"runfallcoin": "./img/runfall/runfallcoin.png",
+				"bronze1": "./img/runfall/bronze_1.png"
 			}
 		},
 		{
