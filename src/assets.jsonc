@@ -174,7 +174,12 @@
 				"fireTexture": "./img/Fire.png",
 				"sparksTexture": "./img/Sparks.png",
 				"frame": "./img/Laterales.png",
-				"highscore": "./img/highscore_popup.png"
+				"highscore": "./img/highscore_popup.png",
+				"meteorEnemy": "./img/runfall/enemy.png",
+				"comet": "./img/runfall/comet.png",
+				"medkit": "./img/runfall/medkit.png",
+				"capsule": "./img/runfall/capsule.png",
+				"runfallcoin": "./img/runfall/runfallcoin.png"
 			}
 		},
 		{
