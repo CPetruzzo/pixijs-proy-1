@@ -29,5 +29,5 @@
   },
   "include": [
     "src/**/*.ts"
-  ]
+, "src/project/scenes/Multiplayer/Backend/server.js"  ]
 }

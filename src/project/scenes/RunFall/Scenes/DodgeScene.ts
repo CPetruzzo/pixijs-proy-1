@@ -112,7 +112,7 @@ export class DodgeScene extends PixiScene {
 		this.objects.forEach((obj) => {
 			obj.update(dt);
 
-			if (obj.y >= this.background.height - obj.height) {
+			if (obj.y >= this.background.height - obj.height * 0.5) {
 				if (obj.name === ObjectsNames.OBSTACLE) {
 					if (obj.isOnGround) {
 						if (CollisionManager.checkCollision(this.player, obj)) {

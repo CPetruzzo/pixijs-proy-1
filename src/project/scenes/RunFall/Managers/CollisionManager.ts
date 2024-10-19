@@ -49,7 +49,7 @@ export class CollisionManager {
 				break;
 
 			case ObjectsNames.OBSTACLE:
-				player.collideWithObstacle(); // Colisión con obstáculo
+				player.collideWithObstacle();
 				player.takeDamage();
 				if (player.healthBar.getCurrentHealth() <= 0) {
 					this.gameOver = true;

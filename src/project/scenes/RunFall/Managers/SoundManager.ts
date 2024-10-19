@@ -8,4 +8,5 @@ export enum Sounds {
 	CLOSEPOPUP = "sound1",
 	START = "sound4",
 	BG_MUSIC = "sound_BGM",
+	STUN = ""
 }

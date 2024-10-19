@@ -4,6 +4,7 @@ import { Player } from "./Player";
 import { OBJECT_SPEED } from "../../../../utils/constants";
 import { Easing, Tween } from "tweedle.js";
 import Random from "../../../../engine/random/Random";
+import { EffectManager } from "../Managers/EffectManager";
 
 export enum ObjectsNames {
 	OBSTACLE = "OBSTACLE",
@@ -18,7 +19,7 @@ export class EnemyObject extends GameObject {
 		super();
 
 		const enemy = Sprite.from("comet");
-		enemy.anchor.set(0.5, 0);
+		enemy.anchor.set(0.5);
 		const enemyscale = Random.shared.randomIntCentered(0.5, 0.3);
 		enemy.scale.set(enemyscale);
 		this.addChild(enemy);
@@ -47,7 +48,7 @@ export class PotionObject extends GameObject {
 		super();
 
 		const potion = Sprite.from("powerup");
-		potion.anchor.set(0.5, 0);
+		potion.anchor.set(0.5);
 		this.addChild(potion);
 	}
 
@@ -86,9 +87,13 @@ export class PowerUpObject extends GameObject {
 	constructor() {
 		super();
 
-		const powerup = Sprite.from("star");
-		powerup.anchor.set(0.5, 0);
+		const powerup = Sprite.from("spacestar");
+		powerup.anchor.set(0.5);
+		powerup.scale.set(0.15);
 		this.addChild(powerup);
+
+		const effectManager = new EffectManager(powerup, undefined);
+		effectManager.speedingPowerUp(5500);
 	}
 
 	public update(dt: number): void {
@@ -110,19 +115,22 @@ export class ObstacleObject extends GameObject {
 		super();
 
 		this.obstacule = Sprite.from("meteorEnemy");
-		this.obstacule.anchor.set(0.5, 0);
+		this.obstacule.anchor.set(0.5);
 		this.obstacule.scale.set(0.2);
 		this.addChild(this.obstacule);
 	}
 
 	public update(dt: number): void {
-		if (this.y < this.parent?.height - this.height) {
+		if (this.y < this.parent?.height - this.height * 0.5) {
 			this.y += OBJECT_SPEED * dt;
 		} else {
 			if (this.timeOnGround < this.timeToStayOnGround) {
 				this.timeOnGround += dt;
 				this.isOnGround = true;
-				this.obstacule.tint = 0xff0000;
+				this.obstacule.tint = 0xd83a6d;
+				// this.obstacule.tint = 0xfe4d1e;
+				// 0xd93e3e
+				// new Tween(this.obstacule).to({ scale: { x: 0.35, y: 0.35 } }, this.timeToStayOnGround).easing(Easing.Bounce.InOut).start()
 			} else {
 				const index = this.parent?.children.indexOf(this);
 				if (index !== undefined && index !== -1) {

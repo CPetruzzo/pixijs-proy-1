@@ -9,7 +9,7 @@ export class EffectManager {
 	private stunFilter: GlowFilter;
 	private glow: GlowFilter;
 
-	constructor(player: any, background: any) {
+	constructor(player: any, background: any | undefined) {
 		this.player = player;
 		this.background = background;
 		this.glow = new GlowFilter();
