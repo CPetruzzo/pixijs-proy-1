@@ -1,114 +1,116 @@
-// server.js
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+const express = require("express");
+const http = require("http");
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-export const SERVER_PORT = 1234;
+const SERVER_PORT = 1234;
 let rooms = {}; // Almacenar los datos del juego por sala
 
 // Manejar la conexión de los sockets
-io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
+io.on("connection", (socket) => {
+	console.log("A user connected:", socket.id);
 
-	socket.on('createRoom', (data) => {
-        const roomName = data.roomName;
-        // Aquí puedes crear la lógica para crear una sala
-        // Por ejemplo, agregar el nombre de la sala a un array o un objeto
+	socket.on("createRoom", (data) => {
+		const roomName = data.roomName;
+		// Aquí puedes crear la lógica para crear una sala
+		// Por ejemplo, agregar el nombre de la sala a un array o un objeto
 
-        // Una vez que se crea la sala, envía la confirmación
-        socket.emit('roomCreated', { roomName });
-    });
-	
-    // Evento para unirse a una sala
-    socket.on('joinRoom', (room) => {
-        console.log(`Received request to join room: ${room}`);
-        socket.join(room);
-        console.log(`${socket.id} joined room: ${room}`);
+		// Una vez que se crea la sala, envía la confirmación
+		socket.emit("roomCreated", { roomName });
+	});
 
-        // Inicializar el estado de la sala si aún no existe
-        if (!rooms[room]) {
-            rooms[room] = {
-                board: [['', '', ''], ['', '', ''], ['', '', '']],
-                players: {}, // Almacenar los jugadores
-                currentPlayer: 'X', // El turno inicial
-            };
-        }
+	socket.on("joinRoom", (room) => {
+		console.log(`Received request to join room: ${room}`);
+		socket.join(room);
+		console.log(`${socket.id} joined room: ${room}`);
 
-        const roomData = rooms[room];
+		// Inicializar el estado de la sala si aún no existe
+		if (!rooms[room]) {
+			rooms[room] = {
+				board: [
+					["", "", ""],
+					["", "", ""],
+					["", "", ""],
+				],
+				players: {}, // Almacenar los jugadores
+				currentPlayer: "X", // El turno inicial
+			};
+		}
 
-        // Asignar al jugador 'X' o 'O' dependiendo de cuántos jugadores haya
-        if (!roomData.players['X']) {
-            roomData.players['X'] = socket.id;
-        } else if (!roomData.players['O']) {
-            roomData.players['O'] = socket.id;
-        } else {
-            console.log('Room is full');
-            socket.emit('roomFull', { message: 'Room is full' });
-            return;
-        }
+		const roomData = rooms[room];
 
-        // Determinar qué jugador es el que se acaba de unir (X o O)
-        const playerSymbol = roomData.players['X'] === socket.id ? 'X' : 'O';
+		// Asignar al jugador 'X' o 'O' dependiendo de cuántos jugadores haya
+		if (!roomData.players["X"]) {
+			roomData.players["X"] = socket.id;
+		} else if (!roomData.players["O"]) {
+			roomData.players["O"] = socket.id;
+		} else {
+			console.log("Room is full");
+			socket.emit("roomFull", { message: "Room is full" });
+			return;
+		}
 
-        const initialGameState = {
-            board: roomData.board,
-            currentPlayer: roomData.currentPlayer,
-            playerSymbol: playerSymbol, // Enviar el símbolo al jugador
-        };
+		// Determinar qué jugador es el que se acaba de unir (X o O)
+		const playerSymbol = roomData.players["X"] === socket.id ? "X" : "O";
 
-        socket.emit('roomJoined', initialGameState); // Enviar el estado inicial al cliente
+		const initialGameState = {
+			board: roomData.board,
+			currentPlayer: roomData.currentPlayer,
+			playerSymbol: playerSymbol, // Enviar el símbolo al jugador
+		};
 
-        // Emitir un mensaje de prueba al unirse a la sala
-        socket.emit('testEvent', { message: 'Hello from server!' });
-    });
+		socket.emit("roomJoined", initialGameState); // Enviar el estado inicial al cliente
 
-    // Manejar los turnos de los jugadores
-    socket.on('turnPlayed', (data) => {
-        const roomData = rooms[data.room];
+		// Emitir un mensaje de prueba al unirse a la sala
+		socket.emit("testEvent", { message: "Hello from server!" });
+	});
 
-        // Verificar que la sala existe y que es el turno correcto del jugador
-        if (!roomData || roomData.players[roomData.currentPlayer] !== socket.id) {
-            console.log(`It's not player ${data.playerData.playerId}'s turn!`);
-            return; // Si no es el turno del jugador, no hace nada
-        }
+	socket.on("turnPlayed", (data) => {
+		const roomData = rooms[data.room];
 
-        // Actualiza el tablero con el movimiento del jugador
-        roomData.board[data.playerData.x][data.playerData.y] = data.playerData.playerId;
+		// Verificar que la sala existe y que es el turno correcto del jugador
+		if (!roomData || roomData.players[roomData.currentPlayer] !== socket.id) {
+			console.log(`It's not player ${data.playerData.playerId}'s turn!`);
+			return; // Si no es el turno del jugador, no hace nada
+		}
 
-        // Envía la actualización del juego a todos en la sala
-        io.to(data.room).emit('updateGame', data.playerData);
+		// Actualiza el tablero con el movimiento del jugador
+		roomData.board[data.playerData.x][data.playerData.y] = data.playerData.playerId;
 
-        // Cambia el turno al otro jugador
-		roomData.currentPlayer = roomData.currentPlayer === 'X' ? 'O' : 'X';
-        console.log(`Next turn is for player: ${roomData.currentPlayer}`);
-    });
+		// Envía la actualización del juego a todos en la sala
+		io.to(data.room).emit("updateGame", data.playerData);
 
-    // Manejo de desconexión
-    socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+		// Cambia el turno al otro jugador
+		roomData.currentPlayer = roomData.currentPlayer === "X" ? "O" : "X";
+		console.log(`Next turn is for player: ${roomData.currentPlayer}`);
+	});
 
-        // Eliminar al jugador desconectado de cualquier sala en la que esté
-        for (let room in rooms) {
-            const roomData = rooms[room];
+	socket.on("disconnect", () => {
+		console.log("User disconnected:", socket.id);
 
-            if (roomData.players['X'] === socket.id) {
-                delete roomData.players['X'];
-            } else if (roomData.players['O'] === socket.id) {
-                delete roomData.players['O'];
-            }
+		// Eliminar al jugador desconectado de cualquier sala en la que esté
+		for (let room in rooms) {
+			const roomData = rooms[room];
 
-            // Si ambos jugadores se desconectan, eliminar la sala
-            if (!roomData.players['X'] && !roomData.players['O']) {
-                delete rooms[room];
-            }
-        }
-    });
+			if (roomData.players["X"] === socket.id) {
+				delete roomData.players["X"];
+			} else if (roomData.players["O"] === socket.id) {
+				delete roomData.players["O"];
+			}
+
+			// Si ambos jugadores se desconectan, eliminar la sala
+			if (!roomData.players["X"] && !roomData.players["O"]) {
+				delete rooms[room];
+			}
+		}
+	});
 });
 
 // Iniciar el servidor
 server.listen(SERVER_PORT, () => {
-    console.log(`Server is running on http://localhost:${SERVER_PORT}`);
+	console.log(`Server is running on http://localhost:${SERVER_PORT}`);
 });

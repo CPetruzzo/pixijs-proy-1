@@ -2,7 +2,7 @@ import type { Sprite } from "pixi.js";
 import { Graphics, Texture } from "pixi.js";
 import { StateMachineAnimator } from "../../../../engine/animation/StateMachineAnimation";
 import { Timer } from "../../../../engine/tweens/Timer";
-import { PLAYER_SPEED, SPEEDUP_TIME, STUN_TIME } from "../../../../utils/constants";
+import { PLAYER_SCALE_RUNFALL, PLAYER_SPEED, SPEEDUP_TIME, STUN_TIME } from "../../../../utils/constants";
 import type { ScoreManager } from "../Managers/ScoreManager";
 import type { HealthBar } from "./HealthBar";
 import { EffectManager } from "../Managers/EffectManager";
@@ -24,8 +24,8 @@ export class Player extends StateMachineAnimator {
 		this.anchor.set(0.5, 0);
 		this.eventMode = "none";
 
-		this.addState("idle", [Texture.from("player1"), Texture.from("player2")], 0.2, true);
-		this.addState("move", [Texture.from("player2"), Texture.from("player3")], 0.2, true);
+		this.addState("idle", [Texture.from("astro1"), Texture.from("astro5")], 0.2, true);
+		this.addState("move", [Texture.from("astro1"), Texture.from("astro3"), Texture.from("astro5")], 0.2, true);
 
 		this.playState("idle");
 
@@ -50,7 +50,7 @@ export class Player extends StateMachineAnimator {
 	}
 
 	public setDirection(movingLeft: boolean): void {
-		this.scale.x = movingLeft ? -1 : 1;
+		this.scale.x = movingLeft ? -PLAYER_SCALE_RUNFALL : PLAYER_SCALE_RUNFALL;
 	}
 	public collectCoin(value: number): void {
 		if (value) {

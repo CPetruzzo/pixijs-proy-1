@@ -23,10 +23,10 @@ export class MultiplayerScene extends PixiScene {
 		this.setupSocketListeners();
 	}
 
-	private setupSocketListeners() {
+	private setupSocketListeners(): void {
 		this.socketManager.onRoomJoined((initialState) => {
 			this.playerSymbol = initialState.playerSymbol;
-			this.opponentSymbol = this.playerSymbol === 'X' ? 'O' : 'X';
+			this.opponentSymbol = this.playerSymbol === "X" ? "O" : "X";
 			this.uiManager.updatePlayerSymbols(this.playerSymbol, this.opponentSymbol);
 			this.boardManager.drawBoard(this.handleCellClick.bind(this));
 		});
@@ -40,9 +40,9 @@ export class MultiplayerScene extends PixiScene {
 		});
 	}
 
-	private handleCellClick(row: number, col: number) {
+	private handleCellClick(row: number, col: number): void {
 		if (this.boardManager.isGameActive && this.playerSymbol) {
-			this.socketManager.playerTurn({ action: 'move', playerId: this.playerSymbol, x: row, y: col });
+			this.socketManager.playerTurn({ action: "move", playerId: this.playerSymbol, x: row, y: col });
 		}
 	}
 

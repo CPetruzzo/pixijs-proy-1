@@ -47,9 +47,19 @@ export class PotionObject extends GameObject {
 	constructor() {
 		super();
 
-		const potion = Sprite.from("powerup");
+		const potion = Sprite.from("medkit1");
 		potion.anchor.set(0.5);
 		this.addChild(potion);
+
+		const potionscale = Random.shared.randomIntCentered(0.5, 0.05);
+		potion.scale.set(potionscale);
+
+		new Tween(potion)
+			.to({ scale: { y: potionscale - 0.05 } }, 800)
+			.start()
+			.repeat(Infinity)
+			.easing(Easing.Quadratic.InOut)
+			.yoyo(true);
 	}
 
 	public update(dt: number): void {

@@ -13,7 +13,8 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
-import { MultiplayerScene } from "./project/scenes/Multiplayer/MultiplayerScene";
+// import { AStarScene } from "./project/scenes/AStarAlgorithm/AStarScene";
+import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -76,7 +77,7 @@ window.dispatchEvent(new Event("resize"));
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
 	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
-	Manager.changeScene(MultiplayerScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(MenuScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

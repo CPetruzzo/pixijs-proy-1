@@ -41,6 +41,7 @@ export const PLAYER_SCALE: number = 0.09;
 // runfall
 export const PLAYER_SPEED: number = 0.5;
 export const OBJECT_SPEED: number = 0.5;
+export const PLAYER_SCALE_RUNFALL: number = 0.6;
 
 export const BLUR_TIME: number = 1500;
 export const STUN_TIME: number = 2000;

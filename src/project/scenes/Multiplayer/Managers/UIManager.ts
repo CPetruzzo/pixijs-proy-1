@@ -1,4 +1,5 @@
-import { Text, Container } from "pixi.js";
+import type { Container } from "pixi.js";
+import { Text } from "pixi.js";
 
 export class UIManager {
 	private playerText: Text;
@@ -17,7 +18,7 @@ export class UIManager {
 		container.addChild(this.opponentText);
 	}
 
-	public updatePlayerSymbols(playerSymbol: string, opponentSymbol: string) {
+	public updatePlayerSymbols(playerSymbol: string, opponentSymbol: string): void {
 		this.playerText.text = `Jugador: ${playerSymbol}`;
 		this.opponentText.text = `Rival: ${opponentSymbol}`;
 	}

@@ -16,8 +16,10 @@ import { CollisionManager } from "../Managers/CollisionManager";
 import { SpawnManager } from "../Managers/SpawnManager";
 import { Sounds } from "../Managers/SoundManager";
 import { ObjectsNames } from "../Objects/Objects";
+import { PLAYER_SCALE_RUNFALL } from "../../../../utils/constants";
 
 export class DodgeScene extends PixiScene {
+	// #region VARIABLES
 	public static readonly BUNDLES = ["fallrungame", "sfx"];
 	// objects
 	private scoreText: Text;
@@ -37,7 +39,7 @@ export class DodgeScene extends PixiScene {
 	private spawnManager: SpawnManager;
 	// booleans
 	public isPaused: boolean = false;
-
+	// #endregion VARIABLES
 	constructor() {
 		super();
 
@@ -68,6 +70,7 @@ export class DodgeScene extends PixiScene {
 		this.backgroundContainer.addChild(this.healthBar);
 
 		this.player = new Player(this.scoreManager, this.healthBar, this.background);
+		this.player.scale.set(PLAYER_SCALE_RUNFALL);
 		this.player.x = this.background.width * 0.5;
 		this.player.y = this.background.height - this.player.height;
 		this.background.addChild(this.player);
@@ -78,9 +81,9 @@ export class DodgeScene extends PixiScene {
 		this.bottomEventContainer = this.createEventContainer(0, this.background.height, this.background.width, 400);
 		this.rightEventContainer = this.createEventContainer(this.background.width, 0, this.background.width * 0.3, this.background.height);
 		this.leftEventContainer = this.createEventContainer(-this.background.width * 0.3, 0, this.background.width * 0.3, this.background.height);
-
 		this.background.addChild(this.bottomEventContainer, this.leftEventContainer, this.rightEventContainer);
 
+		// #region UI
 		const backButton = new Button("Back", 120, 60, () => {
 			Manager.changeScene(MenuScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});
@@ -94,6 +97,8 @@ export class DodgeScene extends PixiScene {
 		pauseButton.position.set(-this.background.width * 0.5 + pauseButton.width * 0.5 + 15, -this.background.height * 0.5 + pauseButton.height * 0.5);
 
 		this.backgroundContainer.addChild(pauseButton, backButton);
+
+		// #endregion UI
 
 		this.playerController = new PlayerController(this.player);
 		this.spawnManager = new SpawnManager(this.scoreManager);
