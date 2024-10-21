@@ -6,13 +6,22 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-
+export const SERVER_PORT = 1234;
 let rooms = {}; // Almacenar los datos del juego por sala
 
 // Manejar la conexión de los sockets
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
+	socket.on('createRoom', (data) => {
+        const roomName = data.roomName;
+        // Aquí puedes crear la lógica para crear una sala
+        // Por ejemplo, agregar el nombre de la sala a un array o un objeto
+
+        // Una vez que se crea la sala, envía la confirmación
+        socket.emit('roomCreated', { roomName });
+    });
+	
     // Evento para unirse a una sala
     socket.on('joinRoom', (room) => {
         console.log(`Received request to join room: ${room}`);
@@ -100,6 +109,6 @@ io.on('connection', (socket) => {
 });
 
 // Iniciar el servidor
-server.listen(1234, () => {
-    console.log('Server is running on http://localhost:1234');
+server.listen(SERVER_PORT, () => {
+    console.log(`Server is running on http://localhost:${SERVER_PORT}`);
 });

@@ -52,3 +52,7 @@ export const ENEMY_COUNTER_POINTS: number = 50;
 
 export const SOUNDPARAMS1 = { allowOverlap: false, singleInstance: true, loop: false, volume: 0.3 };
 export const SOUNDPARAMS2 = { allowOverlap: false, singleInstance: true, loop: false, volume: 0.1 };
+
+// MULTIPLAYER TIC TAC TOE
+
+export const SERVER_PORT: number = 1234;
