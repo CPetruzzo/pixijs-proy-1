@@ -39,6 +39,8 @@ export class DodgeScene extends PixiScene {
 	private spawnManager: SpawnManager;
 	// booleans
 	public isPaused: boolean = false;
+	private pauseButton: Button;
+	private backButton: Button;
 	// #endregion VARIABLES
 	constructor() {
 		super();
@@ -84,19 +86,19 @@ export class DodgeScene extends PixiScene {
 		this.background.addChild(this.bottomEventContainer, this.leftEventContainer, this.rightEventContainer);
 
 		// #region UI
-		const backButton = new Button("Back", 120, 60, () => {
+		this.backButton = new Button("Back", 120, 60, () => {
 			Manager.changeScene(MenuScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});
-		backButton.position.set(this.background.width / 2 - backButton.width * 0.5, -this.background.height / 2 + backButton.height * 0.5);
+		this.backButton.position.set(this.background.width / 2 - this.backButton.width * 0.5, -this.background.height / 2 + this.backButton.height * 0.5);
 
-		const pauseButton = new Button("Pause", 120, 60, () => {
+		this.pauseButton = new Button("Pause", 120, 60, () => {
 			this.isPaused = !this.isPaused;
 			SoundLib.playSound(Sounds.START, {});
-			pauseButton.setLabel(this.isPaused ? "Resume" : "Pause");
+			this.pauseButton.setLabel(this.isPaused ? "Resume" : "Pause");
 		});
-		pauseButton.position.set(-this.background.width * 0.5 + pauseButton.width * 0.5 + 15, -this.background.height * 0.5 + pauseButton.height * 0.5);
+		this.pauseButton.position.set(-this.background.width * 0.5 + this.pauseButton.width * 0.5 + 15, -this.background.height * 0.5 + this.pauseButton.height * 0.5);
 
-		this.backgroundContainer.addChild(pauseButton, backButton);
+		this.backgroundContainer.addChild(this.pauseButton, this.backButton);
 
 		// #endregion UI
 
@@ -163,6 +165,8 @@ export class DodgeScene extends PixiScene {
 		if (CollisionManager.gameOver) {
 			this.openGameOverPopup();
 			this.isPaused = true;
+			this.pauseButton.visible = false;
+			this.backButton.visible = false;
 			return;
 		}
 
