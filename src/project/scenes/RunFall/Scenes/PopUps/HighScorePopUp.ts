@@ -1,16 +1,16 @@
-import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
-import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
+import { PixiScene } from "../../../../../engine/scenemanager/scenes/PixiScene";
+import { ScaleHelper } from "../../../../../engine/utils/ScaleHelper";
 import { Sprite } from "@pixi/sprite";
 import { Easing, Tween } from "tweedle.js";
 import { Graphics } from "@pixi/graphics";
-import { Keyboard } from "../../../../engine/input/Keyboard";
-import { Manager } from "../../../..";
-import { Timer } from "../../../../engine/tweens/Timer";
+import { Keyboard } from "../../../../../engine/input/Keyboard";
+import { Manager } from "../../../../..";
+import { Timer } from "../../../../../engine/tweens/Timer";
 import type { Button } from "@pixi/ui";
-import { SoundLib } from "../../../../engine/sound/SoundLib";
-import { DodgeScene } from "./DodgeScene";
+import { SoundLib } from "../../../../../engine/sound/SoundLib";
+import { DodgeScene } from "../DodgeScene";
 import { Text } from "pixi.js";
-import { Sounds } from "../Managers/SoundManager";
+import { Sounds } from "../../Managers/SoundManager";
 
 interface HighscoreEntry {
 	playerName: string;

@@ -17,21 +17,21 @@ export const MINIMAP_WIDTH = 300;
 export const MINIMAP_HEIGHT = 300;
 
 // Physics
-export const NORMAL_ACCELERATION = 0.0017;
-export const MAX_SPEED_X = 0.65;
-export const MAX_SPEED_Y = 1.1;
-export const WALK_MOVE_SPEED = 0.3;
-
 // Slingshot/Joystick
-export const SUBSTEP_COUNT = 16;
-export const MAX_SLINGSHOT_CHARGE = 300;
-export const SPEED_DIVISOR = MAX_SLINGSHOT_CHARGE * 0.75;
+export const NORMAL_ACCELERATION = 0.0017;
 export const JOYSTICK_MAXPOWER = 130; // used in joystickShoot
 export const JOYSTICK_STRENGTH_FACTOR = 0.8; // used to change shoot strength (if higher --> stronger, and viceversa)
-export const DEADZONERANGE = 0.5; // limits walk mobile movement until you surpass this percentage
 export const TRAJECTORY_POINTS = 3500;
 export const TRAJECTORY_AVERAGE_DT = 0.1005;
 export const AIM_ANIMATION_DURATION = 350;
+
+// export const MAX_SPEED_X = 0.65;
+// export const MAX_SPEED_Y = 1.1;
+// export const WALK_MOVE_SPEED = 0.3;
+// export const SUBSTEP_COUNT = 16;
+// export const MAX_SLINGSHOT_CHARGE = 300;
+// export const SPEED_DIVISOR = MAX_SLINGSHOT_CHARGE * 0.75;
+// export const DEADZONERANGE = 0.5; // limits walk mobile movement until you surpass this percentage
 
 // change this to change level from ldtk
 export const CURRENT_LEVEL: number = 0;

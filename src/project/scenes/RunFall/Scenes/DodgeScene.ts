@@ -4,12 +4,9 @@ import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
 import { Player } from "../Objects/Player";
 import type { GameObject } from "../Objects/GameObject";
 import { Manager } from "../../../..";
-import { HighScorePopUp } from "./HighScorePopUp";
+import { HighScorePopUp } from "./PopUps/HighScorePopUp";
 import { SoundLib } from "../../../../engine/sound/SoundLib";
-import { FadeColorTransition } from "../../../../engine/scenemanager/transitions/FadeColorTransition";
-import { MenuScene } from "./MenuScene";
 import { HealthBar } from "../Objects/HealthBar";
-import { Button } from "../Objects/Button";
 import { PlayerController } from "../Utils/PlayerController";
 import { ScoreManager } from "../Managers/ScoreManager";
 import { CollisionManager } from "../Managers/CollisionManager";
@@ -17,6 +14,7 @@ import { SpawnManager } from "../Managers/SpawnManager";
 import { Sounds } from "../Managers/SoundManager";
 import { ObjectsNames } from "../Objects/Objects";
 import { PLAYER_SCALE_RUNFALL } from "../../../../utils/constants";
+import { SettingsPopUp } from "./PopUps/SettingsPopUp";
 
 export class DodgeScene extends PixiScene {
 	// #region VARIABLES
@@ -39,8 +37,10 @@ export class DodgeScene extends PixiScene {
 	private spawnManager: SpawnManager;
 	// booleans
 	public isPaused: boolean = false;
-	private pauseButton: Button;
-	private backButton: Button;
+
+	private uiButton: Sprite;
+	private isPopupOpen: boolean = false;
+
 	// #endregion VARIABLES
 	constructor() {
 		super();
@@ -85,21 +85,18 @@ export class DodgeScene extends PixiScene {
 		this.leftEventContainer = this.createEventContainer(-this.background.width * 0.3, 0, this.background.width * 0.3, this.background.height);
 		this.background.addChild(this.bottomEventContainer, this.leftEventContainer, this.rightEventContainer);
 
-		// #region UI
-		this.backButton = new Button("Back", 120, 60, () => {
-			Manager.changeScene(MenuScene, { transitionClass: FadeColorTransition, transitionParams: [] });
+		// Create and position the main button to trigger the popup
+		this.uiButton = Sprite.from("coin");
+		this.uiButton.eventMode = "static";
+		this.uiButton.on("pointerdown", () => {
+			if (!this.isPopupOpen) {
+				this.isPopupOpen = true;
+
+				this.openSettingsPopup();
+			}
 		});
-		this.backButton.position.set(this.background.width / 2 - this.backButton.width * 0.5, -this.background.height / 2 + this.backButton.height * 0.5);
-
-		this.pauseButton = new Button("Pause", 120, 60, () => {
-			this.isPaused = !this.isPaused;
-			SoundLib.playSound(Sounds.START, {});
-			this.pauseButton.setLabel(this.isPaused ? "Resume" : "Pause");
-		});
-		this.pauseButton.position.set(-this.background.width * 0.5 + this.pauseButton.width * 0.5 + 15, -this.background.height * 0.5 + this.pauseButton.height * 0.5);
-
-		this.backgroundContainer.addChild(this.pauseButton, this.backButton);
-
+		this.uiButton.position.set(-this.background.width * 0.5 + this.uiButton.width * 0.5 + 15, -this.background.height * 0.5 + this.uiButton.height * 0.5);
+		this.backgroundContainer.addChild(this.uiButton);
 		// #endregion UI
 
 		this.playerController = new PlayerController(this.player);
@@ -161,16 +158,39 @@ export class DodgeScene extends PixiScene {
 		}
 	}
 
+	private async openSettingsPopup(): Promise<void> {
+		this.isPopupOpen = true;
+		this.isPaused = true;
+
+		try {
+			const popupInstance = await Manager.openPopup(SettingsPopUp);
+			if (popupInstance instanceof SettingsPopUp) {
+				popupInstance.showButtons();
+			}
+			if (popupInstance instanceof SettingsPopUp) {
+				popupInstance.on("RESUME_PAUSE", () => {
+					console.log("cerrate loco");
+					this.isPaused = false;
+					this.isPopupOpen = false;
+				});
+			}
+		} catch (error) {
+			console.error("Error opening settings popup:", error);
+		}
+	}
+
 	public override update(dt: number): void {
 		if (CollisionManager.gameOver) {
 			this.openGameOverPopup();
 			this.isPaused = true;
-			this.pauseButton.visible = false;
-			this.backButton.visible = false;
 			return;
 		}
 
 		if (this.isPaused) {
+			return;
+		}
+
+		if (this.isPopupOpen) {
 			return;
 		}
 

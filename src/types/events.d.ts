@@ -19,5 +19,8 @@ declare namespace GlobalMixins {
 		changePowerAttack: number; // se asume que el poder de ataque es un número
 		showDamage: { damage: number; textBounds: Rectangle }; // el evento lleva daño y un Rectangle
 		showAreaDamage: Point; // se asume que se pasa un punto
+
+		// RUNFALL RESUME PAUSE
+		RESUME_PAUSE: any;
 	}
 }

@@ -1,3 +1,5 @@
+import { SoundLib } from "../../../../engine/sound/SoundLib";
+
 export enum Sounds {
 	COIN = "sound_collectable",
 	ENEMY = "sound_hit",
@@ -8,5 +10,20 @@ export enum Sounds {
 	CLOSEPOPUP = "sound1",
 	START = "sound4",
 	BG_MUSIC = "sound_BGM",
-	STUN = ""
+}
+
+export class SoundManager extends SoundLib {
+	public static sfxPlaying: boolean = true;
+	public static musicPlaying: boolean = true;
+	constructor() {
+		super();
+	}
+
+	public static isSoundOn(): boolean {
+		return this.sfxPlaying;
+	}
+
+	public static isMusicOn(): boolean {
+		return this.musicPlaying;
+	}
 }

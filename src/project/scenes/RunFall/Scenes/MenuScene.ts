@@ -6,16 +6,17 @@ import { Manager } from "../../../..";
 import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
 import { FadeColorTransition } from "../../../../engine/scenemanager/transitions/FadeColorTransition";
 import { Easing, Tween } from "tweedle.js";
-import { HighScorePopUp } from "./HighScorePopUp";
+import { HighScorePopUp } from "./PopUps/HighScorePopUp";
 import { SoundLib } from "../../../../engine/sound/SoundLib";
 import { Sounds } from "../Managers/SoundManager";
+import { SoundToggleButton } from "../Utils/SoundToggleButton";
 
 export class MenuScene extends PixiScene {
 	public static readonly BUNDLES = ["package-1", "sfx", "music", "fallrungame", "runfallsfx"];
 
 	private backgroundContainer: Container;
 	private bleedingBackgroundContainer: Container;
-	private musicPaused: boolean = false;
+	private toggleSoundButton: SoundToggleButton;
 
 	constructor() {
 		super();
@@ -70,30 +71,9 @@ export class MenuScene extends PixiScene {
 			Manager.changeScene(DodgeScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});
 
-		const soundBtn = Sprite.from("soundbtn");
-		soundBtn.anchor.set(0.5);
-		soundBtn.y = -background.height * 0.5 + soundBtn.height * 0.5;
-		soundBtn.x = -background.width * 0.5 + soundBtn.width * 0.5;
-		this.backgroundContainer.addChild(soundBtn);
-		soundBtn.eventMode = "static";
-		soundBtn.on("pointerdown", () => {
-			// TODO toggleSound()
-			if (!this.musicPaused) {
-				SoundLib.pauseMusic(Sounds.BG_MUSIC);
-				this.musicPaused = true;
-				soundBtn.alpha = 0.5;
-			} else {
-				SoundLib.resumeMusic(Sounds.BG_MUSIC);
-				this.musicPaused = false;
-				soundBtn.alpha = 1;
-			}
-		});
-
-		if (!this.musicPaused) {
-			soundBtn.alpha = 0.5;
-		} else {
-			soundBtn.alpha = 1;
-		}
+		// Toggle sound button
+		this.toggleSoundButton = new SoundToggleButton(-this.backgroundContainer.width * 0.5 + 80, -this.backgroundContainer.height * 0.5 + 320);
+		this.backgroundContainer.addChild(this.toggleSoundButton);
 
 		new Tween(title)
 			.from({ y: -1500 })

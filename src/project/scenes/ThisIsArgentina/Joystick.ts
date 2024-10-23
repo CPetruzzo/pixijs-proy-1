@@ -70,7 +70,7 @@ export class Joystick extends Container {
 	}
 	private setupPlayer(): void {
 		const playerGraphics = new Graphics();
-		playerGraphics.beginFill(0xFFD700); // Color dorado para el jugador
+		playerGraphics.beginFill(0xffd700); // Color dorado para el jugador
 		playerGraphics.drawRoundedRect(0, 0, JoystickTestScene.METER_TO_PIXEL * 4.5, 6 * JoystickTestScene.METER_TO_PIXEL, 15); // Dibujar el jugador como un círculo
 		playerGraphics.endFill();
 		playerGraphics.pivot.set(playerGraphics.width * 0.5, playerGraphics.height * 0.5);
