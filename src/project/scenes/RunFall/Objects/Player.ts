@@ -25,7 +25,7 @@ export class Player extends StateMachineAnimator {
 		this.eventMode = "none";
 
 		this.addState("idle", [Texture.from("astro1"), Texture.from("astro5")], 0.2, true);
-		this.addState("move", [Texture.from("astro1"), Texture.from("astro3"), Texture.from("astro5")], 0.2, true);
+		this.addState("move", [Texture.from("astro1"), Texture.from("astro3"), Texture.from("astro5")], 0.3, true);
 
 		this.playState("idle");
 
@@ -52,6 +52,7 @@ export class Player extends StateMachineAnimator {
 	public setDirection(movingLeft: boolean): void {
 		this.scale.x = movingLeft ? -PLAYER_SCALE_RUNFALL : PLAYER_SCALE_RUNFALL;
 	}
+
 	public collectCoin(value: number): void {
 		if (value) {
 			this.scoreManager.collectCoin(value);

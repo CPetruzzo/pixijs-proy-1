@@ -77,9 +77,18 @@ export class CoinObject extends GameObject {
 	constructor() {
 		super();
 
-		const coin = Sprite.from("bronze1");
+		const coin = Sprite.from("golditem2");
+		coin.scale.set(0.8);
 		coin.anchor.set(0.5);
 		this.addChild(coin);
+
+		new Tween(coin)
+			.to({ angle: 360 }, 800)
+			.start()
+			.repeat(Infinity)
+			.easing(Easing.Quadratic.InOut)
+			.yoyo(true);
+
 	}
 
 	public update(dt: number): void {
@@ -97,10 +106,15 @@ export class PowerUpObject extends GameObject {
 	constructor() {
 		super();
 
-		const powerup = Sprite.from("spacestar");
+		const powerup = Sprite.from("golditem3");
 		powerup.anchor.set(0.5);
-		powerup.scale.set(0.15);
+		powerup.scale.set(0.8);
 		this.addChild(powerup);
+
+		new Tween(powerup)
+			.to({ angle: 360 }, 800)
+			.start()
+			.repeat(Infinity)
 
 		const effectManager = new EffectManager(powerup, undefined);
 		effectManager.speedingPowerUp(5500);

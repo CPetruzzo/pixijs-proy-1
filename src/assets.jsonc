@@ -188,9 +188,10 @@
 				"astro3": "./img/runfall/astro3.png",
 				"astro4": "./img/runfall/astro4.png",
 				"astro5": "./img/runfall/astro5.png",
-				"medkit1": "./img/runfall/medkitspace1.png"
-
-				
+				"medkit1": "./img/runfall/medkitspace1.png",
+				"golditem1": "./img/runfall/coolgolditem.png",
+				"golditem2":  "./img/runfall/goldmoon.png",
+				"golditem3":  "./img/runfall/goldstar.png"
 			}
 		},
 		{

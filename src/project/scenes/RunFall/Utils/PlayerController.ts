@@ -14,9 +14,17 @@ export class PlayerController {
 	public onKeyDown(background: any): void {
 		if (this.player.canMove) {
 			if (Keyboard.shared.isDown("ArrowLeft") || Keyboard.shared.isDown("KeyA")) {
+				if (Keyboard.shared.justPressed("ArrowLeft") || Keyboard.shared.justPressed("KeyA")) {
+					this.player.playState("move");
+				}
 				this.moveLeft();
 			} else if (Keyboard.shared.isDown("ArrowRight") || Keyboard.shared.isDown("KeyD")) {
+				if (Keyboard.shared.justPressed("ArrowRight") || Keyboard.shared.justPressed("KeyD")) {
+					this.player.playState("move");
+				}
 				this.moveRight(background);
+			} else if (Keyboard.shared.justReleased("ArrowRight") || Keyboard.shared.justReleased("KeyD") || Keyboard.shared.justReleased("ArrowLeft") || Keyboard.shared.justReleased("KeyA")) {
+				this.player.playState("idle");
 			}
 		}
 	}
@@ -24,7 +32,7 @@ export class PlayerController {
 	public onMouseMove(event: any, background: any): void {
 		if (!this.isMoving) {
 			const globalMousePosition = background.toLocal(event.data.global);
-			const targetX = Math.max(Math.min(globalMousePosition.x, background.width - this.player.width * 0.3), this.player.width * 0.3);
+			const targetX = Math.max(Math.min(globalMousePosition.x, background.width - this.player.width * 0.5), this.player.width * 0.5);
 			const distance = targetX - this.player.x;
 			this.player.movingLeft = distance < 0;
 			this.player.setDirection(this.player.movingLeft);
@@ -56,7 +64,7 @@ export class PlayerController {
 		this.isMoving = true;
 		this.player.movingLeft = true;
 		this.player.setDirection(this.player.movingLeft);
-		if (this.player.x > this.player.width * 0.3) {
+		if (this.player.x > this.player.width * 0.5) {
 			this.player.x -= this.player.speed * 15;
 		}
 	}
@@ -65,7 +73,7 @@ export class PlayerController {
 		this.isMoving = true;
 		this.player.movingLeft = false;
 		this.player.setDirection(this.player.movingLeft);
-		if (this.player.x < background.width - this.player.width * 0.3) {
+		if (this.player.x < background.width - this.player.width * 0.5) {
 			this.player.x += this.player.speed * 15;
 		}
 	}
@@ -79,6 +87,8 @@ export class PlayerController {
 		background.on("pointerup", () => {
 			if (this.isMoving) {
 				this.onMouseStop();
+			} else {
+				this.player.playState("idle");
 			}
 		});
 	}
