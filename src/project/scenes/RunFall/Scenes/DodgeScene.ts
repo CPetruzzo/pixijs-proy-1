@@ -86,7 +86,9 @@ export class DodgeScene extends PixiScene {
 		this.background.addChild(this.bottomEventContainer, this.leftEventContainer, this.rightEventContainer);
 
 		// Create and position the main button to trigger the popup
-		this.uiButton = Sprite.from("coin");
+		this.uiButton = Sprite.from("golditem1");
+		this.uiButton.scale.set(0.7);
+		this.uiButton.anchor.set(0.5);
 		this.uiButton.eventMode = "static";
 		this.uiButton.on("pointerdown", () => {
 			if (!this.isPopupOpen) {
@@ -95,7 +97,7 @@ export class DodgeScene extends PixiScene {
 				this.openSettingsPopup();
 			}
 		});
-		this.uiButton.position.set(-this.background.width * 0.5 + this.uiButton.width * 0.5 + 15, -this.background.height * 0.5 + this.uiButton.height * 0.5);
+		this.uiButton.position.set(-this.background.width * 0.5 + this.uiButton.width * 0.5, -this.background.height * 0.5 + this.uiButton.height * 0.5);
 		this.backgroundContainer.addChild(this.uiButton);
 		// #endregion UI
 

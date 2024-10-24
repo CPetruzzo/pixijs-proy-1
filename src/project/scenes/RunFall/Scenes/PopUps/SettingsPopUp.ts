@@ -11,6 +11,7 @@ import { DodgeScene } from "../DodgeScene";
 import { MenuScene } from "../MenuScene";
 import { SoundToggleButton } from "../../Utils/SoundToggleButton";
 import { Text } from "pixi.js";
+import { FadeColorTransition } from "../../../../../engine/scenemanager/transitions/FadeColorTransition";
 
 export class SettingsPopUp extends PixiScene {
 	// Assets
@@ -28,6 +29,7 @@ export class SettingsPopUp extends PixiScene {
 	public restart: boolean = false;
 	public pauseScene: boolean = false;
 	private closePopUpButton: Graphics;
+	private goToMenu: boolean = false;
 
 	constructor(_score?: number) {
 		super();
@@ -54,7 +56,7 @@ export class SettingsPopUp extends PixiScene {
 		this.menuButton.anchor.set(0.5);
 		this.menuButton.scale.set(0.5);
 		this.menuButton.interactive = true;
-		this.menuButton.on("pointerdown", this.goToMenu.bind(this));
+		this.menuButton.on("pointerdown", () => { this.handleResetClickAndLeave() });
 	}
 
 	// Método para manejar el clic en el botón de cerrar
@@ -62,7 +64,12 @@ export class SettingsPopUp extends PixiScene {
 		SoundManager.playSound(Sounds.CLOSEPOPUP, { allowOverlap: false, singleInstance: true, loop: false, volume: 0.2, speed: 0.5 });
 		this.closePopup();
 	}
-
+	// Método para manejar el clic en el botón de cerrar
+	private handleResetClickAndLeave(): void {
+		this.goToMenu = true;
+		SoundManager.playSound(Sounds.CLOSEPOPUP, { allowOverlap: false, singleInstance: true, loop: false, volume: 0.2, speed: 0.5 });
+		this.closePopupAndLeave();
+	}
 	public showButtons(): void {
 		// Create sound toggle button
 		this.background.addChild(this.soundToggleButton);
@@ -127,13 +134,10 @@ export class SettingsPopUp extends PixiScene {
 		this.menuButton.y = this.background.height * 0.5; // Adjust as needed
 	}
 
-	// Navigate to main menu
-	private goToMenu(): void {
-		Manager.changeScene(MenuScene);
-	}
-
 	public override requestClose(_doSomething?: () => void): Promise<boolean> {
 		this.closing = true;
+		this.emit("RESUME_PAUSE");
+
 		return new Promise((resolve) => {
 			this.background.interactiveChildren = false;
 
@@ -151,6 +155,10 @@ export class SettingsPopUp extends PixiScene {
 				if (this.restart) {
 					Manager.changeScene(DodgeScene);
 				}
+
+				if (this.goToMenu) {
+					Manager.changeScene(MenuScene, { transitionClass: FadeColorTransition, transitionParams: [] });
+				}
 			});
 
 			// Chain and start closing animations
@@ -161,12 +169,17 @@ export class SettingsPopUp extends PixiScene {
 
 	public closePopup(): void {
 		if (this.closing) {
-			this.emit("RESUME_PAUSE");
 			return;
 		}
 		this.requestClose();
 	}
 
+	public closePopupAndLeave(): void {
+		if (this.closing) {
+			return;
+		}
+		this.requestClose();
+	}
 	public override onResize(_newW: number, _newH: number): void {
 		// Adjust blocker size to fit new dimensions
 		this.fadeAndBlocker.width = _newW;
@@ -176,8 +189,5 @@ export class SettingsPopUp extends PixiScene {
 		ScaleHelper.setScaleRelativeToIdeal(this, _newW * 0.1, _newH * 0.1, 720, 1600, ScaleHelper.FIT);
 		this.x = _newW * 0.5;
 		this.y = _newH * 0.5;
-
-		// Reposition buttons after resizing
-		this.positionButtons();
 	}
 }
