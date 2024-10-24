@@ -82,13 +82,7 @@ export class CoinObject extends GameObject {
 		coin.anchor.set(0.5);
 		this.addChild(coin);
 
-		new Tween(coin)
-			.to({ angle: 360 }, 800)
-			.start()
-			.repeat(Infinity)
-			.easing(Easing.Quadratic.InOut)
-			.yoyo(true);
-
+		new Tween(coin).to({ angle: 360 }, 800).start().repeat(Infinity).easing(Easing.Quadratic.InOut).yoyo(true);
 	}
 
 	public update(dt: number): void {
@@ -111,10 +105,7 @@ export class PowerUpObject extends GameObject {
 		powerup.scale.set(0.8);
 		this.addChild(powerup);
 
-		new Tween(powerup)
-			.to({ angle: 360 }, 800)
-			.start()
-			.repeat(Infinity)
+		new Tween(powerup).to({ angle: 360 }, 800).start().repeat(Infinity);
 
 		const effectManager = new EffectManager(powerup, undefined);
 		effectManager.speedingPowerUp(5500);
@@ -145,7 +136,7 @@ export class ObstacleObject extends GameObject {
 	}
 
 	public update(dt: number): void {
-		if (this.y < this.parent?.height - this.height * 0.5) {
+		if (this.y < this.parent?.height - this.height * 0.5 - 100) {
 			this.y += OBJECT_SPEED * dt;
 		} else {
 			if (this.timeOnGround < this.timeToStayOnGround) {

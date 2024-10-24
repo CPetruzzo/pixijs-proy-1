@@ -1,5 +1,5 @@
 import i18next from "i18next";
-import { Sprite, Text, TextStyle, Container, Graphics } from "pixi.js";
+import { Sprite, Text, TextStyle, Container, Graphics, Texture } from "pixi.js";
 import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { DodgeScene } from "./DodgeScene";
 import { Manager } from "../../../..";
@@ -8,15 +8,15 @@ import { FadeColorTransition } from "../../../../engine/scenemanager/transitions
 import { Easing, Tween } from "tweedle.js";
 import { HighScorePopUp } from "./PopUps/HighScorePopUp";
 import { SoundLib } from "../../../../engine/sound/SoundLib";
-import { Sounds } from "../Managers/SoundManager";
-import { SoundToggleButton } from "../Utils/SoundToggleButton";
+import { SoundManager, Sounds } from "../Managers/SoundManager";
+import { ToggleSwitch } from "../Utils/toggle/ToggleSwitch";
 
 export class MenuScene extends PixiScene {
 	public static readonly BUNDLES = ["package-1", "sfx", "music", "fallrungame", "runfallsfx"];
 
 	private backgroundContainer: Container;
 	private bleedingBackgroundContainer: Container;
-	private toggleSoundButton: SoundToggleButton;
+	private toggleSwitch: ToggleSwitch;
 
 	constructor() {
 		super();
@@ -71,9 +71,35 @@ export class MenuScene extends PixiScene {
 			Manager.changeScene(DodgeScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});
 
-		// Toggle sound button
-		this.toggleSoundButton = new SoundToggleButton(-this.backgroundContainer.width * 0.5 + 80, -this.backgroundContainer.height * 0.5 + 320);
-		this.backgroundContainer.addChild(this.toggleSoundButton);
+		this.toggleSwitch = new ToggleSwitch({
+			knobTexture: "soundKnob",
+			backgroundTexture: "soundBG",
+			travelDistance: Texture.from("soundBG").width,
+			tweenDuration: 500,
+			onToggleOn: () => {
+				// Lógica para activar la música
+				if (!SoundManager.isMusicOn()) {
+					SoundManager.resumeMusic(Sounds.BG_MUSIC);
+					SoundManager.musicPlaying = true;
+				}
+				SoundManager.playSound(Sounds.START, {}); // Reproduce el sonido de feedback
+			},
+			onToggleOff: () => {
+				// Lógica para desactivar la música
+				if (SoundManager.isMusicOn()) {
+					SoundManager.pauseMusic(Sounds.BG_MUSIC);
+					SoundManager.musicPlaying = false;
+				}
+				SoundManager.playSound(Sounds.START, {}); // Reproduce el sonido de feedback
+			},
+			startingValue: SoundManager.isMusicOn(), // Sincroniza el estado inicial del interruptor con la música
+		});
+		this.toggleSwitch.anchor.set(0.5);
+		this.toggleSwitch.scale.set(0.7);
+		this.toggleSwitch.y = -this.backgroundContainer.height * 0.5 + this.toggleSwitch.height * 2.85;
+		this.toggleSwitch.x = -this.backgroundContainer.width * 0.5 + this.toggleSwitch.width * 0.5;
+
+		this.backgroundContainer.addChild(this.toggleSwitch);
 
 		new Tween(title)
 			.from({ y: -1500 })

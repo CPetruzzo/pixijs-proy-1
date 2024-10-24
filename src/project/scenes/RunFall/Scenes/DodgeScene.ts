@@ -60,21 +60,21 @@ export class DodgeScene extends PixiScene {
 
 		this.background.filters = [];
 
-		this.scoreText = new Text(`Score: 0`, { fontSize: 55, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
+		this.scoreText = new Text(`Score: 0`, { fontSize: 75, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
 		this.scoreText.anchor.set(0.5);
-		this.scoreText.position.set(0, -this.background.height * 0.48);
+		this.scoreText.position.set(0, -this.background.height * 0.47);
 		this.backgroundContainer.addChild(this.scoreText);
 
 		this.scoreManager = new ScoreManager(this.scoreText);
 
 		this.healthBar = new HealthBar(3, 350, 30);
-		this.healthBar.position.set(-this.healthBar.width * 0.5, this.background.height * 0.5 - 50);
+		this.healthBar.position.set(-this.healthBar.width * 0.5, -this.background.height * 0.5 + 150);
 		this.backgroundContainer.addChild(this.healthBar);
 
 		this.player = new Player(this.scoreManager, this.healthBar, this.background);
 		this.player.scale.set(PLAYER_SCALE_RUNFALL);
 		this.player.x = this.background.width * 0.5;
-		this.player.y = this.background.height - this.player.height;
+		this.player.y = this.background.height - this.player.height * 1.5;
 		this.background.addChild(this.player);
 
 		this.background.eventMode = "static";
@@ -86,8 +86,8 @@ export class DodgeScene extends PixiScene {
 		this.background.addChild(this.bottomEventContainer, this.leftEventContainer, this.rightEventContainer);
 
 		// Create and position the main button to trigger the popup
-		this.uiButton = Sprite.from("golditem1");
-		this.uiButton.scale.set(0.7);
+		this.uiButton = Sprite.from("config");
+		// this.uiButton.scale.set(0.7);
 		this.uiButton.anchor.set(0.5);
 		this.uiButton.eventMode = "static";
 		this.uiButton.on("pointerdown", () => {
@@ -118,7 +118,7 @@ export class DodgeScene extends PixiScene {
 		this.objects.forEach((obj) => {
 			obj.update(dt);
 
-			if (obj.y >= this.background.height - obj.height * 0.5) {
+			if (obj.y >= this.background.height - obj.height * 0.5 - this.player.height * 0.5) {
 				if (obj.name === ObjectsNames.OBSTACLE) {
 					if (obj.isOnGround) {
 						if (CollisionManager.checkCollision(this.player, obj)) {
@@ -185,6 +185,7 @@ export class DodgeScene extends PixiScene {
 		if (CollisionManager.gameOver) {
 			this.openGameOverPopup();
 			this.isPaused = true;
+			this.uiButton.visible = false;
 			return;
 		}
 

@@ -9,17 +9,16 @@ import type { Button } from "@pixi/ui";
 import { SoundManager, Sounds } from "../../Managers/SoundManager";
 import { DodgeScene } from "../DodgeScene";
 import { MenuScene } from "../MenuScene";
-import { SoundToggleButton } from "../../Utils/SoundToggleButton";
-import { Text } from "pixi.js";
+import { Text, Texture } from "pixi.js";
 import { FadeColorTransition } from "../../../../../engine/scenemanager/transitions/FadeColorTransition";
+import { ToggleSwitch } from "../../Utils/toggle/ToggleSwitch";
 
 export class SettingsPopUp extends PixiScene {
 	// Assets
 	private fadeAndBlocker: Graphics;
 	public background: Sprite;
 	public buttons: Button[];
-	private soundToggleButton: SoundToggleButton;
-	private menuButton: Sprite;
+	private menuButton: Graphics;
 	// Level data
 	public readonly level: any;
 	public levelNumber: number;
@@ -30,6 +29,7 @@ export class SettingsPopUp extends PixiScene {
 	public pauseScene: boolean = false;
 	private closePopUpButton: Graphics;
 	private goToMenu: boolean = false;
+	private toggleSwitch: ToggleSwitch;
 
 	constructor(_score?: number) {
 		super();
@@ -49,14 +49,31 @@ export class SettingsPopUp extends PixiScene {
 		this.background.anchor.set(0.5);
 		this.addChild(this.background);
 
-		this.soundToggleButton = new SoundToggleButton(-100, 0);
-
-		// Create menu button to go back to main menu
-		this.menuButton = Sprite.from("asteroidFragment");
-		this.menuButton.anchor.set(0.5);
-		this.menuButton.scale.set(0.5);
-		this.menuButton.interactive = true;
-		this.menuButton.on("pointerdown", () => { this.handleResetClickAndLeave() });
+		this.toggleSwitch = new ToggleSwitch({
+			knobTexture: "soundKnob",
+			backgroundTexture: "soundBG",
+			travelDistance: Texture.from("soundBG").width,
+			tweenDuration: 500,
+			onToggleOn: () => {
+				// Lógica para activar la música
+				if (!SoundManager.isMusicOn()) {
+					SoundManager.resumeMusic(Sounds.BG_MUSIC);
+					SoundManager.musicPlaying = true;
+				}
+				SoundManager.playSound(Sounds.START, {}); // Reproduce el sonido de feedback
+			},
+			onToggleOff: () => {
+				// Lógica para desactivar la música
+				if (SoundManager.isMusicOn()) {
+					SoundManager.pauseMusic(Sounds.BG_MUSIC);
+					SoundManager.musicPlaying = false;
+				}
+				SoundManager.playSound(Sounds.START, {}); // Reproduce el sonido de feedback
+			},
+			startingValue: SoundManager.isMusicOn(), // Sincroniza el estado inicial del interruptor con la música
+		});
+		this.toggleSwitch.anchor.set(0.5, 1.25);
+		// this.toggleSwitch.scale.set(0.8);
 	}
 
 	// Método para manejar el clic en el botón de cerrar
@@ -71,10 +88,7 @@ export class SettingsPopUp extends PixiScene {
 		this.closePopupAndLeave();
 	}
 	public showButtons(): void {
-		// Create sound toggle button
-		this.background.addChild(this.soundToggleButton);
-		this.background.addChild(this.menuButton);
-		this.positionButtons();
+		this.background.addChild(this.toggleSwitch);
 
 		// Mostrar el botón de reinicio
 		this.closePopUpButton = new Graphics();
@@ -93,6 +107,25 @@ export class SettingsPopUp extends PixiScene {
 		tryagain.anchor.set(0.5);
 		// tryagain.anchor.set(0.5);
 		this.closePopUpButton.addChild(tryagain);
+
+		this.menuButton = new Graphics();
+		this.menuButton.beginFill(0x808080);
+		this.menuButton.drawRoundedRect(0, -275, 350, 150, 50);
+		this.menuButton.endFill();
+		this.menuButton.pivot.set(this.menuButton.width * 0.5, this.menuButton.height * 0.5);
+		this.menuButton.eventMode = "static";
+		this.menuButton.position.set(this.background.width * 0.5, this.background.height + 350); // Posiciona el botón según sea necesario
+		this.menuButton.on("pointertap", () => {
+			this.handleResetClickAndLeave();
+		});
+		this.background.addChild(this.menuButton); // Agrega el botón al background
+
+		const returnButton = new Text("To Menu", { fontSize: 70, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
+		returnButton.y = this.closePopUpButton.height * 0.5 - 275;
+		returnButton.x = this.closePopUpButton.width * 0.5;
+		returnButton.anchor.set(0.5);
+		// returnButton.anchor.set(0.5);
+		this.menuButton.addChild(returnButton);
 	}
 
 	public override onStart(): void {
@@ -126,12 +159,6 @@ export class SettingsPopUp extends PixiScene {
 
 		// Position buttons
 		// this.positionButtons();
-	}
-
-	private positionButtons(): void {
-		// Position the menu button
-		this.menuButton.x = 0; // Adjust as needed
-		this.menuButton.y = this.background.height * 0.5; // Adjust as needed
 	}
 
 	public override requestClose(_doSomething?: () => void): Promise<boolean> {
