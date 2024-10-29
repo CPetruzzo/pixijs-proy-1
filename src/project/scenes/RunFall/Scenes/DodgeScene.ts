@@ -13,8 +13,9 @@ import { CollisionManager } from "../Managers/CollisionManager";
 import { SpawnManager } from "../Managers/SpawnManager";
 import { Sounds } from "../Managers/SoundManager";
 import { ObjectsNames } from "../Objects/Objects";
-import { PLAYER_SCALE_RUNFALL } from "../../../../utils/constants";
+import { PLAYER_SCALE_RUNFALL, REMOVE_OBJECT_TIME } from "../../../../utils/constants";
 import { SettingsPopUp } from "./PopUps/SettingsPopUp";
+import { Tween } from "tweedle.js";
 
 export class DodgeScene extends PixiScene {
 	// #region VARIABLES
@@ -129,6 +130,13 @@ export class DodgeScene extends PixiScene {
 						}
 					}
 					obj.handleEvent(this.player);
+				} else if (obj.name === ObjectsNames.ALIEN_SHIP) {
+					if (obj.shipDead) {
+						if (CollisionManager.checkCollision(this.player, obj)) {
+							(obj as any).stopShooting();
+						}
+					}
+					obj.handleEvent(this.player);
 				} else {
 					this.removeObject(obj);
 				}
@@ -142,8 +150,13 @@ export class DodgeScene extends PixiScene {
 
 	private removeObject(obj: GameObject): void {
 		const objIndex = this.objects.indexOf(obj);
+		new Tween(this.objects[objIndex])
+			.to({ alpha: 0 }, REMOVE_OBJECT_TIME)
+			.start()
+			.onComplete(() => {
+				this.background.removeChild(obj);
+			});
 		this.objects.splice(objIndex, 1);
-		this.background.removeChild(obj);
 	}
 
 	private async openGameOverPopup(): Promise<void> {

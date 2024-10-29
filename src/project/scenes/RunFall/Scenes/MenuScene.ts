@@ -90,7 +90,7 @@ export class MenuScene extends PixiScene {
 					SoundManager.pauseMusic(Sounds.BG_MUSIC);
 					SoundManager.musicPlaying = false;
 				}
-				SoundManager.playSound(Sounds.START, {}); // Reproduce el sonido de feedback
+				SoundManager.playSound(Sounds.CLOSEPOPUP, {}); // Reproduce el sonido de feedback
 			},
 			startingValue: SoundManager.isMusicOn(), // Sincroniza el estado inicial del interruptor con la música
 		});

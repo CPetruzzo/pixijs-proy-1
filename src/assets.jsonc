@@ -197,6 +197,8 @@
 				"soundBG":  "./img/runfall/fondoknob.png",
 				"soundKnob":  "./img/runfall/soundknob.png",
 				"config":  "./img/runfall/config.png",
+				"spaceship":  "./img/runfall/starship.png",
+				"shoot":  "./img/runfall/shoot.png",
 				"return": "./img/runfall/return.png"
 			}
 		},
