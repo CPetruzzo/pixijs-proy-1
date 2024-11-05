@@ -209,6 +209,13 @@
 				"basquetcourt": "./img/basquetball/court.webp",
 				"basketnet": "./img/basquetball/basketnet.png",
 				"basketrim": "./img/basquetball/rim.png",
+				"cachobasket": "./img/basquetball/cachobasket.jpg",
+				"returnbasket": "./img/basquetball/returnbasket.png",
+				"gameover": "./img/basquetball/gameover.jpg",
+				"info": "./img/basquetball/info.png",
+				"play": "./img/basquetball/play.png",
+				"pause": "./img/basquetball/pause.png",
+				"sound": "./img/basquetball/sound.png",
 				"bounce": "./sfx/basketballBounce.wav",
 				"hitRim": "./sfx/basketballHitRim.wav",
 				"courtBGM": "./sfx/basketballBGM.wav"
