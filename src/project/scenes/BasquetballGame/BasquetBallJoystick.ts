@@ -1,9 +1,9 @@
-import { Graphics } from "pixi.js";
+import type { Graphics } from "pixi.js";
 import { Sprite, Container, Point } from "pixi.js";
 import { isMobile } from "../../..";
 import { joystickComponentX, joystickComponentY } from "../../../utils/FunctionUtils";
 import { JOYSTICK_MAXPOWER } from "../../../utils/constants";
-import { JoystickBasquetBallPlayer } from "./JoystickBasquetBallPlayer";
+import type { JoystickBasquetBallPlayer } from "./JoystickBasquetBallPlayer";
 
 export interface JoystickParams {
 	inner: Sprite;

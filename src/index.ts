@@ -13,7 +13,7 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
-import { BasquetballGameScene } from "./project/scenes/BasquetballGame/BasquetballGameScene";
+import { BasquetballMainScene } from "./project/scenes/BasquetballGame/BasquetballMainScene";
 // import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
 
 settings.RENDER_OPTIONS.hello = false;
@@ -77,7 +77,7 @@ window.dispatchEvent(new Event("resize"));
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
 	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
-	Manager.changeScene(BasquetballGameScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(BasquetballMainScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

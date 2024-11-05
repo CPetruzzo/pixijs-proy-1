@@ -5,7 +5,7 @@ import { BasquetballGameScene } from "./BasquetballGameScene";
 
 export class JoystickBasquetBallPlayer extends Container {
 	public rigidBody: RigidBody;
-	public collider: Collider; // Haz que el collider sea público
+	public collider: Collider;
 	public world: World;
 
 	constructor(world: World) {
@@ -18,16 +18,15 @@ export class JoystickBasquetBallPlayer extends Container {
 		this.pivot.set(this.width * 0.5, this.height * 0.5);
 		const rigidBodyDesc = RigidBodyDesc.dynamic()
 			.setTranslation(this.x / BasquetballGameScene.METER_TO_PIXEL, this.y / BasquetballGameScene.METER_TO_PIXEL)
-			.lockRotations()
-			;
+			.lockRotations();
 		this.rigidBody = world.createRigidBody(rigidBodyDesc);
 
 		const colliderDesc = ColliderDesc.ball(4);
-		this.collider = this.world.createCollider(colliderDesc, this.rigidBody); // Asigna el collider
+		this.collider = this.world.createCollider(colliderDesc, this.rigidBody);
 	}
 
 	public shootHim(charge: { x: number; y: number }): void {
-		const force = new Vector2(-charge.x * 2300, -charge.y * 2300); // Aumenta el factor
+		const force = new Vector2(-charge.x * 2300, -charge.y * 2300);
 		this.rigidBody.applyImpulse(force, true);
 	}
 
