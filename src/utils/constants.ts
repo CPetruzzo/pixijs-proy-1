@@ -20,7 +20,7 @@ export const MINIMAP_HEIGHT = 300;
 // Slingshot/Joystick
 export const NORMAL_ACCELERATION = 0.0017;
 export const JOYSTICK_MAXPOWER = 130; // used in joystickShoot
-export const JOYSTICK_STRENGTH_FACTOR = 0.8; // used to change shoot strength (if higher --> stronger, and viceversa)
+export const JOYSTICK_STRENGTH_FACTOR = 1.5; // used to change shoot strength (if higher --> stronger, and viceversa)
 export const TRAJECTORY_POINTS = 3500;
 export const TRAJECTORY_AVERAGE_DT = 0.1005;
 export const AIM_ANIMATION_DURATION = 350;

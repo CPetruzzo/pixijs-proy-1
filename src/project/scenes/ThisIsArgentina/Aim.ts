@@ -106,4 +106,7 @@ export class Aim extends Container {
 			angle: joystickData.angle,
 		});
 	}
+
+	public stopUpdate(): void {
+	}
 }

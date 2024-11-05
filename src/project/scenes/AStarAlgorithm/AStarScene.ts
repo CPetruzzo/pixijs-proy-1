@@ -60,7 +60,7 @@ export class AStarScene extends PixiScene {
 				this.gameContainer.addChild(tile);
 
 				// Detectar clic en cada tile
-				tile.interactive = true;
+				tile.eventMode = "static";
 				tile.on("pointerdown", () => {
 					this.onTileClick(x, y);
 				});

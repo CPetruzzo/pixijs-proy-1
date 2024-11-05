@@ -3,8 +3,7 @@ import { Sprite, Container, Point } from "pixi.js";
 import { isMobile } from "../../..";
 import { joystickComponentX, joystickComponentY } from "../../../utils/FunctionUtils";
 import { JOYSTICK_MAXPOWER } from "../../../utils/constants";
-import type { JoystickPlayer } from "./Classes/JoystickPlayer";
-import { JoystickTestScene } from "./JoystickTestScene";
+import { JoystickBasquetBallPlayer } from "./JoystickBasquetBallPlayer";
 
 export interface JoystickParams {
 	inner: Sprite;
@@ -28,7 +27,7 @@ export enum JoystickEmits {
 	HOOK = "HOOK",
 }
 
-export class Joystick extends Container {
+export class BasquetBallJoystick extends Container {
 	private player: Graphics | any;
 	private joystickBG: Sprite;
 	private joystickHandle: Sprite;
@@ -46,7 +45,7 @@ export class Joystick extends Container {
 	private clickZone: Sprite;
 	private isAnchored: boolean;
 
-	constructor(player: JoystickPlayer | Graphics | any) {
+	constructor(player: JoystickBasquetBallPlayer | Graphics | any) {
 		super();
 		this.player = player;
 		this.joystickParams = this.createDefaultParams();
@@ -64,17 +63,8 @@ export class Joystick extends Container {
 
 		this.setupJoystick();
 		this.setupEventListeners();
-		this.setupPlayer();
 
 		this.on(JoystickEmits.JOYSTICKUP as any, this.handleJoystickUp);
-	}
-	private setupPlayer(): void {
-		const playerGraphics = new Graphics();
-		playerGraphics.beginFill(0xffd700); // Color dorado para el jugador
-		playerGraphics.drawRoundedRect(0, 0, JoystickTestScene.METER_TO_PIXEL * 4.5, 6 * JoystickTestScene.METER_TO_PIXEL, 15); // Dibujar el jugador como un círculo
-		playerGraphics.endFill();
-		playerGraphics.pivot.set(playerGraphics.width * 0.5, playerGraphics.height * 0.5);
-		this.player.addChild(playerGraphics);
 	}
 
 	private setupClickContainer(): void {

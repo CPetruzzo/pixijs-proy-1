@@ -1,7 +1,7 @@
 import type { RigidBody, World } from "@dimforge/rapier2d";
 import { ColliderDesc, RigidBodyDesc, Vector2 } from "@dimforge/rapier2d";
 import { Container } from "pixi.js";
-import { JoystickTestScene } from "../../JoystickTestScene";
+import { JoystickTestScene } from "../JoystickTestScene";
 
 export class JoystickPlayer extends Container {
 	private rigidBody: RigidBody;
@@ -21,7 +21,7 @@ export class JoystickPlayer extends Container {
 		rigidBodyDesc.mass = 25;
 		this.rigidBody = world.createRigidBody(rigidBodyDesc);
 
-		const colliderDesc = ColliderDesc.roundCuboid(0.5, 1, 2);
+		const colliderDesc = ColliderDesc.ball(4);
 		colliderDesc.rotation = 0;
 		this.world.createCollider(colliderDesc, this.rigidBody);
 	}

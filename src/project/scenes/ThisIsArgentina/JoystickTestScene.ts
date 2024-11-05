@@ -1,14 +1,14 @@
-import { PixiScene } from "../../engine/scenemanager/scenes/PixiScene";
-import { Joystick, JoystickEmits } from "./ThisIsArgentina/Joystick";
-import { Aim } from "./ThisIsArgentina/Aim";
-import { JoystickPlayer } from "./ThisIsArgentina/Classes/JoystickPlayer";
+import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
+import { Joystick, JoystickEmits } from "./Joystick";
+import { Aim } from "./Aim";
+import { JoystickPlayer } from "./Classes/JoystickPlayer";
 import { RigidBodyDesc } from "@dimforge/rapier2d";
 import { World, Vector2, ColliderDesc } from "@dimforge/rapier2d";
 import { Container, Graphics, Sprite } from "pixi.js";
-import { ObjectPool } from "../../engine/objectpool/ObjectPool";
-import { ScaleHelper } from "../../engine/utils/ScaleHelper";
+import { ObjectPool } from "../../../engine/objectpool/ObjectPool";
+import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Color } from "@pixi/core";
-import { Camera2D } from "../../utils/Camera2D";
+import { Camera2D } from "../../../utils/Camera2D";
 
 export class JoystickTestScene extends PixiScene {
 	private joystick: Joystick;
