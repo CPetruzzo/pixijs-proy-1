@@ -41,11 +41,12 @@ export const PLAYER_SCALE: number = 0.09;
 // runfall
 export const PLAYER_SPEED: number = 0.5;
 export const OBJECT_SPEED: number = 0.5;
-export const PLAYER_SCALE_RUNFALL: number = 0.6;
+export const PLAYER_SCALE_RUNFALL: number = 0.65;
 
 export const BLUR_TIME: number = 1500;
 export const STUN_TIME: number = 2000;
 export const SPEEDUP_TIME: number = 5500;
+export const REMOVE_OBJECT_TIME: number = 250;
 
 export const COIN_POINTS: number = 50;
 export const POTION_POINTS: number = 10;

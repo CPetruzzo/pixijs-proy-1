@@ -13,11 +13,14 @@ export class Player extends StateMachineAnimator {
 	public speed: number;
 	public aux: Graphics;
 	public effectManager: EffectManager;
+	private isShielded: boolean = false;
+	private shieldDuration: number = 5000; // Duración de la inmunidad en milisegundos
 	constructor(public scoreManager: ScoreManager, public healthBar: HealthBar, public background: Sprite) {
 		super();
 		this.scoreManager = scoreManager;
 		this.healthBar = healthBar;
 		this.effectManager = new EffectManager(this, background);
+		console.log("isShielded", this.isShielded);
 
 		this.speed = PLAYER_SPEED;
 
@@ -94,5 +97,15 @@ export class Player extends StateMachineAnimator {
 	public collideWithObstacle(): void {
 		this.effectManager.causeStun(STUN_TIME);
 		this.stopMovement();
+	}
+
+	public applyShield(): void {
+		this.isShielded = true;
+		console.log("Inmunidad activada");
+
+		setTimeout(() => {
+			this.isShielded = false;
+			console.log("Inmunidad desactivada");
+		}, this.shieldDuration);
 	}
 }

@@ -30,6 +30,7 @@ export class SettingsPopUp extends PixiScene {
 	private closePopUpButton: Graphics;
 	private goToMenu: boolean = false;
 	private toggleSwitch: ToggleSwitch;
+	private closePopUpBoolean: boolean = false;
 
 	constructor(_score?: number) {
 		super();
@@ -68,7 +69,7 @@ export class SettingsPopUp extends PixiScene {
 					SoundManager.pauseMusic(Sounds.BG_MUSIC);
 					SoundManager.musicPlaying = false;
 				}
-				SoundManager.playSound(Sounds.START, {}); // Reproduce el sonido de feedback
+				SoundManager.playSound(Sounds.CLOSEPOPUP, {}); // Reproduce el sonido de feedback
 			},
 			startingValue: SoundManager.isMusicOn(), // Sincroniza el estado inicial del interruptor con la música
 		});
@@ -78,6 +79,7 @@ export class SettingsPopUp extends PixiScene {
 
 	// Método para manejar el clic en el botón de cerrar
 	private handleResetClick(): void {
+		this.closePopUpBoolean = true;
 		SoundManager.playSound(Sounds.CLOSEPOPUP, { allowOverlap: false, singleInstance: true, loop: false, volume: 0.2, speed: 0.5 });
 		this.closePopup();
 	}
@@ -101,12 +103,12 @@ export class SettingsPopUp extends PixiScene {
 		this.closePopUpButton.on("pointertap", this.handleResetClick, this); // Agrega un manejador de eventos al hacer clic en el botón
 		this.background.addChild(this.closePopUpButton); // Agrega el botón al background
 
-		const tryagain = new Text("Close", { fontSize: 70, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
-		tryagain.y = this.closePopUpButton.height * 0.5;
-		tryagain.x = this.closePopUpButton.width * 0.5;
-		tryagain.anchor.set(0.5);
+		const closepopup = new Text("Continue", { fontSize: 70, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
+		closepopup.y = this.closePopUpButton.height * 0.5;
+		closepopup.x = this.closePopUpButton.width * 0.5;
+		closepopup.anchor.set(0.5);
 		// tryagain.anchor.set(0.5);
-		this.closePopUpButton.addChild(tryagain);
+		this.closePopUpButton.addChild(closepopup);
 
 		this.menuButton = new Graphics();
 		this.menuButton.beginFill(0x808080);
@@ -163,7 +165,6 @@ export class SettingsPopUp extends PixiScene {
 
 	public override requestClose(_doSomething?: () => void): Promise<boolean> {
 		this.closing = true;
-		this.emit("RESUME_PAUSE");
 
 		return new Promise((resolve) => {
 			this.background.interactiveChildren = false;
@@ -182,14 +183,20 @@ export class SettingsPopUp extends PixiScene {
 				if (this.restart) {
 					Manager.changeScene(DodgeScene);
 				}
-
-				if (this.goToMenu) {
-					Manager.changeScene(MenuScene, { transitionClass: FadeColorTransition, transitionParams: [] });
-				}
 			});
 
 			// Chain and start closing animations
 			elasticAnimation.chain(fadeAnimation);
+			elasticAnimation.onComplete(() => {
+				if (this.goToMenu) {
+					this.emit("RESUME_PAUSE");
+					Manager.changeScene(MenuScene, { transitionClass: FadeColorTransition, transitionParams: [] });
+				}
+
+				if (this.closePopUpBoolean) {
+					this.emit("RESUME_PAUSE");
+				}
+			});
 			elasticAnimation.start();
 		});
 	}
