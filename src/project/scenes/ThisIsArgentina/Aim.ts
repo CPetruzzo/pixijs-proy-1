@@ -43,8 +43,8 @@ export class Aim extends Container {
 			if (i % 250 != 0) {
 				continue;
 			}
-			const point = Sprite.from("collectable");
-			point.scale.set(0.2);
+			const point = Sprite.from("basquetball");
+			point.scale.set(0.03);
 			point.anchor.set(0.5);
 			const posX = -this.currentSpeedValues.x * TRAJECTORY_AVERAGE_DT * i;
 			const posY = -this.currentSpeedValues.y * TRAJECTORY_AVERAGE_DT * i + (this.currentSpeedValues.acceleration * Math.pow(TRAJECTORY_AVERAGE_DT * i, 2)) / 2;
@@ -85,7 +85,7 @@ export class Aim extends Container {
 					.start();
 			} else {
 				point.alpha = 0.5;
-				point.scale.set(0.4);
+				point.scale.set(0.07);
 			}
 		});
 	}
@@ -107,6 +107,6 @@ export class Aim extends Container {
 		});
 	}
 
-	public stopUpdate(): void {
-	}
+	// eslint-disable-next-line prettier/prettier
+	public stopUpdate(): void { }
 }
