@@ -8,7 +8,7 @@ import { FadeColorTransition } from "../../../engine/scenemanager/transitions/Fa
 import { Easing, Tween } from "tweedle.js";
 
 export class BasquetballMainScene extends PixiScene {
-	public static readonly BUNDLES = ["joystick", "basquet"];
+	public static readonly BUNDLES = ["joystick", "basquet", "runfallsfx"];
 	private backgroundContainer: Container = new Container();
 
 	constructor() {

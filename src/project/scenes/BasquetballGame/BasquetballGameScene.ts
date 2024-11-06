@@ -18,7 +18,7 @@ export class BasquetballGameScene extends PixiScene {
 	private player: JoystickBasquetBallPlayer;
 	private aim: Aim;
 	public world: World;
-	public static readonly BUNDLES = ["joystick", "basquet", "fallrungame", "runfallsfx"];
+	public static readonly BUNDLES = ["joystick", "basquet", "runfallsfx"];
 	private worldContainer: Container = new Container();
 	private backgroundContainer: Container = new Container();
 	public static readonly METER_TO_PIXEL = 10.0;
