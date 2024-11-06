@@ -18,24 +18,36 @@ export class BasquetballMainScene extends PixiScene {
 
 		SoundLib.playMusic("courtBGM", { loop: true, volume: 0.3, singleInstance: true });
 
-		const bG = Sprite.from("cachobasket");
+		const bG = Sprite.from("cachobasketball");
 		bG.anchor.set(0.5);
-		bG.scale.set(1.1);
-		bG.x = 580;
+		bG.scale.set(1.2);
+		bG.x = 1170;
 		bG.y = 590;
 		this.backgroundContainer.addChild(bG);
 
 		const play = Sprite.from("play");
 		play.anchor.set(0.5);
-		play.scale.set(1.1);
-		play.x = 570;
-		play.y = 910;
+		play.scale.set(1.2);
+		play.x = 1160;
+		play.y = 937;
 		this.backgroundContainer.addChild(play);
 
 		play.eventMode = "static";
-		play.on("pointertap", () => {
+		play.on("pointerover", () => {
+			new Tween(play)
+				.to({ scale: { x: 1.3, y: 1.3 } }, 500)
+				.easing(Easing.Bounce.Out)
+				.start();
+		});
+		play.on("pointerout", () => {
 			new Tween(play)
 				.to({ scale: { x: 1.2, y: 1.2 } }, 500)
+				.easing(Easing.Bounce.Out)
+				.start();
+		});
+		play.on("pointertap", () => {
+			new Tween(play)
+				.to({ scale: { x: 1.3, y: 1.3 } }, 500)
 				.easing(Easing.Bounce.Out)
 				.start();
 			SoundLib.playSound("bounce", {});

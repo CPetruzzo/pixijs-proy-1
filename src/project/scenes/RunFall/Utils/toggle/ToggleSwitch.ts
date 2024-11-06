@@ -29,7 +29,7 @@ export class ToggleSwitch extends Toggle {
 	}
 
 	private content: Container;
-	private knob: Sprite;
+	public knob: Sprite;
 	private middle: Sprite;
 	private background: Sprite;
 	private distance: number;

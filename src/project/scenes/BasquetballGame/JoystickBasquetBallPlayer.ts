@@ -13,7 +13,7 @@ export class JoystickBasquetBallPlayer extends Container {
 		this.world = world;
 
 		this.position.x = 1100;
-		this.position.y = 850;
+		this.position.y = 550;
 
 		this.pivot.set(this.width * 0.5, this.height * 0.5);
 		const rigidBodyDesc = RigidBodyDesc.dynamic()
