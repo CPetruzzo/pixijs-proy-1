@@ -38,6 +38,7 @@ export class BasquetballMainScene extends PixiScene {
 				.to({ scale: { x: 1.3, y: 1.3 } }, 500)
 				.easing(Easing.Bounce.Out)
 				.start();
+			SoundLib.playSound("bounce", {});
 		});
 		play.on("pointerout", () => {
 			new Tween(play)

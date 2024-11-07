@@ -12,9 +12,8 @@ export class JoystickBasquetBallPlayer extends Container {
 		super();
 		this.world = world;
 
-		this.position.x = 1100;
-		this.position.y = 550;
-
+		this.position.x = 1500;
+		this.position.y = 1150;
 		this.pivot.set(this.width * 0.5, this.height * 0.5);
 		const rigidBodyDesc = RigidBodyDesc.dynamic()
 			.setTranslation(this.x / BasquetballGameScene.METER_TO_PIXEL, this.y / BasquetballGameScene.METER_TO_PIXEL)
@@ -23,6 +22,15 @@ export class JoystickBasquetBallPlayer extends Container {
 
 		const colliderDesc = ColliderDesc.ball(4);
 		this.collider = this.world.createCollider(colliderDesc, this.rigidBody);
+	}
+
+	public spawnPlayer(): void {
+		this.position.x = 1500;
+		this.position.y = 1150;
+		this.rigidBody.translation().x = 1500 / BasquetballGameScene.METER_TO_PIXEL;
+		this.rigidBody.translation().y = 1150 / BasquetballGameScene.METER_TO_PIXEL;
+		this.rigidBody.linvel().y = 0;
+		this.rigidBody.linvel().x = 0;
 	}
 
 	public shootHim(charge: { x: number; y: number }): void {

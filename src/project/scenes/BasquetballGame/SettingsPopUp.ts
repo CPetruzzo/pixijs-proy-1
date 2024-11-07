@@ -64,7 +64,19 @@ export class SettingsPopUp extends PixiScene {
 		this.closePopUpButton = Sprite.from("play");
 		this.closePopUpButton.eventMode = "static";
 		this.closePopUpButton.anchor.set(0.5);
-		this.closePopUpButton.position.set(this.background.width * 0.5 - this.closePopUpButton.width * 0.5, this.background.height * 0.5); // Posiciona el botón según sea necesario
+		this.closePopUpButton.position.set(this.background.width * 0.5 - this.closePopUpButton.width * 0.6, this.background.height * 0.5); // Posiciona el botón según sea necesario
+		this.closePopUpButton.on("pointerover", () => {
+			new Tween(this.closePopUpButton)
+				.to({ scale: { x: 1.05, y: 1.05 } }, 300)
+				.easing(Easing.Bounce.Out)
+				.start();
+		});
+		this.closePopUpButton.on("pointerout", () => {
+			new Tween(this.closePopUpButton)
+				.to({ scale: { x: 1, y: 1 } }, 300)
+				.easing(Easing.Bounce.Out)
+				.start();
+		});
 		this.closePopUpButton.on("pointertap", this.handleResetClick, this); // Agrega un manejador de eventos al hacer clic en el botón
 		this.background.addChild(this.closePopUpButton); // Agrega el botón al background
 
@@ -74,6 +86,18 @@ export class SettingsPopUp extends PixiScene {
 		this.menuButton.position.set(this.background.width * 0.5 + this.menuButton.width * 0.5, this.background.height * 0.5); // Posiciona el botón según sea necesario
 		this.menuButton.on("pointertap", () => {
 			this.handleResetClickAndLeave();
+		});
+		this.menuButton.on("pointerover", () => {
+			new Tween(this.menuButton)
+				.to({ scale: { x: 1.05, y: 1.05 } }, 300)
+				.easing(Easing.Bounce.Out)
+				.start();
+		});
+		this.menuButton.on("pointerout", () => {
+			new Tween(this.menuButton)
+				.to({ scale: { x: 1, y: 1 } }, 300)
+				.easing(Easing.Bounce.Out)
+				.start();
 		});
 		this.background.addChild(this.menuButton); // Agrega el botón al background
 	}
@@ -88,7 +112,21 @@ export class SettingsPopUp extends PixiScene {
 		// Fade and scale animations
 		const fadeScale = new Tween(this.fadeAndBlocker).to({ scale: { x: 35, y: 15 } });
 		const fadeAnimation = new Tween(this.fadeAndBlocker).to({ alpha: 1 }, 500);
-		const elasticAnimation = new Tween(this.background).to({ scale: { x: 20, y: 20 } }, 1000).easing(Easing.Elastic.Out);
+		const elasticAnimation = new Tween(this.background)
+			.from({
+				scale: { x: 20, y: 20 },
+				y: 8000,
+				alpha: 0,
+			})
+			.to(
+				{
+					scale: { x: 20, y: 20 },
+					y: 0,
+					alpha: 1,
+				},
+				1000
+			)
+			.easing(Easing.Elastic.Out);
 
 		// Play sound when animation starts
 		elasticAnimation.onStart(() => {
@@ -119,7 +157,16 @@ export class SettingsPopUp extends PixiScene {
 
 			// Fade out and scale down animations
 			const fadeAnimation = new Tween(this.fadeAndBlocker).to({ alpha: 0 }, 500);
-			const elasticAnimation = new Tween(this.background).to({ scale: { x: 0, y: 0 } }, 1000).easing(Easing.Elastic.In);
+			const elasticAnimation = new Tween(this.background)
+				.to(
+					{
+						// scale: { x: 0, y: 0 },
+						y: 8000,
+						alpha: 0,
+					},
+					1000
+				)
+				.easing(Easing.Elastic.In);
 
 			// On animation complete, handle the closure
 			fadeAnimation.onComplete(() => {

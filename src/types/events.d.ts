@@ -23,5 +23,8 @@ declare namespace GlobalMixins {
 		// RUNFALL RESUME PAUSE
 		RESUME_PAUSE: any;
 		toggledButtonEvent: any;
+
+		START: any;
+		TIME_ENDED: any;
 	}
 }
