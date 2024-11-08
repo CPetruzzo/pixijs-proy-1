@@ -110,12 +110,47 @@ export class BasketballHighScorePopUp extends PixiScene {
 		const lineHeight = 90;
 		for (let i = 0; i < Math.min(highscores.length, 5); i++) {
 			const entry = highscores[i];
-			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 50, fill: 0xffffff, align: "center", dropShadow: true, fontFamily: "Darling Coffee" });
+			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 50, fill: 0xffffff, align: "center", dropShadow: true, fontFamily: "DK Boarding House III" });
 			entryText.anchor.set(0.5, 0.5);
 			entryText.position.set(0, startY + i * lineHeight - 220);
 			this.background.addChild(entryText);
 			if (entry.score === playerScore) {
-				entryText.tint = 0xe99f96;
+				entryText.tint = 0xfdf178;
+				new Tween(entryText).to({ alpha: 0 }, 500).start().repeat(Infinity).yoyo(true).yoyoEasing(Easing.Linear.None);
+				entryText.style.align = "center";
+			}
+		}
+
+		const returnbasket = Sprite.from("returnbasket");
+		returnbasket.anchor.set(0.5);
+		returnbasket.scale.set(1.1);
+		returnbasket.x = 0;
+		returnbasket.y = 310;
+		returnbasket.eventMode = "static";
+		returnbasket.on("pointertap", () => this.handleResetClick());
+		this.background.addChild(returnbasket);
+	}
+
+	public async showPlayerScore(playerScore: number): Promise<void> {
+		const playerName = await this.showNameInputDialog();
+
+		// Guardar el puntaje del jugador actual
+		highscores.push({ playerName, score: playerScore });
+
+		highscores.sort((a, b) => b.score - a.score);
+		localStorage.setItem(localStorageKey, JSON.stringify(highscores));
+
+		// Mostrar los highscores en la tabla
+		const startY = 50;
+		const lineHeight = 90;
+		for (let i = 0; i < Math.min(highscores.length, 5); i++) {
+			const entry = highscores[i];
+			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 50, fill: 0xffffff, align: "center", dropShadow: true, fontFamily: "DK Boarding House III" });
+			entryText.anchor.set(0.5, 0.5);
+			entryText.position.set(0, startY + i * lineHeight - 220);
+			this.background.addChild(entryText);
+			if (entry.score === playerScore) {
+				entryText.tint = 0xfdf178;
 				new Tween(entryText).to({ alpha: 0 }, 500).start().repeat(Infinity).yoyo(true).yoyoEasing(Easing.Linear.None);
 				entryText.style.align = "center";
 			}
@@ -181,7 +216,7 @@ export class BasketballHighScorePopUp extends PixiScene {
 		this.fadeAndBlocker.width = _newW;
 		this.fadeAndBlocker.height = _newH;
 
-		ScaleHelper.setScaleRelativeToIdeal(this, _newW * 0.1, _newH * 0.1, 720, 1600, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToIdeal(this, _newW * 0.11, _newH * 0.11, 720, 1600, ScaleHelper.FIT);
 		this.x = _newW * 0.5;
 		this.y = _newH * 0.5;
 	}

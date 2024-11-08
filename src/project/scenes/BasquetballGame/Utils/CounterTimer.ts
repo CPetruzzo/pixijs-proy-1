@@ -19,15 +19,15 @@ export class CounterTimer extends Container {
 		this.initialTime = currentCounterTime;
 		this.currentCounterTime = currentCounterTime;
 		this.counter = new Text(`${this.currentCounterTime}`, {
-			fontSize: 170,
+			fontSize: 250,
 			fill: 0xf48e44,
 			dropShadowDistance: 15,
 			dropShadow: true,
 			dropShadowColor: 0x000000,
-			fontFamily: "Darling Coffee",
+			fontFamily: "DK Boarding House III",
 		});
 		this.counter.anchor.set(0.5);
-		this.counter.y = this.counter.height * 1.15;
+		this.counter.y = this.counter.height * 0.75;
 		this.addChild(this.counter);
 	}
 

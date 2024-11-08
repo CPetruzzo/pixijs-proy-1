@@ -31,7 +31,7 @@ export class UI {
 		this.score = 0;
 
 		this.setupUIElements();
-		this.counterTime = new CounterTimer(50);
+		this.counterTime = new CounterTimer(5);
 		this.timeContainer.addChild(this.counterTime);
 	}
 
@@ -90,12 +90,12 @@ export class UI {
 		this.timeContainer.addChild(timeFrame);
 
 		this.scoreText = new Text(`Score: ${this.score}`, {
-			fontSize: 170,
+			fontSize: 250,
 			fill: 0xf48e44,
 			dropShadowDistance: 15,
 			dropShadow: true,
 			dropShadowColor: 0x000000,
-			fontFamily: "Darling Coffee",
+			fontFamily: "DK Boarding House III",
 		});
 		this.scoreText.position.set(scoreFrame.x, scoreFrame.y);
 		this.scoreText.anchor.set(0.5);

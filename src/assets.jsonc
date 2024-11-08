@@ -67,6 +67,28 @@
 					}
 				},
 				{
+					"name": "BoardFont",
+					"srcs": "./fonts/DK Boarding House I.otf",
+					"data": {
+						"family": "DK Boarding House I",
+						"weight": [
+							"normal",
+							"bold"
+						]
+					}
+				},
+				{
+					"name": "BoardFont2",
+					"srcs": "./fonts/DK Boarding House III.otf",
+					"data": {
+						"family": "DK Boarding House III",
+						"weight": [
+							"normal",
+							"bold"
+						]
+					}
+				},
+				{
 					"name": "defaultSDFFont",
 					"srcs": "./fonts/roundedelegance.json"
 				}
