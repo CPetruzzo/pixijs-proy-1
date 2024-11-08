@@ -30,9 +30,9 @@ export class SpawnManager {
 		const score = this.scoreManager.getScore();
 
 		if (score >= 4500) {
-			objectType = Random.shared.randomInt(0, 6); // Aumentar la variedad de objetos
+			objectType = Random.shared.randomInt(0, 5); // Aumentar la variedad de objetos
 		} else if (score >= 3000) {
-			objectType = Random.shared.randomInt(0, 6); // Aumentar la variedad de objetos
+			objectType = Random.shared.randomInt(0, 5); // Aumentar la variedad de objetos
 		} else if (score >= 1750) {
 			objectType = Random.shared.randomInt(0, 5); // Aumentar la variedad de objetos
 		} else if (score >= 500) {

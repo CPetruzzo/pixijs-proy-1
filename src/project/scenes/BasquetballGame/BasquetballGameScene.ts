@@ -51,7 +51,6 @@ export class BasquetballGameScene extends PixiScene {
 	private wallContainer: Container = new Container();
 	private noTime: boolean = false;
 	private gameOver: boolean = false;
-	private isPaused: boolean = false;
 	private popupOpened: boolean = false;
 
 	// private basketballPlayer: BasketballPlayer;
@@ -211,6 +210,7 @@ export class BasquetballGameScene extends PixiScene {
 			const popupInstance = await Manager.openPopup(BasketballHighScorePopUp, [this.ui.score]);
 			if (popupInstance instanceof BasketballHighScorePopUp) {
 				popupInstance.showHighscores(this.ui.score);
+				// popupInstance.showPlayerScore();
 			} else {
 				console.error("Error al abrir el popup: no se pudo obtener la instancia de BasePopup.");
 			}
@@ -229,7 +229,7 @@ export class BasquetballGameScene extends PixiScene {
 			this.noTime = true;
 		});
 
-		if (this.isPaused) {
+		if (this.ui.isPaused) {
 			return;
 		}
 

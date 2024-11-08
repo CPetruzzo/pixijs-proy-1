@@ -31,7 +31,7 @@ export class UI {
 		this.score = 0;
 
 		this.setupUIElements();
-		this.counterTime = new CounterTimer(5);
+		this.counterTime = new CounterTimer(50);
 		this.timeContainer.addChild(this.counterTime);
 	}
 
@@ -52,6 +52,9 @@ export class UI {
 		const pausePosition = { x: -info.width * 1.5, y: info.height * 0.5 };
 		const pauseButton = new ToggleButton("pauseOn", "pauseOff", pausePosition, this.rightContainer);
 		this.rightContainer.addChild(pauseButton);
+		pauseButton.on("pointertap", () => {
+			this.isPaused = true;
+		});
 
 		const sound = Sprite.from("sound");
 		sound.anchor.set(0.5);
@@ -90,8 +93,8 @@ export class UI {
 		this.timeContainer.addChild(timeFrame);
 
 		this.scoreText = new Text(`Score: ${this.score}`, {
-			fontSize: 250,
-			fill: 0xf48e44,
+			fontSize: 210,
+			fill: 0xfdf178,
 			dropShadowDistance: 15,
 			dropShadow: true,
 			dropShadowColor: 0x000000,

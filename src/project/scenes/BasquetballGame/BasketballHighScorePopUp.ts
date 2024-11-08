@@ -31,6 +31,10 @@ export class BasketballHighScorePopUp extends PixiScene {
 	public closing: boolean = false;
 	public restart: boolean = false;
 	public pauseScene: boolean = false;
+	public totalPoints: number;
+	public doublesPoints: number = 10;
+	public triplesPoints: number = 1;
+	public cleanShotsPoints: number = 0;
 
 	constructor(_score?: number) {
 		super();
@@ -106,11 +110,17 @@ export class BasketballHighScorePopUp extends PixiScene {
 		localStorage.setItem(localStorageKey, JSON.stringify(highscores));
 
 		// Mostrar los highscores en la tabla
-		const startY = 50;
+		const startY = 60;
 		const lineHeight = 90;
 		for (let i = 0; i < Math.min(highscores.length, 5); i++) {
 			const entry = highscores[i];
-			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 50, fill: 0xffffff, align: "center", dropShadow: true, fontFamily: "DK Boarding House III" });
+			const entryText = new Text(`${entry.playerName}: ${entry.score}`, {
+				fontSize: 50,
+				fill: 0xffffff,
+				align: "center",
+				dropShadow: true,
+				fontFamily: "DK Boarding House III",
+			});
 			entryText.anchor.set(0.5, 0.5);
 			entryText.position.set(0, startY + i * lineHeight - 220);
 			this.background.addChild(entryText);
@@ -131,39 +141,55 @@ export class BasketballHighScorePopUp extends PixiScene {
 		this.background.addChild(returnbasket);
 	}
 
-	public async showPlayerScore(playerScore: number): Promise<void> {
-		const playerName = await this.showNameInputDialog();
+	public showPlayerScore(): void {
+		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+		const createText = (content: string, fontSize: number, color: number, x: number, y: number, align: "left" | "right" = "left") => {
+			const text = new Text(content, {
+				fontSize,
+				fill: color,
+				dropShadow: true,
+				dropShadowColor: 0x000000,
+				align,
+				fontFamily: "DK Boarding House III",
+			});
+			text.x = x;
+			text.y = y;
+			this.background.addChild(text);
+			return text;
+		};
 
-		// Guardar el puntaje del jugador actual
-		highscores.push({ playerName, score: playerScore });
+		const baseX = -265;
+		const pointsX = 170;
+		const multiplierX = 220;
 
-		highscores.sort((a, b) => b.score - a.score);
-		localStorage.setItem(localStorageKey, JSON.stringify(highscores));
+		// Display Doubles
+		createText("Doubles", 50, 0xffffff, baseX, -170);
+		createText(`${this.doublesPoints}`, 50, 0xffffff, pointsX, -170, "right");
+		createText("x2", 20, 0xfdf178, multiplierX, -145, "right");
 
-		// Mostrar los highscores en la tabla
-		const startY = 50;
-		const lineHeight = 90;
-		for (let i = 0; i < Math.min(highscores.length, 5); i++) {
-			const entry = highscores[i];
-			const entryText = new Text(`${entry.playerName}: ${entry.score}`, { fontSize: 50, fill: 0xffffff, align: "center", dropShadow: true, fontFamily: "DK Boarding House III" });
-			entryText.anchor.set(0.5, 0.5);
-			entryText.position.set(0, startY + i * lineHeight - 220);
-			this.background.addChild(entryText);
-			if (entry.score === playerScore) {
-				entryText.tint = 0xfdf178;
-				new Tween(entryText).to({ alpha: 0 }, 500).start().repeat(Infinity).yoyo(true).yoyoEasing(Easing.Linear.None);
-				entryText.style.align = "center";
-			}
-		}
+		// Display Triples
+		createText("Triples", 50, 0xffffff, baseX, -80);
+		createText(`${this.triplesPoints}`, 50, 0xffffff, pointsX, -80, "right");
+		createText("x3", 20, 0xfdf178, multiplierX, -55, "right");
 
-		const returnbasket = Sprite.from("returnbasket");
-		returnbasket.anchor.set(0.5);
-		returnbasket.scale.set(1.1);
-		returnbasket.x = 0;
-		returnbasket.y = 310;
-		returnbasket.eventMode = "static";
-		returnbasket.on("pointertap", () => this.handleResetClick());
-		this.background.addChild(returnbasket);
+		// Display Clean Shots
+		createText("Clean Shots", 50, 0xffffff, baseX, 20);
+		createText(`${this.cleanShotsPoints}`, 50, 0xffffff, pointsX, 20, "right");
+		createText("x5", 20, 0xfdf178, multiplierX, 55, "right");
+
+		this.totalPoints = this.cleanShotsPoints * 5 + this.triplesPoints * 3 + this.doublesPoints * 2;
+		// Display Total
+		createText("Total", 50, 0xffffff, baseX, 120);
+		createText(`${this.totalPoints}`, 50, 0xffffff, pointsX, 120, "right");
+
+		// Add Return Button
+		const returnBasket = Sprite.from("returnbasket");
+		returnBasket.anchor.set(0.5);
+		returnBasket.scale.set(1.1);
+		returnBasket.position.set(0, 310);
+		returnBasket.eventMode = "static";
+		returnBasket.on("pointertap", () => this.handleResetClick());
+		this.background.addChild(returnBasket);
 	}
 
 	public override requestClose(_doSomething?: () => void): Promise<boolean> {

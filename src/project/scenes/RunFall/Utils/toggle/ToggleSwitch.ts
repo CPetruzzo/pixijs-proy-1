@@ -36,6 +36,8 @@ export class ToggleSwitch extends Toggle {
 	private sizeRetainer: Graphics;
 	private tweenDuration: number;
 	private tween: Tween<any>;
+	private knobTween: Tween<any>;
+
 	private _anchor: ObservablePoint;
 	private dragLastPos: Point;
 	private wasDrag: boolean;
@@ -126,14 +128,18 @@ export class ToggleSwitch extends Toggle {
 
 	private moveKnob(): void {
 		this.tween?.stop();
+		this.knobTween?.stop();
 		if (this.value) {
 			const duration = Math.abs((this.tweenDuration * (this.knob.x - (this.distance - this.knob.width) / 2)) / this.distance);
+			this.knobTween = new Tween(this.knob).from({ angle: 180 }).to({ angle: 0 }, 350).start();
 			this.tween = new Tween(this.knob.position).to({ x: (this.distance - this.knob.width) / 2 }, duration);
 		} else {
 			const duration = Math.abs((this.tweenDuration * (this.knob.x - (-this.distance + this.knob.width) / 2)) / this.distance);
+			this.knobTween = new Tween(this.knob).from({ angle: 0 }).to({ angle: 180 }, 350).start();
 			this.tween = new Tween(this.knob.position).to({ x: (-this.distance + this.knob.width) / 2 }, duration);
 		}
 		this.tween.easing(Easing.Quadratic.Out);
+		this.knobTween.start();
 		this.tween.start();
 	}
 
