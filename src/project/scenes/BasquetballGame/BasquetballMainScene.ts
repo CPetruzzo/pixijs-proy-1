@@ -17,7 +17,7 @@ export class BasquetballMainScene extends PixiScene {
 
 		this.addChild(this.backgroundContainer);
 
-		SoundLib.playMusic("courtBGM", { loop: true, volume: 0.3, singleInstance: true });
+		SoundLib.playMusic("courtBGM", { loop: true, singleInstance: true });
 
 		const bG = Sprite.from("cachobasketHQ");
 		bG.anchor.set(0.5);

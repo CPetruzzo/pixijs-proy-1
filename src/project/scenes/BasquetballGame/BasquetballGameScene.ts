@@ -14,8 +14,10 @@ import { UI } from "./Utils/UI";
 import { CounterEmits } from "./Utils/CounterTimer";
 import { Manager } from "../../..";
 import { BasketballHighScorePopUp } from "./BasketballHighScorePopUp";
+import { EventQueue } from "@dimforge/rapier2d";
 
 export class BasquetballGameScene extends PixiScene {
+	// #region VARIABLES
 	private joystick: BasquetBallJoystick;
 	private player: JoystickBasquetBallPlayer;
 	private aim: Aim;
@@ -52,10 +54,13 @@ export class BasquetballGameScene extends PixiScene {
 	private noTime: boolean = false;
 	private gameOver: boolean = false;
 	private popupOpened: boolean = false;
+	private eventQueue: EventQueue;
 
 	// private basketballPlayer: BasketballPlayer;
+	// #endregion VARIABLES
 	constructor() {
 		super();
+		this.eventQueue = new EventQueue(true);
 
 		this.sortableChildren = true;
 		// Mover el contenedor del mundo
@@ -84,7 +89,7 @@ export class BasquetballGameScene extends PixiScene {
 		const gravity = new Vector2(0.0, 140);
 		this.world = new World(gravity);
 
-		SoundLib.playMusic("courtBGM", { loop: true, volume: 0.3, singleInstance: true });
+		SoundLib.playMusic("courtBGM", { loop: true, singleInstance: true });
 
 		this.bG = Sprite.from("basquetcourtFullScreen");
 		this.bG.anchor.set(0.5);
@@ -143,6 +148,10 @@ export class BasquetballGameScene extends PixiScene {
 		const rightWallDesc = ColliderDesc.cuboid(1, 200);
 		rightWallDesc.restitution = 1.3;
 		this.world.createCollider(rightWallDesc).setTranslation({ x: 221.0, y: 110.0 });
+		// Crear el suelo (ground)
+		const topWallDesc = ColliderDesc.cuboid(100, 1);
+		topWallDesc.restitution = 1.3;
+		this.world.createCollider(topWallDesc).setTranslation({ x: 128, y: 0 });
 
 		// Crear el aim
 		this.aim = new Aim();
@@ -209,8 +218,8 @@ export class BasquetballGameScene extends PixiScene {
 		try {
 			const popupInstance = await Manager.openPopup(BasketballHighScorePopUp, [this.ui.score]);
 			if (popupInstance instanceof BasketballHighScorePopUp) {
-				popupInstance.showHighscores(this.ui.score);
-				// popupInstance.showPlayerScore();
+				// popupInstance.showHighscores(this.ui.score);
+				popupInstance.showPlayerScore();
 			} else {
 				console.error("Error al abrir el popup: no se pudo obtener la instancia de BasePopup.");
 			}
@@ -220,77 +229,123 @@ export class BasquetballGameScene extends PixiScene {
 	}
 
 	public override update(_dt: number): void {
-		if (this.gameOver && !this.popupOpened) {
-			this.openGameOverPopup();
-			this.popupOpened = true; // Evita aperturas múltiples
+		if (this.isGameOver()) {
 			return;
 		}
 		this.ui.counterTime.on(CounterEmits.TIME_ENDED, () => {
 			this.noTime = true;
 		});
 
-		if (this.ui.isPaused) {
-			return;
-		}
-
-		if (this.noTime) {
-			this.gameOver = true;
-			return;
-		} else {
-			// this.debugDraw();
-			this.world.step();
+		if (!this.ui.isPaused) {
+			this.world.step(this.eventQueue);
 			this.player.update();
 			this.joystick.updateJoystick();
-			// this.basketballPlayer.update(_dt);
 			this.ui.counterTime.updateCounterTime(0.02, false);
 
-			// Detectar colisión entre la pelota y el aro, si el sensor del aro está habilitado
-			if (!this.hoopSensorEnabled) {
-				this.world.contactPair(this.player.collider, this.hoopCollider, (manifold, _flipped) => {
-					if (manifold.numContacts() > 0) {
-						const normal = manifold.localNormal1();
-						console.log("Collision with hoop detected");
-						// Comprobar si el contacto es adecuado para marcar el puntaje
-						if (normal.y > 0) {
-							this.ui.updateScore(2);
-							console.log(`${this.ui.score}`);
-						}
-						this.hoopCollider.setSensor(true); // Desactiva colisiones futuras temporalmente
+			this.detectHoopCollision();
+			this.detectGroundCollision();
+			this.detectRimCollisions();
+			this.detectDrainCollisionEvents();
+		}
+	}
+
+	private isGameOver(): boolean {
+		if (this.gameOver && !this.popupOpened) {
+			this.openGameOverPopup();
+			this.popupOpened = true;
+			return true;
+		}
+		if (this.noTime) {
+			this.gameOver = true;
+			return true;
+		}
+		return false;
+	}
+
+	// Detección de colisión con el aro
+	private detectHoopCollision(): void {
+		if (!this.hoopSensorEnabled) {
+			this.world.contactPair(this.player.collider, this.hoopCollider, (manifold, _flipped) => {
+				if (manifold.numContacts() > 0) {
+					const normal = manifold.localNormal1();
+					if (normal.y > 0) {
+						// Actualiza el puntaje y llama a la detección de puntuación
+						this.ui.updateScore(2);
+						this.onScoreDetected();
+						console.log("Puntaje actualizado:", this.ui.score);
+
+						// Activa el sensor para evitar múltiples detecciones inmediatas
+						this.hoopCollider.setSensor(true);
 						this.hoopSensorEnabled = true;
+
+						// Llama a una función para reiniciar el sensor después de un tiempo
+						setTimeout(() => {
+							this.resetHoopSensor();
+						}, 2000); // Ajusta el tiempo según sea necesario
 					}
-				});
-			}
-
-			// Detectar si la pelota toca el suelo
-			this.world.contactPair(this.player.collider, this.groundCollider, (manifold, _flipped) => {
-				if (manifold.numContacts() > 0) {
-					const verticalVelocity = this.player.rigidBody.linvel().y;
-					if (verticalVelocity > 9) {
-						// Umbral ajustable para detectar un rebote alto
-						SoundLib.playSound("bounce", { loop: false, singleInstance: true, allowOverlap: false, volume: 0.06 });
-					} else {
-						this.player.rigidBody.linvel().y = 0;
-					}
-					this.hoopCollider.setSensor(false);
-					this.hoopSensorEnabled = false;
-				}
-			});
-
-			// Detectar colisiones con los colliders front y back del aro
-			this.world.contactPair(this.player.collider, this.frontCollider, (manifold, _flipped) => {
-				if (manifold.numContacts() > 0) {
-					console.log("manifold.numContacts()", manifold.numContacts());
-					SoundLib.playSound("hitRim", { loop: false, allowOverlap: false, volume: 0.03 });
-				}
-			});
-
-			this.world.contactPair(this.player.collider, this.backCollider, (manifold, _flipped) => {
-				if (manifold.numContacts() > 0) {
-					console.log("manifold.numContacts()", manifold.numContacts());
-					SoundLib.playSound("hitRim", { loop: false, allowOverlap: false, volume: 0.03 });
 				}
 			});
 		}
+	}
+
+	// Función para resetear el sensor del aro
+	private resetHoopSensor(): void {
+		this.hoopCollider.setSensor(false);
+		this.hoopSensorEnabled = false;
+		console.log("Sensor de aro reiniciado");
+	}
+
+	// Función para manejar lo que sucede cuando se detecta una puntuación
+	private onScoreDetected(): void {
+		console.log("Scored!");
+		this.player.spawnPlayer();
+		console.log("Player respawneado en posición:", this.player.rigidBody.translation());
+	}
+
+	// Detección de colisión con el suelo
+	private detectGroundCollision(): void {
+		this.world.contactPair(this.player.collider, this.groundCollider, (manifold, _flipped) => {
+			if (manifold.numContacts() > 0) {
+				const verticalVelocity = this.player.rigidBody.linvel().y;
+				if (verticalVelocity > 9) {
+					SoundLib.playSound("bounce", { loop: false, singleInstance: true, allowOverlap: false, volume: 0.06 });
+				} else {
+					this.player.rigidBody.linvel().y = 0;
+				}
+				this.hoopCollider.setSensor(false);
+				this.hoopSensorEnabled = false;
+			}
+		});
+	}
+
+	// Detección de colisiones con los colliders del aro
+	private detectRimCollisions(): void {
+		[this.frontCollider, this.backCollider].forEach((collider) => {
+			this.world.contactPair(this.player.collider, collider, (manifold, _flipped) => {
+				if (manifold.numContacts() > 0) {
+					console.log("Colisión detectada con el aro");
+					SoundLib.playSound("hitRim", { loop: false, allowOverlap: false, volume: 0.03 });
+				}
+			});
+		});
+	}
+
+	// Detección de eventos de colisión usando `drainCollisionEvents`
+	private detectDrainCollisionEvents(): void {
+		this.eventQueue.drainCollisionEvents((collider1, collider2, started) => {
+			if (started && this.isPlayerHoopCollision(collider1, collider2)) {
+				this.onScoreDetected();
+				console.log("onScoreDetected");
+			}
+		});
+	}
+
+	// Comprobación si es una colisión entre el jugador y el aro
+	private isPlayerHoopCollision(collider1: number, collider2: number): boolean {
+		return (
+			(collider1 === this.player.collider.handle && collider2 === this.hoopCollider.handle) ||
+			(collider2 === this.player.collider.handle && collider1 === this.hoopCollider.handle)
+		);
 	}
 
 	public debugDraw(): void {

@@ -93,7 +93,7 @@ export class Aim extends Container {
 	/** removes points before update */
 	public removePoints(): void {
 		this.points.forEach((point) => {
-			this.removeChild(point);
+			// this.removeChild(point);
 			point.destroy();
 		});
 		this.points = [];

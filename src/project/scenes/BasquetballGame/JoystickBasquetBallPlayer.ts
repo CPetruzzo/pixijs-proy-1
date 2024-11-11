@@ -2,6 +2,7 @@ import type { Collider, RigidBody, World } from "@dimforge/rapier2d";
 import { ColliderDesc, RigidBodyDesc, Vector2 } from "@dimforge/rapier2d";
 import { Container } from "pixi.js";
 import { BasquetballGameScene } from "./BasquetballGameScene";
+import Random from "../../../engine/random/Random";
 
 export class JoystickBasquetBallPlayer extends Container {
 	public rigidBody: RigidBody;
@@ -12,7 +13,9 @@ export class JoystickBasquetBallPlayer extends Container {
 		super();
 		this.world = world;
 
-		this.position.x = 1500;
+		const spawnX = Random.shared.randomInt(1050, 1500);
+
+		this.position.x = spawnX;
 		this.position.y = 1150;
 		this.pivot.set(this.width * 0.5, this.height * 0.5);
 		const rigidBodyDesc = RigidBodyDesc.dynamic()
@@ -22,15 +25,6 @@ export class JoystickBasquetBallPlayer extends Container {
 
 		const colliderDesc = ColliderDesc.ball(4);
 		this.collider = this.world.createCollider(colliderDesc, this.rigidBody);
-	}
-
-	public spawnPlayer(): void {
-		this.position.x = 1500;
-		this.position.y = 1150;
-		this.rigidBody.translation().x = 1500 / BasquetballGameScene.METER_TO_PIXEL;
-		this.rigidBody.translation().y = 1150 / BasquetballGameScene.METER_TO_PIXEL;
-		this.rigidBody.linvel().y = 0;
-		this.rigidBody.linvel().x = 0;
 	}
 
 	public shootHim(charge: { x: number; y: number }): void {
@@ -43,5 +37,31 @@ export class JoystickBasquetBallPlayer extends Container {
 		this.position.set(position.x * BasquetballGameScene.METER_TO_PIXEL, position.y * BasquetballGameScene.METER_TO_PIXEL + 10);
 		this.x = this.rigidBody.translation().x * BasquetballGameScene.METER_TO_PIXEL;
 		this.y = this.rigidBody.translation().y * BasquetballGameScene.METER_TO_PIXEL;
+	}
+
+	public spawnPlayer(): void {
+		const spawnX = Random.shared.randomInt(1050, 1500);
+		this.position.x = spawnX;
+		this.position.y = 1150;
+
+		// Establece la posición del `RigidBody` usando `setTranslation`
+		this.rigidBody.setTranslation({ x: spawnX / BasquetballGameScene.METER_TO_PIXEL, y: 1150 / BasquetballGameScene.METER_TO_PIXEL }, true);
+
+		// Reinicia la velocidad
+		this.rigidBody.setLinvel({ x: 0, y: 0 }, true);
+		this.rigidBody.setAngvel(0, true);
+	}
+
+	public playerMissedSpawn(): void {
+		const spawnX = Random.shared.randomInt(1050, 1500);
+		this.position.x = spawnX;
+		this.position.y = 1150;
+
+		// Establece la posición del `RigidBody` usando `setTranslation`
+		this.rigidBody.setTranslation({ x: spawnX / BasquetballGameScene.METER_TO_PIXEL, y: 1150 / BasquetballGameScene.METER_TO_PIXEL }, true);
+
+		// Reinicia la velocidad
+		this.rigidBody.setLinvel({ x: 0, y: 0 }, true);
+		this.rigidBody.setAngvel(0, true);
 	}
 }
