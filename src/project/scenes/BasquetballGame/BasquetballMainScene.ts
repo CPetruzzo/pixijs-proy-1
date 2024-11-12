@@ -7,17 +7,18 @@ import { BasquetballGameScene } from "./BasquetballGameScene";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 import { Easing, Tween } from "tweedle.js";
 import { ToggleSwitch } from "../RunFall/Utils/toggle/ToggleSwitch";
+import { SoundManager, Sounds } from "../RunFall/Managers/SoundManager";
+import { TutorialManager } from "./Utils/TutorialManager";
 
 export class BasquetballMainScene extends PixiScene {
 	public static readonly BUNDLES = ["joystick", "basquet", "runfallsfx"];
 	private backgroundContainer: Container = new Container();
-
 	constructor() {
 		super();
 
 		this.addChild(this.backgroundContainer);
 
-		SoundLib.playMusic("courtBGM", { loop: true, singleInstance: true });
+		SoundLib.playMusic(Sounds.BASKET_MUSIC, { loop: true, singleInstance: true });
 
 		const bG = Sprite.from("cachobasketHQ");
 		bG.anchor.set(0.5);
@@ -26,6 +27,7 @@ export class BasquetballMainScene extends PixiScene {
 		bG.y = 590;
 		this.backgroundContainer.addChild(bG);
 
+		// music button
 		const scoreText1 = new Text(`Music`, {
 			fontSize: 50,
 			fill: 0xffffff,
@@ -42,33 +44,31 @@ export class BasquetballMainScene extends PixiScene {
 			backgroundTexture: "cachobasketBAR",
 			travelDistance: Texture.from("cachobasketBAR").width,
 			tweenDuration: 500,
-			// onToggleOn: () => {
-			// 	// Lógica para activar la música
-			// 	if (!SoundManager.isMusicOn()) {
-			// 		SoundManager.resumeMusic(Sounds.BG_MUSIC);
-			// 		SoundManager.musicPlaying = true;
-			// 	}
-			// 	SoundManager.playSound(Sounds.START, {}); // Reproduce el sonido de feedback
-			// },
-			// onToggleOff: () => {
-			// 	// Lógica para desactivar la música
-			// 	if (SoundManager.isMusicOn()) {
-			// 		SoundManager.pauseMusic(Sounds.BG_MUSIC);
-			// 		SoundManager.musicPlaying = false;
-			// 	}
-			// 	SoundManager.playSound(Sounds.CLOSEPOPUP, {}); // Reproduce el sonido de feedback
-			// },
-			// startingValue: SoundManager.isMusicOn(), // Sincroniza el estado inicial del interruptor con la música
+			startingValue: SoundManager.isMusicOn(),
+			onToggleOn: () => {
+				// Lógica para activar la música
+				if (!SoundManager.isMusicOn()) {
+					SoundManager.resumeMusic(Sounds.BASKET_MUSIC);
+					SoundManager.musicPlaying = true;
+				}
+			},
+			onToggleOff: () => {
+				// Lógica para desactivar la música
+				if (SoundManager.isMusicOn()) {
+					SoundManager.pauseMusic(Sounds.BASKET_MUSIC);
+					SoundManager.musicPlaying = false;
+				}
+			},
 		});
 		toggleSwitch1.x = 950;
 		toggleSwitch1.y = 411;
 		toggleSwitch1.scale.set(1.27);
 		this.backgroundContainer.addChild(toggleSwitch1);
 
+		// sfx button
 		const scoreText2 = new Text(`SOUND EFFECTS`, {
 			fontSize: 50,
 			fill: 0xffffff,
-			// dropShadowDistance: 15,
 			dropShadow: true,
 			dropShadowColor: 0x000000,
 			fontFamily: "DK Boarding House III",
@@ -81,13 +81,28 @@ export class BasquetballMainScene extends PixiScene {
 			backgroundTexture: "cachobasketBAR",
 			travelDistance: Texture.from("cachobasketBAR").width,
 			tweenDuration: 500,
+			startingValue: SoundManager.isSoundOn(),
+			onToggleOn: () => {
+				// Lógica para activar la música
+				if (!SoundManager.isSoundOn()) {
+					SoundLib.muteSound = false;
+					SoundManager.sfxPlaying = true;
+				}
+			},
+			onToggleOff: () => {
+				// Lógica para desactivar la música
+				if (SoundManager.isSoundOn()) {
+					SoundLib.muteSound = true;
+					SoundManager.sfxPlaying = false;
+				}
+			},
 		});
 		toggleSwitch2.x = 950;
 		toggleSwitch2.y = 552;
 		toggleSwitch2.scale.set(1.25, 1.29);
 		this.backgroundContainer.addChild(toggleSwitch2);
 
-		const scoreText3 = new Text(`DIFFICULTY`, {
+		const scoreText3 = new Text(`TUTORIAL`, {
 			fontSize: 50,
 			fill: 0xffffff,
 			// dropShadowDistance: 15,
@@ -103,6 +118,9 @@ export class BasquetballMainScene extends PixiScene {
 			backgroundTexture: "cachobasketBAR",
 			travelDistance: Texture.from("cachobasketBAR").width,
 			tweenDuration: 500,
+			startingValue: TutorialManager.isActive(),
+			onToggleOn: () => TutorialManager.enableTutorial(),
+			onToggleOff: () => TutorialManager.disableTutorial(),
 		});
 		toggleSwitch3.x = 950;
 		toggleSwitch3.y = 702;

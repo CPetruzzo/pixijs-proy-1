@@ -15,6 +15,7 @@ import { CircularLoadingTransition } from "./engine/scenemanager/transitions/Cir
 import { JoystickEmits } from "./utils/Joystick";
 import { BasquetballMainScene } from "./project/scenes/BasquetballGame/BasquetballMainScene";
 // import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
+// import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
 
 settings.RENDER_OPTIONS.hello = false;
 

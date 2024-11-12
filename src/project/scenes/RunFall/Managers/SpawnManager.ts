@@ -29,13 +29,14 @@ export class SpawnManager {
 		let objectType: number;
 		const score = this.scoreManager.getScore();
 
-		if (score >= 4500) {
+		// if (score >= 4500) {
+		// 	objectType = Random.shared.randomInt(0, 5); // Aumentar la variedad de objetos
+		// } else if (score >= 3000) {
+		// 	objectType = Random.shared.randomInt(0, 5); // Aumentar la variedad de objetos
+		// } else
+		if (score >= 1250) {
 			objectType = Random.shared.randomInt(0, 5); // Aumentar la variedad de objetos
-		} else if (score >= 3000) {
-			objectType = Random.shared.randomInt(0, 5); // Aumentar la variedad de objetos
-		} else if (score >= 1750) {
-			objectType = Random.shared.randomInt(0, 5); // Aumentar la variedad de objetos
-		} else if (score >= 500) {
+		} else if (score >= 750) {
 			objectType = Random.shared.randomInt(0, 4);
 		} else {
 			objectType = Random.shared.randomInt(0, 3);

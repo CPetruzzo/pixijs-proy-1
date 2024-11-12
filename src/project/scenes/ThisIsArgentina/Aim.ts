@@ -76,13 +76,7 @@ export class Aim extends Container {
 				const nextPoint = this.points[nextIndex];
 				const targetX = nextPoint.position.x;
 				const targetY = nextPoint.position.y;
-				new Tween(point.position)
-					.to({ x: targetX, y: targetY }, this.animationDuration)
-					.onComplete(() => {
-						this.animatePoints();
-					})
-					.repeat(Infinity)
-					.start();
+				new Tween(point.position).to({ x: targetX, y: targetY }, this.animationDuration).repeat(Infinity).start();
 			} else {
 				point.alpha = 0.5;
 				point.scale.set(0.07);

@@ -218,8 +218,8 @@ export class BasquetballGameScene extends PixiScene {
 		try {
 			const popupInstance = await Manager.openPopup(BasketballHighScorePopUp, [this.ui.score]);
 			if (popupInstance instanceof BasketballHighScorePopUp) {
-				// popupInstance.showHighscores(this.ui.score);
-				popupInstance.showPlayerScore();
+				popupInstance.showHighscores(this.ui.score);
+				// popupInstance.showPlayerScore();
 			} else {
 				console.error("Error al abrir el popup: no se pudo obtener la instancia de BasePopup.");
 			}
@@ -308,7 +308,7 @@ export class BasquetballGameScene extends PixiScene {
 			if (manifold.numContacts() > 0) {
 				const verticalVelocity = this.player.rigidBody.linvel().y;
 				if (verticalVelocity > 9) {
-					SoundLib.playSound("bounce", { loop: false, singleInstance: true, allowOverlap: false, volume: 0.06 });
+					SoundLib.playSound("bounce", { loop: false, singleInstance: true, allowOverlap: false });
 				} else {
 					this.player.rigidBody.linvel().y = 0;
 				}

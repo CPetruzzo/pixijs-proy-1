@@ -28,7 +28,7 @@ export enum JoystickEmits {
 }
 
 export class BasquetBallJoystick extends Container {
-	private player: Graphics | any;
+	private player: JoystickBasquetBallPlayer | Graphics | any;
 	private joystickBG: Sprite;
 	private joystickHandle: Sprite;
 	private rockButton: Sprite;

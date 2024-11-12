@@ -10,6 +10,7 @@ export enum Sounds {
 	CLOSEPOPUP = "sound1",
 	START = "sound4",
 	BG_MUSIC = "sound_BGM",
+	BASKET_MUSIC = "courtBGM",
 }
 
 export class SoundManager extends SoundLib {
