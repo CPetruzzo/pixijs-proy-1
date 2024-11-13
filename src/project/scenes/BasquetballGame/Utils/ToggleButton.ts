@@ -4,6 +4,7 @@ import { Container, Sprite } from "pixi.js";
 export class ToggleButton extends Container {
 	private onSprite: Sprite;
 	private offSprite: Sprite;
+	public paused: boolean;
 
 	constructor(onTexture: SpriteSource, offTexture: SpriteSource, position: { x: number; y: number }, parentContainer: { addChild: (arg0: Sprite) => void }) {
 		super();
@@ -52,6 +53,7 @@ export class ToggleButton extends Container {
 		this.offSprite.alpha = 0;
 		this.offSprite.eventMode = "none";
 		this.onSprite.eventMode = "static";
+		this.paused = false;
 		// this.addBounceEffect(this.offSprite); // Agregar efecto de rebote a offSprite
 	}
 
@@ -62,6 +64,7 @@ export class ToggleButton extends Container {
 		this.onSprite.eventMode = "none";
 		this.offSprite.eventMode = "static";
 		console.log("onSprite alpha:", this.onSprite.alpha, "| offSprite alpha:", this.offSprite.alpha);
+		this.paused = true;
 		// this.addBounceEffect(this.onSprite); // Agregar efecto de rebote a onSprite
 	}
 }

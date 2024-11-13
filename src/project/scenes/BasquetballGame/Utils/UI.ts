@@ -14,6 +14,7 @@ export class UI {
 	public isPaused: boolean;
 	public timeContainer: Container;
 	public counterTime: CounterTimer;
+	public pauseButton: ToggleButton;
 
 	constructor() {
 		this.rightContainer = new Container();
@@ -50,11 +51,8 @@ export class UI {
 
 		// Ejemplo de uso
 		const pausePosition = { x: -info.width * 1.5, y: info.height * 0.5 };
-		const pauseButton = new ToggleButton("pauseOn", "pauseOff", pausePosition, this.rightContainer);
-		this.rightContainer.addChild(pauseButton);
-		pauseButton.on("pointertap", () => {
-			this.isPaused = true;
-		});
+		this.pauseButton = new ToggleButton("pauseOn", "pauseOff", pausePosition, this.rightContainer);
+		this.rightContainer.addChild(this.pauseButton);
 
 		const sound = Sprite.from("sound");
 		sound.anchor.set(0.5);

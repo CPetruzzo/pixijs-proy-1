@@ -156,11 +156,13 @@ export class BasquetballGameScene extends PixiScene {
 		// Crear el aim
 		this.aim = new Aim();
 
-		this.joystick.on(JoystickEmits.AIM, () => {
-			this.player.addChild(this.aim);
-			this.aim.visible = true;
-			this.aim.updateTrajectory({ power: this.joystick.joystickPower, angle: this.joystick.joystickAngle });
-		});
+		if (!this.player.hasShot) {
+			this.joystick.on(JoystickEmits.AIM, () => {
+				this.player.addChild(this.aim);
+				this.aim.visible = true;
+				this.aim.updateTrajectory({ power: this.joystick.joystickPower, angle: this.joystick.joystickAngle });
+			});
+		}
 
 		this.joystick.on(JoystickEmits.STOPAIM, () => {
 			this.player.removeChild(this.aim);
@@ -229,7 +231,7 @@ export class BasquetballGameScene extends PixiScene {
 	}
 
 	public override update(_dt: number): void {
-		if (this.isGameOver()) {
+		if (this.isGameOver() || this.ui.pauseButton.paused) {
 			return;
 		}
 		this.ui.counterTime.on(CounterEmits.TIME_ENDED, () => {
@@ -307,13 +309,26 @@ export class BasquetballGameScene extends PixiScene {
 		this.world.contactPair(this.player.collider, this.groundCollider, (manifold, _flipped) => {
 			if (manifold.numContacts() > 0) {
 				const verticalVelocity = this.player.rigidBody.linvel().y;
+
+				// Reproducir sonido si la velocidad es suficientemente alta
 				if (verticalVelocity > 9) {
 					SoundLib.playSound("bounce", { loop: false, singleInstance: true, allowOverlap: false });
 				} else {
 					this.player.rigidBody.linvel().y = 0;
+					this.player.isOnGround = true;
 				}
-				this.hoopCollider.setSensor(false);
-				this.hoopSensorEnabled = false;
+
+				// Desactivar el sensor del aro cuando el jugador toca el suelo
+				if (this.hoopSensorEnabled) {
+					this.hoopCollider.setSensor(false);
+					this.hoopSensorEnabled = false;
+				}
+
+				// Solo respawnear si el jugador ha disparado y está tocando el suelo
+				if (this.player.hasShot) {
+					this.player.spawnPlayer();
+					this.player.hasShot = false; // Restablecer el estado de disparo para evitar respawneo continuo
+				}
 			}
 		});
 	}

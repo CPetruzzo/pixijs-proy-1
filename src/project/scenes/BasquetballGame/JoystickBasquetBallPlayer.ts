@@ -8,6 +8,8 @@ export class JoystickBasquetBallPlayer extends Container {
 	public rigidBody: RigidBody;
 	public collider: Collider;
 	public world: World;
+	public hasShot: boolean = false;
+	public isOnGround: boolean = false; // Nueva variable para verificar si está en el suelo
 
 	constructor(world: World) {
 		super();
@@ -28,8 +30,14 @@ export class JoystickBasquetBallPlayer extends Container {
 	}
 
 	public shootHim(charge: { x: number; y: number }): void {
-		const force = new Vector2(-charge.x * 2300, -charge.y * 2300);
-		this.rigidBody.applyImpulse(force, true);
+		if (this.isOnGround) {
+			// Verificación de si está en el suelo
+			this.hasShot = true;
+			this.isOnGround = false; // Después de disparar, ya no está en el suelo
+
+			const force = new Vector2(-charge.x * 4600, -charge.y * 4600);
+			this.rigidBody.applyImpulse(force, true);
+		}
 	}
 
 	public update(): void {
