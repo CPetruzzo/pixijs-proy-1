@@ -3,6 +3,8 @@ import { ToggleButton } from "./ToggleButton";
 import { Manager } from "../../../..";
 import { SettingsPopUp } from "../SettingsPopUp";
 import { CounterTimer } from "./CounterTimer";
+import { SoundManager, Sounds } from "../../RunFall/Managers/SoundManager";
+import { SoundLib } from "../../../../engine/sound/SoundLib";
 
 export class UI {
 	public rightContainer: Container;
@@ -15,6 +17,7 @@ export class UI {
 	public timeContainer: Container;
 	public counterTime: CounterTimer;
 	public pauseButton: ToggleButton;
+	private sound: Sprite;
 
 	constructor() {
 		this.rightContainer = new Container();
@@ -54,10 +57,12 @@ export class UI {
 		this.pauseButton = new ToggleButton("pauseOn", "pauseOff", pausePosition, this.rightContainer);
 		this.rightContainer.addChild(this.pauseButton);
 
-		const sound = Sprite.from("sound");
-		sound.anchor.set(0.5);
-		sound.position.set(-sound.width * 2.5, sound.height * 0.5);
-		this.rightContainer.addChild(sound);
+		this.sound = Sprite.from("sound");
+		this.sound.anchor.set(0.5);
+		this.sound.position.set(-this.sound.width * 2.5, this.sound.height * 0.5);
+		this.sound.eventMode = "static";
+		this.sound.on("pointertap", this.toggleSound.bind(this));
+		this.rightContainer.addChild(this.sound);
 
 		// Crear texto de puntaje
 		const scoreFrame = Sprite.from("scoreFrame");
@@ -127,6 +132,30 @@ export class UI {
 			}
 		} catch (error) {
 			console.error("Error opening settings popup:", error);
+		}
+	}
+
+	private toggleSound(): void {
+		if (SoundManager.isSoundOn()) {
+			// Lógica para desactivar la música
+			SoundLib.muteSound = true;
+			SoundManager.sfxPlaying = false;
+			this.sound.alpha = 0.5;
+		} else {
+			// Lógica para activar la música
+			SoundLib.muteSound = false;
+			SoundManager.sfxPlaying = true;
+			this.sound.alpha = 1;
+		}
+
+		if (SoundManager.isMusicOn()) {
+			SoundManager.pauseMusic(Sounds.BASKET_MUSIC);
+			SoundManager.musicPlaying = false;
+			this.sound.alpha = 0.5;
+		} else {
+			SoundManager.resumeMusic(Sounds.BASKET_MUSIC);
+			SoundManager.musicPlaying = true;
+			this.sound.alpha = 1;
 		}
 	}
 }
