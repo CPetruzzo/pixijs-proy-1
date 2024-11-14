@@ -1,10 +1,9 @@
 import { Container, Sprite, Text } from "pixi.js";
-import { ToggleButton } from "./ToggleButton";
 import { Manager } from "../../../..";
 import { SettingsPopUp } from "../SettingsPopUp";
 import { CounterTimer } from "./CounterTimer";
-import { SoundManager, Sounds } from "../../RunFall/Managers/SoundManager";
-import { SoundLib } from "../../../../engine/sound/SoundLib";
+import { PauseButton } from "./PauseButton";
+import { SoundButton } from "./SoundButton";
 
 export class UI {
 	public rightContainer: Container;
@@ -16,8 +15,8 @@ export class UI {
 	public isPaused: boolean;
 	public timeContainer: Container;
 	public counterTime: CounterTimer;
-	public pauseButton: ToggleButton;
-	private sound: Sprite;
+	public pauseButton: PauseButton;
+	private soundButton: SoundButton;
 
 	constructor() {
 		this.rightContainer = new Container();
@@ -54,15 +53,13 @@ export class UI {
 
 		// Ejemplo de uso
 		const pausePosition = { x: -info.width * 1.5, y: info.height * 0.5 };
-		this.pauseButton = new ToggleButton("pauseOn", "pauseOff", pausePosition, this.rightContainer);
+		this.pauseButton = new PauseButton(pausePosition, this.rightContainer);
 		this.rightContainer.addChild(this.pauseButton);
 
-		this.sound = Sprite.from("sound");
-		this.sound.anchor.set(0.5);
-		this.sound.position.set(-this.sound.width * 2.5, this.sound.height * 0.5);
-		this.sound.eventMode = "static";
-		this.sound.on("pointertap", this.toggleSound.bind(this));
-		this.rightContainer.addChild(this.sound);
+		// Ejemplo de uso
+		const soundPosition = { x: -info.width * 2.5, y: info.height * 0.5 };
+		this.soundButton = new SoundButton(soundPosition, this.rightContainer);
+		this.rightContainer.addChild(this.soundButton);
 
 		// Crear texto de puntaje
 		const scoreFrame = Sprite.from("scoreFrame");
@@ -132,30 +129,6 @@ export class UI {
 			}
 		} catch (error) {
 			console.error("Error opening settings popup:", error);
-		}
-	}
-
-	private toggleSound(): void {
-		if (SoundManager.isSoundOn()) {
-			// Lógica para desactivar la música
-			SoundLib.muteSound = true;
-			SoundManager.sfxPlaying = false;
-			this.sound.alpha = 0.5;
-		} else {
-			// Lógica para activar la música
-			SoundLib.muteSound = false;
-			SoundManager.sfxPlaying = true;
-			this.sound.alpha = 1;
-		}
-
-		if (SoundManager.isMusicOn()) {
-			SoundManager.pauseMusic(Sounds.BASKET_MUSIC);
-			SoundManager.musicPlaying = false;
-			this.sound.alpha = 0.5;
-		} else {
-			SoundManager.resumeMusic(Sounds.BASKET_MUSIC);
-			SoundManager.musicPlaying = true;
-			this.sound.alpha = 1;
 		}
 	}
 }

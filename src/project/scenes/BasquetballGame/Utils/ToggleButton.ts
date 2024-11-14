@@ -2,9 +2,8 @@ import type { SpriteSource } from "pixi.js";
 import { Container, Sprite } from "pixi.js";
 
 export class ToggleButton extends Container {
-	private onSprite: Sprite;
-	private offSprite: Sprite;
-	public paused: boolean;
+	public onSprite: Sprite;
+	public offSprite: Sprite;
 
 	constructor(onTexture: SpriteSource, offTexture: SpriteSource, position: { x: number; y: number }, parentContainer: { addChild: (arg0: Sprite) => void }) {
 		super();
@@ -36,25 +35,12 @@ export class ToggleButton extends Container {
 		});
 	}
 
-	// Método para agregar el efecto de rebote
-	// private addBounceEffect(sprite: Sprite): void {
-	// 	new Tween(sprite)
-	// 		.from({ scale: { x: 1, y: 1 } })
-	// 		.to({ scale: { x: 1.35, y: 1.35 } }, 850) // Aumentar la escala
-	// 		.easing(Easing.Bounce.Out) // Efecto de rebote
-	// 		.yoyo(true) // Hacer que vuelva a su tamaño original
-	// 		.repeat(1) // Repetir la animación una vez
-	// 		.start();
-	// }
-
 	public toggleToOn(): void {
 		console.log("toggleToOn called");
 		this.onSprite.alpha = 1;
 		this.offSprite.alpha = 0;
 		this.offSprite.eventMode = "none";
 		this.onSprite.eventMode = "static";
-		this.paused = false;
-		// this.addBounceEffect(this.offSprite); // Agregar efecto de rebote a offSprite
 	}
 
 	public toggleToOff(): void {
@@ -64,7 +50,5 @@ export class ToggleButton extends Container {
 		this.onSprite.eventMode = "none";
 		this.offSprite.eventMode = "static";
 		console.log("onSprite alpha:", this.onSprite.alpha, "| offSprite alpha:", this.offSprite.alpha);
-		this.paused = true;
-		// this.addBounceEffect(this.onSprite); // Agregar efecto de rebote a onSprite
 	}
 }

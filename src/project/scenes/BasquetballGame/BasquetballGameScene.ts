@@ -231,7 +231,10 @@ export class BasquetballGameScene extends PixiScene {
 	}
 
 	public override update(_dt: number): void {
-		if (this.isGameOver() || this.ui.pauseButton.paused) {
+		if (this.ui.pauseButton.paused) {
+			return;
+		}
+		if (this.isGameOver()) {
 			return;
 		}
 		this.ui.counterTime.on(CounterEmits.TIME_ENDED, () => {

@@ -229,7 +229,8 @@
 			"assets": {
 				"basquetball": "./img/basquetball/basquetball.png",
 				"basquetcourt": "./img/basquetball/court.webp",
-				"basquetcourtFullScreen": "./img/basquetball/court.jpg",
+				"basquetcourtFullScreenHQ": "./img/basquetball/court.jpg",
+				"basquetcourtFullScreen": "./img/basquetball/courtHQ.jpg",
 				"basketnet": "./img/basquetball/basketnet.png",
 				"basketrim": "./img/basquetball/rim.png",
 				"cachobasket": "./img/basquetball/cachobasket.jpg",
@@ -250,6 +251,10 @@
 				"pauseOn": "./img/basquetball/pauseOn.png",
 				"pauseOff": "./img/basquetball/pauseOff.png",
 				"sound": "./img/basquetball/sound.png",
+				"soundOff": "./img/basquetball/soundOff.png",
+				"soundoffbase": "./img/basquetball/soundoffbase.png",
+				"soundToggle": "./img/basquetball/soundToggle.png",
+				"soundToggleOff": "./img/basquetball/soundToggleOff.png",
 				"bounce": "./sfx/basketballBounce.wav",
 				"hitRim": "./sfx/basketballHitRim.wav",
 				"courtBGM": "./sfx/basketballBGM.wav"
