@@ -13,9 +13,11 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
-import { BasquetballMainScene } from "./project/scenes/BasquetballGame/BasquetballMainScene";
-// import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
-// import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
+// import { BasquetballMainScene } from "./project/scenes/BasquetballGame/BasquetballMainScene";
+import { NameInputScene } from "./project/scenes/BasquetballGame/NameInputScene";
+
+// import { initializeApp } from "firebase/app";
+// import { getDatabase } from "firebase/database";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -31,6 +33,22 @@ const pixiSettings = {
 	view: document.getElementById("pixi-canvas") as HTMLCanvasElement,
 	interactionTestsAllScenes: true,
 };
+
+// // Your web app's Firebase configuration
+// const firebaseConfig = {
+// 	apiKey: "AIzaSyDern4dyBVwSuhoxW-Qi7qH8bRd5SWHG2g",
+// 	authDomain: "tasklistdatabase-95f3d.firebaseapp.com",
+// 	databaseURL: "https://tasklistdatabase-95f3d-default-rtdb.firebaseio.com",
+// 	projectId: "tasklistdatabase-95f3d",
+// 	storageBucket: "tasklistdatabase-95f3d.firebasestorage.app",
+// 	messagingSenderId: "1171677904",
+// 	appId: "1:1171677904:web:c893dad98eabff84f574d5",
+// };
+
+// // Initialize Firebase
+// const app = initializeApp(firebaseConfig);
+// // Inicialización de Firestore
+// export const db = getDatabase(app);
 
 document.getElementById("pixi-content").style.background = "#" + "000000"; // app.renderer.backgroundColor.toString(16);
 document.getElementById("pixi-content").appendChild(pixiSettings.view);
@@ -78,7 +96,7 @@ window.dispatchEvent(new Event("resize"));
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
 	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
-	Manager.changeScene(BasquetballMainScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(NameInputScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

@@ -6,9 +6,13 @@ import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { SoundLib } from "../../../engine/sound/SoundLib";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Sounds } from "../RunFall/Managers/SoundManager";
-import { Manager } from "../../..";
+import {
+	Manager,
+	// db
+} from "../../..";
 import { BasquetballMainScene } from "./BasquetballMainScene";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
+// import { ref, set, get } from "firebase/database";
 
 interface HighscoreEntry {
 	playerName: string;
@@ -17,6 +21,8 @@ interface HighscoreEntry {
 
 const localStorageKey = "basketballHighscores";
 let highscores: HighscoreEntry[] = [];
+
+// const firebaseHighscoresRef = ref(db, "basketballHighscores");
 
 export class BasketballHighScorePopUp extends PixiScene {
 	// assets
@@ -70,9 +76,14 @@ export class BasketballHighScorePopUp extends PixiScene {
 		const storedHighscores = localStorage.getItem(localStorageKey);
 		console.log("storedHighscores", storedHighscores);
 		if (storedHighscores) {
-			highscores = JSON.parse(storedHighscores);
+			const parsedData = JSON.parse(storedHighscores);
+			if (Array.isArray(parsedData) && parsedData.every((item) => "playerName" in item && "score" in item)) {
+				highscores = parsedData as HighscoreEntry[];
+			} else {
+				console.warn("Los datos de highscores no tienen la estructura esperada.");
+				highscores = []; // Asignar un arreglo vacío si la estructura es incorrecta
+			}
 		}
-
 		this.background.interactiveChildren = false;
 
 		this.fadeAndBlocker.alpha = 0;
@@ -100,9 +111,28 @@ export class BasketballHighScorePopUp extends PixiScene {
 		fadeScale.start();
 	}
 
+	// private async saveScoreToFirebase(playerName: string, playerScore: number): Promise<void> {
+	// 	const newScoreRef = ref(db, `basketballHighscores/${Date.now()}`);
+	// 	await set(newScoreRef, { playerName, score: playerScore });
+	// }
+
+	// private async fetchHighscoresFromFirebase(): Promise<HighscoreEntry[]> {
+	// 	const snapshot = await get(firebaseHighscoresRef);
+	// 	if (snapshot.exists()) {
+	// 		const scores = snapshot.val() as Record<string, HighscoreEntry>; // Forzamos el tipo de los valores
+	// 		return Object.values(scores).sort((a, b) => b.score - a.score);
+	// 	}
+	// 	return [];
+	// }
+
 	public async showHighscores(playerScore: number): Promise<void> {
 		const playerName = await this.showNameInputDialog();
 
+		// // Guardar el puntaje en Firebase
+		// await this.saveScoreToFirebase(playerName, playerScore);
+
+		// // Recargar los puntajes desde Firebase
+		// highscores = await this.fetchHighscoresFromFirebase();
 		// Guardar el puntaje del jugador actual
 		highscores.push({ playerName, score: playerScore });
 
