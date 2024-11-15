@@ -15,8 +15,9 @@ import { CircularLoadingTransition } from "./engine/scenemanager/transitions/Cir
 import { JoystickEmits } from "./utils/Joystick";
 import { BasquetballMainScene } from "./project/scenes/BasquetballGame/BasquetballMainScene";
 
-// import { initializeApp } from "firebase/app";
-// import { getDatabase } from "firebase/database";
+import { initializeApp } from "firebase/app";
+import { getDatabase } from "firebase/database";
+import { ENV_FIREBASE } from "./env";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -33,21 +34,21 @@ export const pixiSettings = {
 	interactionTestsAllScenes: true,
 };
 
-// // Your web app's Firebase configuration
-// const firebaseConfig = {
-// 	apiKey: "AIzaSyDern4dyBVwSuhoxW-Qi7qH8bRd5SWHG2g",
-// 	authDomain: "tasklistdatabase-95f3d.firebaseapp.com",
-// 	databaseURL: "https://tasklistdatabase-95f3d-default-rtdb.firebaseio.com",
-// 	projectId: "tasklistdatabase-95f3d",
-// 	storageBucket: "tasklistdatabase-95f3d.firebasestorage.app",
-// 	messagingSenderId: "1171677904",
-// 	appId: "1:1171677904:web:c893dad98eabff84f574d5",
-// };
+// Your web app's Firebase configuration
+const firebaseConfig = {
+	apiKey: ENV_FIREBASE.FIREBASE_API_KEY,
+	authDomain: ENV_FIREBASE.FIREBASE_AUTH_DOMAIN,
+	databaseURL: ENV_FIREBASE.FIREBASE_DATABASE_URL,
+	projectId: ENV_FIREBASE.FIREBASE_PROJECT_ID,
+	storageBucket: ENV_FIREBASE.FIREBASE_STORAGE_BUCKET,
+	messagingSenderId: ENV_FIREBASE.FIREBASE_MESSAGING_SENDER_ID,
+	appId: ENV_FIREBASE.FIREBASE_APP_ID,
+};
 
-// // Initialize Firebase
-// const app = initializeApp(firebaseConfig);
-// // Inicialización de Firestore
-// export const db = getDatabase(app);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+// Inicialización de Firestore
+export const db = getDatabase(app);
 
 document.getElementById("pixi-content").style.background = "#" + "000000"; // app.renderer.backgroundColor.toString(16);
 document.getElementById("pixi-content").appendChild(pixiSettings.view);
@@ -82,7 +83,6 @@ if (DEBUG) {
 	console.groupEnd();
 }
 // Manager.setRotateScene("portrait", SimpleLockScene, ["rotateDevice"]);
-// Manager.setRotateScene("portrait", SimpleLockScene, ["rotateDevice"]);
 
 window.addEventListener("resize", () => {
 	const w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
@@ -91,6 +91,10 @@ window.addEventListener("resize", () => {
 });
 
 window.dispatchEvent(new Event("resize"));
+window.addEventListener("contextmenu", (e) => {
+	e.preventDefault();
+	window.dispatchEvent(new CustomEvent("rightClick", { detail: "Clic derecho detectado" }));
+});
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));

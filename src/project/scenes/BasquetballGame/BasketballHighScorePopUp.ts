@@ -6,24 +6,21 @@ import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { SoundLib } from "../../../engine/sound/SoundLib";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Sounds } from "../RunFall/Managers/SoundManager";
-import {
-	Manager,
-	// db
-} from "../../..";
+import { Manager } from "../../..";
 import { BasquetballMainScene } from "./BasquetballMainScene";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 import { NameInputPopUp } from "./Utils/NameInputPopUp";
-// import { ref, set, get } from "firebase/database";
 
 interface HighscoreEntry {
 	playerName: string;
 	score: number;
 }
 
+import { ref, get } from "firebase/database";
+import { set } from "firebase/database";
+import { db } from "../../..";
 const localStorageKey = "basketballHighscores";
 let highscores: HighscoreEntry[] = [];
-
-// const firebaseHighscoresRef = ref(db, "basketballHighscores");
 
 export class BasketballHighScorePopUp extends PixiScene {
 	// assets
@@ -76,7 +73,7 @@ export class BasketballHighScorePopUp extends PixiScene {
 				highscores = parsedData as HighscoreEntry[];
 			} else {
 				console.warn("Los datos de highscores no tienen la estructura esperada.");
-				highscores = []; // Asignar un arreglo vacío si la estructura es incorrecta
+				highscores = [];
 			}
 		}
 		this.background.interactiveChildren = false;
@@ -106,41 +103,49 @@ export class BasketballHighScorePopUp extends PixiScene {
 		fadeScale.start();
 	}
 
-	// private async saveScoreToFirebase(playerName: string, playerScore: number): Promise<void> {
-	// 	const newScoreRef = ref(db, `basketballHighscores/${Date.now()}`);
-	// 	await set(newScoreRef, { playerName, score: playerScore });
-	// }
+	public async saveScoreToFirebase(playerName: string, playerScore: number): Promise<void> {
+		try {
+			const newScoreRef = ref(db, `basketballHighscores/${Date.now()}`);
+			await set(newScoreRef, { playerName, score: playerScore });
+			console.log("Highscore guardado en Firebase");
+		} catch (error) {
+			console.error("Error al guardar el puntaje en Firebase:", error);
+		}
+	}
 
-	// private async fetchHighscoresFromFirebase(): Promise<HighscoreEntry[]> {
-	// 	const snapshot = await get(firebaseHighscoresRef);
-	// 	if (snapshot.exists()) {
-	// 		const scores = snapshot.val() as Record<string, HighscoreEntry>; // Forzamos el tipo de los valores
-	// 		return Object.values(scores).sort((a, b) => b.score - a.score);
-	// 	}
-	// 	return [];
-	// }
+	public async fetchHighscoresFromFirebase(): Promise<HighscoreEntry[]> {
+		try {
+			const firebaseHighscoresRef = ref(db, "basketballHighscores");
+			const snapshot = await get(firebaseHighscoresRef);
+			if (snapshot.exists()) {
+				const scores = snapshot.val() as Record<string, HighscoreEntry>;
+				return Object.values(scores).sort((a, b) => b.score - a.score);
+			} else {
+				console.log("No hay *highscores* en Firebase.");
+				return [];
+			}
+		} catch (error) {
+			console.error("Error al cargar los *highscores* desde Firebase:", error);
+			return [];
+		}
+	}
 
-	public showHighscores(playerScore: number): void {
-		// Accede al nombre del jugador
-		const playerName = NameInputPopUp.playerName;
-		console.log(`Player Name: ${playerName} `);
-		// // Guardar el puntaje en Firebase
-		// await this.saveScoreToFirebase(playerName, playerScore);
+	public async showHighscores(playerScore: number): Promise<void> {
+		const playerName = NameInputPopUp.playerName || "Jugador Anónimo"; // Nombre del jugador
+		console.log(`Player Name: ${playerName}`);
 
-		// // Recargar los puntajes desde Firebase
-		// highscores = await this.fetchHighscoresFromFirebase();
-		// Guardar el puntaje del jugador actual
-		highscores.push({ playerName, score: playerScore });
+		// Guardar el puntaje en Firebase
+		await this.saveScoreToFirebase(playerName, playerScore);
 
-		highscores.sort((a, b) => b.score - a.score);
-		localStorage.setItem(localStorageKey, JSON.stringify(highscores));
+		// Cargar *highscores* desde Firebase
+		highscores = await this.fetchHighscoresFromFirebase();
 
-		// Mostrar los highscores en la tabla
+		// Mostrar los *highscores* ordenados en la tabla
 		const startY = 60;
 		const lineHeight = 90;
 		for (let i = 0; i < Math.min(highscores.length, 5); i++) {
 			const entry = highscores[i];
-			const entryText = new Text(`${entry.playerName}: ${entry.score} `, {
+			const entryText = new Text(`${entry.playerName}: ${entry.score}`, {
 				fontSize: 50,
 				fill: 0xffffff,
 				align: "center",
@@ -150,6 +155,7 @@ export class BasketballHighScorePopUp extends PixiScene {
 			entryText.anchor.set(0.5, 0.5);
 			entryText.position.set(0, startY + i * lineHeight - 220);
 			this.background.addChild(entryText);
+
 			if (entry.score === playerScore) {
 				entryText.tint = 0xfdf178;
 				new Tween(entryText).to({ alpha: 0 }, 500).start().repeat(Infinity).yoyo(true).yoyoEasing(Easing.Linear.None);
@@ -157,14 +163,15 @@ export class BasketballHighScorePopUp extends PixiScene {
 			}
 		}
 
-		const returnbasket = Sprite.from("returnbasket");
-		returnbasket.anchor.set(0.5);
-		returnbasket.scale.set(1.1);
-		returnbasket.x = 0;
-		returnbasket.y = 310;
-		returnbasket.eventMode = "static";
-		returnbasket.on("pointertap", () => this.handleResetClick());
-		this.background.addChild(returnbasket);
+		// Botón para volver al menú
+		const returnBasket = Sprite.from("returnbasket");
+		returnBasket.anchor.set(0.5);
+		returnBasket.scale.set(1.1);
+		returnBasket.x = 0;
+		returnBasket.y = 310;
+		returnBasket.eventMode = "static";
+		returnBasket.on("pointertap", () => this.handleResetClick());
+		this.background.addChild(returnBasket);
 	}
 
 	public showPlayerScore(): void {
