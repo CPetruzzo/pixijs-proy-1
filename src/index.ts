@@ -13,8 +13,7 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
-// import { BasquetballMainScene } from "./project/scenes/BasquetballGame/BasquetballMainScene";
-import { NameInputScene } from "./project/scenes/BasquetballGame/NameInputScene";
+import { BasquetballMainScene } from "./project/scenes/BasquetballGame/BasquetballMainScene";
 
 // import { initializeApp } from "firebase/app";
 // import { getDatabase } from "firebase/database";
@@ -23,7 +22,7 @@ settings.RENDER_OPTIONS.hello = false;
 
 DEFAULTS.safetyCheckFunction = (obj: any) => !obj?.destroyed;
 
-const pixiSettings = {
+export const pixiSettings = {
 	backgroundColor: 0x0,
 	width: ScaleHelper.IDEAL_WIDTH,
 	resolution: window.devicePixelRatio || 1,
@@ -96,7 +95,7 @@ window.dispatchEvent(new Event("resize"));
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
 	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
-	Manager.changeScene(NameInputScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(BasquetballMainScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

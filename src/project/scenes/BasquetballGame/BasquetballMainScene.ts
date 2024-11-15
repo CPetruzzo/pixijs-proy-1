@@ -161,8 +161,8 @@ export class BasquetballMainScene extends PixiScene {
 	}
 
 	public override onResize(_newW: number, _newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, _newW, _newH, 1920, 1080, ScaleHelper.FIT);
-		this.backgroundContainer.x = _newW / 2;
-		this.backgroundContainer.y = _newH / 2;
+		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, _newW, _newH, 2090, 1080, ScaleHelper.FILL);
+		this.backgroundContainer.x = _newW * 0.5;
+		this.backgroundContainer.y = _newH * 0.5;
 	}
 }

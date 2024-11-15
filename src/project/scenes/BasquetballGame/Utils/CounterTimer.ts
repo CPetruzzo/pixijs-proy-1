@@ -20,7 +20,7 @@ export class CounterTimer extends Container {
 		this.currentCounterTime = currentCounterTime;
 		this.counter = new Text(`${this.currentCounterTime}`, {
 			fontSize: 250,
-			fill: 0xf48e44,
+			fill: 0xffffff,
 			dropShadowDistance: 15,
 			dropShadow: true,
 			dropShadowColor: 0x000000,

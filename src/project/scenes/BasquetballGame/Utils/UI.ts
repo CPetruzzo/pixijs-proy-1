@@ -4,6 +4,8 @@ import { SettingsPopUp } from "../SettingsPopUp";
 import { CounterTimer } from "./CounterTimer";
 import { PauseButton } from "./PauseButton";
 import { SoundButton } from "./SoundButton";
+import { NameInputPopUp } from "./NameInputPopUp";
+import { BasketballHighScorePopUp } from "../BasketballHighScorePopUp";
 
 export class UI {
 	public rightContainer: Container;
@@ -94,7 +96,7 @@ export class UI {
 
 		this.scoreText = new Text(`Score: ${this.score}`, {
 			fontSize: 210,
-			fill: 0xfdf178,
+			fill: 0xffffff,
 			dropShadowDistance: 15,
 			dropShadow: true,
 			dropShadowColor: 0x000000,
@@ -129,6 +131,42 @@ export class UI {
 			}
 		} catch (error) {
 			console.error("Error opening settings popup:", error);
+		}
+	}
+
+	public async openNameInputPopup(): Promise<void> {
+		this.isPopupOpen = true;
+		this.isPaused = true;
+
+		try {
+			const popupInstance = await Manager.openPopup(NameInputPopUp);
+			if (popupInstance instanceof NameInputPopUp) {
+				popupInstance.showButtons();
+			}
+			if (popupInstance instanceof NameInputPopUp) {
+				popupInstance.on("HIGHSCORE_NAME_READY", () => {
+					console.log("cerrate loco");
+					this.isPaused = false;
+					this.isPopupOpen = false;
+					this.openGameOverPopup();
+				});
+			}
+		} catch (error) {
+			console.error("Error opening settings popup:", error);
+		}
+	}
+
+	private async openGameOverPopup(): Promise<void> {
+		try {
+			const popupInstance = await Manager.openPopup(BasketballHighScorePopUp, [this.score]);
+			if (popupInstance instanceof BasketballHighScorePopUp) {
+				popupInstance.showHighscores(this.score);
+				// popupInstance.showPlayerScore();
+			} else {
+				console.error("Error al abrir el popup: no se pudo obtener la instancia de BasePopup.");
+			}
+		} catch (error) {
+			console.error("Error al abrir el popup:", error);
 		}
 	}
 }

@@ -255,6 +255,8 @@
 				"soundoffbase": "./img/basquetball/soundoffbase.png",
 				"soundToggle": "./img/basquetball/soundToggle.png",
 				"soundToggleOff": "./img/basquetball/soundToggleOff.png",
+				"continueBTN": "./img/basquetball/continueBTN.png",
+
 				"bounce": "./sfx/basketballBounce.wav",
 				"hitRim": "./sfx/basketballHitRim.wav",
 				"courtBGM": "./sfx/basketballBGM.wav"

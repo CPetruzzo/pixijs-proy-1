@@ -12,8 +12,6 @@ import { JoystickBasquetBallPlayer } from "./JoystickBasquetBallPlayer";
 import { SoundLib } from "../../../engine/sound/SoundLib";
 import { UI } from "./Utils/UI";
 import { CounterEmits } from "./Utils/CounterTimer";
-import { Manager } from "../../..";
-import { BasketballHighScorePopUp } from "./BasketballHighScorePopUp";
 import { EventQueue } from "@dimforge/rapier2d";
 
 export class BasquetballGameScene extends PixiScene {
@@ -48,7 +46,7 @@ export class BasquetballGameScene extends PixiScene {
 	private groundCollider: Collider; // Collider del suelo
 	private frontCollider: Collider;
 	private backCollider: Collider;
-	private net: Sprite;
+	// private net: Sprite;
 	private ui: UI;
 	private wallContainer: Container = new Container();
 	private noTime: boolean = false;
@@ -99,12 +97,12 @@ export class BasquetballGameScene extends PixiScene {
 		this.bG.zIndex = -1;
 		this.worldContainer.addChild(this.bG);
 
-		this.net = Sprite.from("basketnet");
-		this.net.anchor.set(0.5);
-		this.net.scale.set(1.55);
-		this.net.position.set(860, 735);
-		this.worldContainer.addChild(this.net);
-		this.net.zIndex = 3;
+		// this.net = Sprite.from("basketnet");
+		// this.net.anchor.set(0.5);
+		// this.net.scale.set(1.55);
+		// this.net.position.set(861, 735);
+		// this.worldContainer.addChild(this.net);
+		// this.net.zIndex = 3;
 
 		const rim = Sprite.from("basketrim");
 		rim.anchor.set(0.5);
@@ -216,20 +214,6 @@ export class BasquetballGameScene extends PixiScene {
 		this.world.createCollider(blockCollider).setTranslation({ x: x - 0.3, y: y + 1.3 });
 	}
 
-	private async openGameOverPopup(): Promise<void> {
-		try {
-			const popupInstance = await Manager.openPopup(BasketballHighScorePopUp, [this.ui.score]);
-			if (popupInstance instanceof BasketballHighScorePopUp) {
-				popupInstance.showHighscores(this.ui.score);
-				// popupInstance.showPlayerScore();
-			} else {
-				console.error("Error al abrir el popup: no se pudo obtener la instancia de BasePopup.");
-			}
-		} catch (error) {
-			console.error("Error al abrir el popup:", error);
-		}
-	}
-
 	public override update(_dt: number): void {
 		if (this.ui.pauseButton.paused) {
 			return;
@@ -256,8 +240,8 @@ export class BasquetballGameScene extends PixiScene {
 
 	private isGameOver(): boolean {
 		if (this.gameOver && !this.popupOpened) {
-			this.openGameOverPopup();
-			this.popupOpened = true;
+			this.ui.openNameInputPopup();
+			this.popupOpened = true; // Asegura que solo se abra una vez
 			return true;
 		}
 		if (this.noTime) {
@@ -391,7 +375,7 @@ export class BasquetballGameScene extends PixiScene {
 
 	public override onResize(_newW: number, _newH: number): void {
 		// Escala ambos contenedores para que coincidan con el tamaño ideal de la pantalla
-		ScaleHelper.setScaleRelativeToIdeal(this.worldContainer, _newW, _newH, 1920, 1920, ScaleHelper.FILL);
+		ScaleHelper.setScaleRelativeToIdeal(this.worldContainer, _newW * 1.15, _newH * 1.15, 1920, 1920, ScaleHelper.FILL);
 		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, _newW, _newH, 1920, 1080, ScaleHelper.FILL);
 		ScaleHelper.setScaleRelativeToIdeal(this.ui.rightContainer, _newW * 0.3, _newH * 0.3, 1920, 1080, ScaleHelper.FIT);
 		ScaleHelper.setScaleRelativeToIdeal(this.ui.leftContainer, _newW * 0.3, _newH * 0.3, 1920, 1080, ScaleHelper.FIT);

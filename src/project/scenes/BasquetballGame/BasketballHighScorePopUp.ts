@@ -12,6 +12,7 @@ import {
 } from "../../..";
 import { BasquetballMainScene } from "./BasquetballMainScene";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
+import { NameInputPopUp } from "./Utils/NameInputPopUp";
 // import { ref, set, get } from "firebase/database";
 
 interface HighscoreEntry {
@@ -64,12 +65,6 @@ export class BasketballHighScorePopUp extends PixiScene {
 		this.restart = true;
 		SoundLib.playSound(Sounds.CLOSEPOPUP, { allowOverlap: false, singleInstance: true, loop: false, volume: 0.2, speed: 0.5 });
 		this.closePopup();
-	}
-
-	// eslint-disable-next-line @typescript-eslint/require-await
-	private async showNameInputDialog(): Promise<string> {
-		const playerName = prompt("Enter your name:");
-		return playerName || "Player"; // Si no se ingresa un nombre, se usa "Player" por defecto
 	}
 
 	public override onStart(): void {
@@ -125,9 +120,10 @@ export class BasketballHighScorePopUp extends PixiScene {
 	// 	return [];
 	// }
 
-	public async showHighscores(playerScore: number): Promise<void> {
-		const playerName = await this.showNameInputDialog();
-
+	public showHighscores(playerScore: number): void {
+		// Accede al nombre del jugador
+		const playerName = NameInputPopUp.playerName;
+		console.log(`Player Name: ${playerName} `);
 		// // Guardar el puntaje en Firebase
 		// await this.saveScoreToFirebase(playerName, playerScore);
 
@@ -144,7 +140,7 @@ export class BasketballHighScorePopUp extends PixiScene {
 		const lineHeight = 90;
 		for (let i = 0; i < Math.min(highscores.length, 5); i++) {
 			const entry = highscores[i];
-			const entryText = new Text(`${entry.playerName}: ${entry.score}`, {
+			const entryText = new Text(`${entry.playerName}: ${entry.score} `, {
 				fontSize: 50,
 				fill: 0xffffff,
 				align: "center",
@@ -194,23 +190,23 @@ export class BasketballHighScorePopUp extends PixiScene {
 
 		// Display Doubles
 		createText("Doubles", 50, 0xffffff, baseX, -170);
-		createText(`${this.doublesPoints}`, 50, 0xffffff, pointsX, -170, "right");
+		createText(`${this.doublesPoints} `, 50, 0xffffff, pointsX, -170, "right");
 		createText("x2", 20, 0xfdf178, multiplierX, -145, "right");
 
 		// Display Triples
 		createText("Triples", 50, 0xffffff, baseX, -80);
-		createText(`${this.triplesPoints}`, 50, 0xffffff, pointsX, -80, "right");
+		createText(`${this.triplesPoints} `, 50, 0xffffff, pointsX, -80, "right");
 		createText("x3", 20, 0xfdf178, multiplierX, -55, "right");
 
 		// Display Clean Shots
 		createText("Clean Shots", 50, 0xffffff, baseX, 20);
-		createText(`${this.cleanShotsPoints}`, 50, 0xffffff, pointsX, 20, "right");
+		createText(`${this.cleanShotsPoints} `, 50, 0xffffff, pointsX, 20, "right");
 		createText("x5", 20, 0xfdf178, multiplierX, 55, "right");
 
 		this.totalPoints = this.cleanShotsPoints * 5 + this.triplesPoints * 3 + this.doublesPoints * 2;
 		// Display Total
 		createText("Total", 50, 0xffffff, baseX, 120);
-		createText(`${this.totalPoints}`, 50, 0xffffff, pointsX, 120, "right");
+		createText(`${this.totalPoints} `, 50, 0xffffff, pointsX, 120, "right");
 
 		// Add Return Button
 		const returnBasket = Sprite.from("returnbasket");

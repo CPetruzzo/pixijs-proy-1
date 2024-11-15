@@ -10,12 +10,13 @@ export class NameInputScene extends PixiScene {
 	private backgroundContainer: Container = new Container();
 	private nameInputContainer: Container = new Container();
 	private playerName: string = "";
+	public static readonly BUNDLES = ["basquet"];
 
 	constructor() {
 		super();
 
 		// Fondo
-		const background = Sprite.from("backgroundTexture");
+		const background = Sprite.from("scoreFrame");
 		background.anchor.set(0.5);
 		background.x = 960; // Ajusta según resolución
 		background.y = 540;
@@ -34,15 +35,15 @@ export class NameInputScene extends PixiScene {
 			})
 		);
 		titleText.anchor.set(0.5);
-		titleText.position.set(960, 300);
-		this.addChild(titleText);
+		titleText.position.set(960, 410);
+		this.backgroundContainer.addChild(titleText);
 
 		// Campo de texto (usando un gráfico básico como fondo)
 		const inputBox = new Graphics();
 		inputBox.beginFill(0xffffff, 0.2); // Color de fondo del campo
-		inputBox.drawRoundedRect(0, 0, 600, 80, 10);
+		inputBox.drawRoundedRect(0, -25, 500, 80, 10);
 		inputBox.endFill();
-		inputBox.position.set(660, 500);
+		inputBox.position.set(700, 510);
 
 		// Texto para mostrar el nombre ingresado
 		const nameText = new Text(
@@ -50,34 +51,35 @@ export class NameInputScene extends PixiScene {
 			new TextStyle({
 				fontSize: 50,
 				fill: 0xffffff,
-				fontFamily: "Arial",
+				fontFamily: "DK Boarding House III",
 			})
 		);
-		nameText.position.set(675, 510); // Dentro del campo de texto
+		nameText.position.set(725, 495); // Dentro del campo de texto
 		this.nameInputContainer.addChild(inputBox);
 		this.nameInputContainer.addChild(nameText);
-		this.addChild(this.nameInputContainer);
+		this.backgroundContainer.addChild(this.nameInputContainer);
 
 		// Evento para actualizar el texto del nombre en tiempo real
 		window.addEventListener("keydown", (e) => this.onKeyDown(e, nameText));
 
 		// Botón de confirmación
-		const confirmButton = Sprite.from("confirmButtonTexture");
+		const confirmButton = Sprite.from("continueBTN");
 		confirmButton.anchor.set(0.5);
-		confirmButton.position.set(960, 700);
-		confirmButton.interactive = true;
-		this.addChild(confirmButton);
+		confirmButton.scale.set(0.6);
+		confirmButton.position.set(960, 680);
+		confirmButton.eventMode = "static";
+		this.backgroundContainer.addChild(confirmButton);
 
 		// Animación del botón en pointerover
 		confirmButton.on("pointerover", () => {
 			new Tween(confirmButton)
-				.to({ scale: { x: 1.1, y: 1.1 } }, 200)
+				.to({ scale: { x: 0.65, y: 0.65 } }, 200)
 				.easing(Easing.Quadratic.Out)
 				.start();
 		});
 		confirmButton.on("pointerout", () => {
 			new Tween(confirmButton)
-				.to({ scale: { x: 1.0, y: 1.0 } }, 200)
+				.to({ scale: { x: 0.6, y: 0.6 } }, 200)
 				.easing(Easing.Quadratic.Out)
 				.start();
 		});
@@ -109,7 +111,7 @@ export class NameInputScene extends PixiScene {
 
 	// Ajuste de escala y posición en caso de cambio de tamaño de pantalla
 	public override onResize(_newW: number, _newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, _newW, _newH, 1920, 1080, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, _newW, _newH, 1920, 1080, ScaleHelper.FILL);
 		this.backgroundContainer.x = _newW / 2;
 		this.backgroundContainer.y = _newH / 2;
 	}
