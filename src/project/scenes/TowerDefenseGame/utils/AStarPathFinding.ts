@@ -1,10 +1,11 @@
 import { Node } from "../models/Node";
 
 export class AStarPathfinding {
-	static findPath(grid: number[][], start: Node, goal: Node): Node[] | null {
+	public static findPath(grid: number[][], start: Node, goal: Node): Node[] | null {
 		const openSet: Node[] = [start];
 		const closedSet: Set<string> = new Set();
 
+		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 		const key = (node: Node) => `${node.x},${node.y}`;
 		start.g = 0;
 		start.h = this.heuristic(start, goal);
@@ -22,7 +23,9 @@ export class AStarPathfinding {
 
 			const neighbors = this.getNeighbors(grid, current);
 			for (const neighbor of neighbors) {
-				if (closedSet.has(key(neighbor))) continue;
+				if (closedSet.has(key(neighbor))) {
+					continue;
+				}
 
 				const tentativeG = current.g + 1;
 				if (tentativeG < neighbor.g || !openSet.some((n) => n.equals(neighbor))) {
@@ -53,20 +56,14 @@ export class AStarPathfinding {
 	private static getNeighbors(grid: number[][], node: Node): Node[] {
 		const directions = [
 			{ x: 0, y: -1 }, // Up
-			{ x: 0, y: 1 },  // Down
+			{ x: 0, y: 1 }, // Down
 			{ x: -1, y: 0 }, // Left
-			{ x: 1, y: 0 },  // Right
+			{ x: 1, y: 0 }, // Right
 		];
 
 		return directions
 			.map((dir) => new Node(node.x + dir.x, node.y + dir.y))
-			.filter((neighbor) =>
-				neighbor.x >= 0 &&
-				neighbor.x < grid[0].length &&
-				neighbor.y >= 0 &&
-				neighbor.y < grid.length &&
-				grid[neighbor.y][neighbor.x] === 0
-			);
+			.filter((neighbor) => neighbor.x >= 0 && neighbor.x < grid[0].length && neighbor.y >= 0 && neighbor.y < grid.length && grid[neighbor.y][neighbor.x] === 0);
 	}
 
 	private static heuristic(node: Node, goal: Node): number {

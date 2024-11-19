@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 export const GameConfig = {
 	// Tamaño de la celda de la grilla
 	tileSize: 64, // Tamaño de cada celda en píxeles
@@ -19,15 +20,16 @@ export const GameConfig = {
 
 	// Configuración para las torres (puedes personalizar la potencia, rango, etc.)
 	towerConfig: {
-		range: 3, // Rango de la torre en píxeles
+		range: 4, // Rango de la torre en píxeles
 		damage: 10, // Daño de la torre
-		fireRate: 100, // Tasa de disparo (disparos por segundo)
+		fireRate: 50, // Tasa de disparo (disparos por segundo) -> más grande, menos disparos
 	},
 
 	// Enemigos y sus características (velocidad, salud, etc.)
 	enemyConfig: {
 		speed: 2, // Velocidad de los enemigos
-		health: 100, // Salud base de los enemigos
+		health: [100, 750, 1500], // Salud base de los enemigos
+		sprites: ["enemy", "enemy2", "enemy3"], // Array con los nombres de los sprites
 	},
 
 	// Colores para diferentes elementos del juego
@@ -39,5 +41,5 @@ export const GameConfig = {
 	},
 	initialPoints: 100, // Puntos iniciales del jugador
 	towerCost: 50, // Costo de una torre
-	pointsPerKill: 10, // Puntos ganados por matar un enemigo
+	pointsPerKill: [10, 30, 60], // Puntos ganados por matar un enemigo
 };

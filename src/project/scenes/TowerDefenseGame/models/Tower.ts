@@ -1,5 +1,6 @@
-import { Sprite, Container } from "pixi.js";
-import { Enemy } from "./Enemy";
+import type { Container } from "pixi.js";
+import { Sprite } from "pixi.js";
+import type { Enemy } from "./Enemy";
 import { ProjectileManager } from "../utils/ProjectileManager";
 import { DistanceHelper } from "../utils/DistanceHelper";
 import { GameConfig } from "../game/GameConfig"; // Asegúrate de importar GameConfig
@@ -7,7 +8,7 @@ import { GameConfig } from "../game/GameConfig"; // Asegúrate de importar GameC
 export class Tower {
 	public sprite: Sprite;
 	public lastShotTime: number = 0;
-	public towerConfig: { range: number; damage: number; fireRate: number; };
+	public towerConfig: { range: number; damage: number; fireRate: number };
 
 	constructor(public x: number, public y: number, public tileSize: number) {
 		// Usar valores de GameConfig para la torre
@@ -33,9 +34,7 @@ export class Tower {
 
 		// Verificar si ha pasado el tiempo necesario para disparar
 		if (now - this.lastShotTime > towerConfig.fireRate) {
-			const enemy = activeEnemies.find((e) =>
-				DistanceHelper.isWithinRange(this, e, towerConfig.range, this.tileSize)
-			);
+			const enemy = activeEnemies.find((e) => DistanceHelper.isWithinRange(this, e, towerConfig.range, this.tileSize));
 
 			if (enemy) {
 				this.lastShotTime = now;

@@ -166,8 +166,12 @@
 			"name": "towerdefense",
 			"assets": {
 				"enemy": "./img/towerdefense/towerEnemy1.png",
+				"enemy2": "./img/towerdefense/towerEnemy2.png",
+				"enemy3": "./img/towerdefense/towerEnemy3.png",
 				"tower": "./img/towerdefense/towerBuilding.png",
-				"bg": "./img/towerdefense/bg.jpg"
+				"bg": "./img/towerdefense/bg.jpg",
+				"bgExtended": "./img/towerdefense/bgExtended.jpg"
+
 			}
 		},
 		{

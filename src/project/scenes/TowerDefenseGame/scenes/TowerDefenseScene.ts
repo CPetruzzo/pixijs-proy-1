@@ -1,4 +1,5 @@
-import { Container, Point, Text } from "pixi.js";
+import type { Point } from "pixi.js";
+import { Container } from "pixi.js";
 import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { Enemy } from "../models/Enemy";
 import { Tower } from "../models/Tower";
@@ -8,6 +9,8 @@ import { Node } from "../models/Node";
 import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
 import { GameConfig } from "../game/GameConfig";
 import { GameStats } from "../utils/GameStats";
+import { UIContainer } from "../ui/UIContainer";
+import { ProjectileManager } from "../utils/ProjectileManager";
 
 export class TowerDefenseScene extends PixiScene {
 	private grid: number[][];
@@ -17,11 +20,11 @@ export class TowerDefenseScene extends PixiScene {
 	private towers: Tower[] = [];
 	private lastSpawnTime: number = 0;
 	private walkableCells: boolean[][] = [];
-	private occupiedCells: boolean[][] = [];  // Nueva matriz para las celdas ocupadas
+	private occupiedCells: boolean[][] = []; // Nueva matriz para las celdas ocupadas
 	public static readonly BUNDLES = ["towerdefense"];
-	private gameStats: GameStats = new GameStats(GameConfig.initialPoints); // Inicializamos con puntos iniciales
+	public static gameStats: GameStats = new GameStats(GameConfig.initialPoints); // Inicializamos con puntos iniciales
 	private towerCost: number = GameConfig.towerCost; // Costo de construir una torre
-	private pointsText: Text;
+	private uiContainer: UIContainer = new UIContainer();
 
 	constructor() {
 		super();
@@ -29,16 +32,18 @@ export class TowerDefenseScene extends PixiScene {
 		this.addChild(this.gameContainer);
 		this.createBackground();
 		this.initializeWalkableCells();
-		this.initializeOccupiedCells();  // Inicializamos las celdas ocupadas
+		this.initializeOccupiedCells(); // Inicializamos las celdas ocupadas
 		// this.createTowers();
 		this.setupClickListener();
 
-		this.pointsText = new Text(`Puntos: ${this.gameStats.getPoints()}`, { fill: "white" });
-		this.pointsText.position.set(10, 10);
-		this.addChild(this.pointsText);
+		this.addChild(this.uiContainer);
 	}
 
 	private createBackground(): void {
+		// Dibujar el fondo
+		Grid.drawBackground(GameConfig.gridWidth, GameConfig.gridHeight, this.tileSize, this.gameContainer);
+
+		// Dibujar la grilla encima del fondo
 		Grid.drawGrid(this.grid, this.tileSize, this.gameContainer);
 	}
 
@@ -49,17 +54,27 @@ export class TowerDefenseScene extends PixiScene {
 			const tower = new Tower(pos.x, pos.y, this.tileSize);
 			this.towers.push(tower);
 			this.gameContainer.addChild(tower.sprite);
-			this.occupiedCells[pos.y][pos.x] = true;  // Marcar la celda como ocupada
+			this.occupiedCells[pos.y][pos.x] = true; // Marcar la celda como ocupada
 		});
 	}
 
 	private spawnEnemy(): void {
-		const startNode = new Node(0, 0);
-		const goalNode = new Node(0, GameConfig.gridHeight - 1);
+		const startNode = new Node(9, 1);
+		const goalNode = new Node(9, GameConfig.gridHeight - 1);
 		const path = AStarPathfinding.findPath(this.grid, startNode, goalNode);
 
 		if (path) {
-			const enemy = new Enemy(0, 0, path, this.tileSize);
+			let enemyIndex = 0; // Por defecto, seleccionamos el primer enemigo
+
+			// Desbloquear enemigos más fuertes si el score supera ciertos valores
+			if (TowerDefenseScene.gameStats.getScore() > 200) {
+				enemyIndex = 1; // Por ejemplo, desbloqueamos el enemigo 2
+			}
+			if (TowerDefenseScene.gameStats.getScore() > 400) {
+				enemyIndex = 2; // Desbloqueamos el enemigo 3
+			}
+
+			const enemy = new Enemy(9, 1, path, this.tileSize, enemyIndex);
 			this.enemies.push(enemy);
 			this.gameContainer.addChild(enemy.sprite);
 		}
@@ -84,7 +99,7 @@ export class TowerDefenseScene extends PixiScene {
 	// Verificar si la celda está vacía y es válida para colocar una torre
 	private isTileEmpty(x: number, y: number): boolean {
 		// Comprobar si alguna torre ya está ocupando esa celda
-		const isOccupied = this.occupiedCells[y] && this.occupiedCells[y][x];  // Revisamos en la nueva matriz
+		const isOccupied = this.occupiedCells[y] && this.occupiedCells[y][x]; // Revisamos en la nueva matriz
 
 		// Verificar si la celda forma parte del camino de los enemigos
 		const isWalkable = this.walkableCells[y][x];
@@ -94,9 +109,10 @@ export class TowerDefenseScene extends PixiScene {
 	}
 
 	// Agregar torre solo si se tienen suficientes puntos
+	// Agregar torre solo si se tienen suficientes puntos
 	private addTower(x: number, y: number): void {
 		if (this.isTileEmpty(x, y)) {
-			if (this.gameStats.spendPoints(this.towerCost)) {
+			if (TowerDefenseScene.gameStats.spendPoints(this.towerCost)) {
 				const tower = new Tower(x, y, this.tileSize);
 				this.towers.push(tower);
 				this.gameContainer.addChild(tower.sprite);
@@ -104,7 +120,11 @@ export class TowerDefenseScene extends PixiScene {
 				// Marcar la celda como ocupada
 				this.occupiedCells[y][x] = true;
 
-				console.log(`Torre agregada en (${x}, ${y}). Puntos restantes: ${this.gameStats.getPoints()}`);
+				// Aumentar el costo de la próxima torre en 5
+				this.towerCost += 30;
+
+				console.log(`Torre agregada en (${x}, ${y}). Puntos restantes: ${TowerDefenseScene.gameStats.getPoints()}`);
+				console.log(`Costo de la siguiente torre: ${this.towerCost}`);
 			} else {
 				console.log("No tienes suficientes puntos para agregar una torre.");
 			}
@@ -119,6 +139,9 @@ export class TowerDefenseScene extends PixiScene {
 			this.lastSpawnTime = Date.now();
 		}
 
+		ProjectileManager.updateProjectiles(this.gameContainer, delta);
+
+		console.log("this.enemies", this.enemies.length);
 		this.enemies.forEach((enemy, index) => {
 			enemy.update();
 			if (enemy.isDefeated()) {
@@ -126,19 +149,18 @@ export class TowerDefenseScene extends PixiScene {
 				this.gameContainer.removeChild(enemy.sprite);
 
 				// Otorgar puntos al jugador por matar al enemigo
-				this.gameStats.addPoints(GameConfig.pointsPerKill);
-				console.log(`Enemigo derrotado. Puntos actuales: ${this.gameStats.getPoints()}`);
+				TowerDefenseScene.gameStats.addPoints(GameConfig.pointsPerKill[enemy.getEnemyIndex()]);
+				TowerDefenseScene.gameStats.addScore(GameConfig.pointsPerKill[enemy.getEnemyIndex()]); // Incrementar el score también
+				console.log(`Enemigo derrotado. Puntos actuales: ${TowerDefenseScene.gameStats.getPoints()}`);
 			}
 		});
-		this.towers.forEach((tower) =>
-			tower.update(delta, this.enemies, this.gameContainer)
-		);
+		this.towers.forEach((tower) => tower.update(delta, this.enemies, this.gameContainer));
 
-		this.pointsText.text = `Puntos: ${this.gameStats.getPoints()}`;
+		this.uiContainer.updateUI(TowerDefenseScene.gameStats, this.towerCost);
 	}
 
 	public override onResize(newW: number, newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, newW, newH, 1920, 720, ScaleHelper.FILL);
+		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, newW, newH, 620, 620, ScaleHelper.FIT);
 		this.gameContainer.x = newW * 0.5;
 		this.gameContainer.y = newH * 0.5;
 
@@ -151,7 +173,7 @@ export class TowerDefenseScene extends PixiScene {
 		for (let y = 0; y < GameConfig.gridHeight; y++) {
 			this.occupiedCells[y] = [];
 			for (let x = 0; x < GameConfig.gridWidth; x++) {
-				this.occupiedCells[y][x] = false;  // Inicializamos todas las celdas como no ocupadas
+				this.occupiedCells[y][x] = false; // Inicializamos todas las celdas como no ocupadas
 			}
 		}
 	}
@@ -164,14 +186,22 @@ export class TowerDefenseScene extends PixiScene {
 			for (let x = 0; x < GameConfig.gridWidth; x++) {
 				// El camino de la "U" se define de la siguiente manera:
 				if (
-					(y === 0 && x >= 0 && x <= 9) || // Primer columna (de arriba a abajo)
-					(y === 1 && x >= 0 && x <= 9) || // Primer columna (de arriba a abajo)
-					(y === 8 && x >= 0 && x <= 9) || // Última fila (de izquierda a derecha)
-					(y === 9 && x >= 0 && x <= 9) || // Última fila (de izquierda a derecha)
-					(x === 8 && y >= 0 && y <= 9) ||   // Última columna (de arriba a abajo)
-					(x === 9 && y >= 0 && y <= 9)    // Última columna (de arriba a abajo)
+					(y === 0 && x >= 0 && x <= 9) ||
+					(y === 1 && x >= 0 && x <= 9) ||
+					(y === 2 && x >= 0 && x <= 9) ||
+					(y === 3 && x === 3) ||
+					(y === 5 && x === 3) ||
+					(y === 6 && x >= 0 && x <= 9) ||
+					(y === 7 && x >= 0 && x <= 9) ||
+					(y === 8 && x >= 0 && x <= 9) ||
+					(y === 9 && x >= 0 && x <= 9) ||
+					(x === 0 && y >= 0 && y <= 9) ||
+					(x === 1 && y >= 0 && y <= 9) ||
+					(x === 8 && y === 4) ||
+					(x === 9 && y >= 0 && y <= 9) ||
+					(x === 2 && y >= 0 && y <= 9)
 				) {
-					this.walkableCells[y][x] = false;  // Las celdas por las que los enemigos pueden caminar
+					this.walkableCells[y][x] = false; // Las celdas por las que los enemigos pueden caminar
 				} else {
 					this.walkableCells[y][x] = true; // Las celdas que están bloqueadas
 				}
@@ -179,4 +209,3 @@ export class TowerDefenseScene extends PixiScene {
 		}
 	}
 }
-

@@ -1,16 +1,10 @@
+/* eslint-disable prettier/prettier */
 import { Container, Graphics } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 
 class Enemy {
-	constructor(
-		public sprite: Graphics,
-		public x: number,
-		public y: number,
-		public path: Node[],
-		public currentStep: number = 0,
-		public health: number = 100
-	) { }
+	constructor(public sprite: Graphics, public x: number, public y: number, public path: Node[], public currentStep: number = 0, public health: number = 100) { }
 }
 
 class Tower {
@@ -25,14 +19,7 @@ class Tower {
 }
 
 class Node {
-	constructor(
-		public x: number,
-		public y: number,
-		public g: number = 0,
-		public h: number = 0,
-		public f: number = 0,
-		public parent: Node | null = null
-	) { }
+	constructor(public x: number, public y: number, public g: number = 0, public h: number = 0, public f: number = 0, public parent: Node | null = null) { }
 }
 
 export class TowerDefenseScene extends PixiScene {
@@ -96,7 +83,6 @@ export class TowerDefenseScene extends PixiScene {
 				}
 			}
 		}
-
 	}
 
 	private isValidCell(nx: number, ny: number, cols: number, rows: number): boolean {
@@ -141,11 +127,7 @@ export class TowerDefenseScene extends PixiScene {
 		towerPositions.forEach((pos) => {
 			const towerSprite = new Graphics();
 			towerSprite.beginFill(0x00ff00);
-			towerSprite.drawCircle(
-				(pos.x + 0.5) * this.tileSize,
-				(pos.y + 0.5) * this.tileSize,
-				this.tileSize * 0.4
-			);
+			towerSprite.drawCircle((pos.x + 0.5) * this.tileSize, (pos.y + 0.5) * this.tileSize, this.tileSize * 0.4);
 			towerSprite.endFill();
 
 			const tower = new Tower(towerSprite, pos.x, pos.y);
@@ -158,9 +140,7 @@ export class TowerDefenseScene extends PixiScene {
 		this.towers.forEach((tower) => {
 			const now = Date.now();
 			if (now - tower.lastShotTime > tower.fireRate) {
-				const enemyInRange = this.enemies.find((enemy) =>
-					Math.hypot((enemy.sprite.x / this.tileSize - tower.x), (enemy.sprite.y / this.tileSize - tower.y)) <= tower.range
-				);
+				const enemyInRange = this.enemies.find((enemy) => Math.hypot(enemy.sprite.x / this.tileSize - tower.x, enemy.sprite.y / this.tileSize - tower.y) <= tower.range);
 
 				if (enemyInRange) {
 					tower.lastShotTime = now;
@@ -208,8 +188,8 @@ export class TowerDefenseScene extends PixiScene {
 
 	private spawnEnemy(): void {
 		// Generar un nuevo enemigo en la posición inicial
-		const startX = 0;
-		const startY = 0;
+		const startX = 9;
+		const startY = 3;
 		const goalX = 8;
 		const goalY = 5;
 
@@ -248,13 +228,17 @@ export class TowerDefenseScene extends PixiScene {
 			closedSet.push(currentNode);
 
 			this.getNeighbors(currentNode).forEach((neighbor) => {
-				if (closedSet.some((n) => n.x === neighbor.x && n.y === neighbor.y)) return;
+				if (closedSet.some((n) => n.x === neighbor.x && n.y === neighbor.y)) {
+					return;
+				}
 
 				const tentativeG = currentNode.g + 1;
 
 				if (!openSet.some((n) => n.x === neighbor.x && n.y === neighbor.y)) {
 					openSet.push(neighbor);
-				} else if (tentativeG >= neighbor.g) return;
+				} else if (tentativeG >= neighbor.g) {
+					return;
+				}
 
 				neighbor.parent = currentNode;
 				neighbor.g = tentativeG;
@@ -271,10 +255,18 @@ export class TowerDefenseScene extends PixiScene {
 		const neighbors: Node[] = [];
 		const { x, y } = node;
 
-		if (x > 0 && this.grid[x - 1][y] === 0) neighbors.push(new Node(x - 1, y));
-		if (x < this.grid.length - 1 && this.grid[x + 1][y] === 0) neighbors.push(new Node(x + 1, y));
-		if (y > 0 && this.grid[x][y - 1] === 0) neighbors.push(new Node(x, y - 1));
-		if (y < this.grid[0].length - 1 && this.grid[x][y + 1] === 0) neighbors.push(new Node(x, y + 1));
+		if (x > 0 && this.grid[x - 1][y] === 0) {
+			neighbors.push(new Node(x - 1, y));
+		}
+		if (x < this.grid.length - 1 && this.grid[x + 1][y] === 0) {
+			neighbors.push(new Node(x + 1, y));
+		}
+		if (y > 0 && this.grid[x][y - 1] === 0) {
+			neighbors.push(new Node(x, y - 1));
+		}
+		if (y < this.grid[0].length - 1 && this.grid[x][y + 1] === 0) {
+			neighbors.push(new Node(x, y + 1));
+		}
 
 		return neighbors;
 	}
@@ -299,10 +291,7 @@ export class TowerDefenseScene extends PixiScene {
 				enemy.sprite.x += (targetX - enemy.sprite.x) * 0.05;
 				enemy.sprite.y += (targetY - enemy.sprite.y) * 0.05;
 
-				if (
-					Math.abs(enemy.sprite.x - targetX) < 1 &&
-					Math.abs(enemy.sprite.y - targetY) < 1
-				) {
+				if (Math.abs(enemy.sprite.x - targetX) < 1 && Math.abs(enemy.sprite.y - targetY) < 1) {
 					enemy.currentStep++;
 				}
 			}
