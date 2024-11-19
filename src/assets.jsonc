@@ -163,6 +163,14 @@
 			}
 		},
 		{
+			"name": "towerdefense",
+			"assets": {
+				"enemy": "./img/towerdefense/towerEnemy1.png",
+				"tower": "./img/towerdefense/towerBuilding.png",
+				"bg": "./img/towerdefense/bg.jpg"
+			}
+		},
+		{
 			"name": "package-2",
 			"assets": {
 				"loli": "./models/cheers1.png",

@@ -13,11 +13,14 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
-import { BasquetballMainScene } from "./project/scenes/BasquetballGame/BasquetballMainScene";
+// import { BasquetballMainScene } from "./project/scenes/BasquetballGame/BasquetballMainScene";
 
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
+import { TowerDefenseScene } from "./project/scenes/TowerDefenseGame/scenes/TowerDefenseScene";
+// import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
+// import { TowerDefenseScene } from "./project/scenes/AStarAlgorithm/TowerDefenseScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -99,7 +102,7 @@ window.addEventListener("contextmenu", (e) => {
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
 	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
-	Manager.changeScene(BasquetballMainScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(TowerDefenseScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {
