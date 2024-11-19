@@ -1,4 +1,4 @@
-import { Container, Point } from "pixi.js";
+import { Container, Point, Text } from "pixi.js";
 import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { Enemy } from "../models/Enemy";
 import { Tower } from "../models/Tower";
@@ -7,6 +7,7 @@ import { AStarPathfinding } from "../utils/AStarPathFinding";
 import { Node } from "../models/Node";
 import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
 import { GameConfig } from "../game/GameConfig";
+import { GameStats } from "../utils/GameStats";
 
 export class TowerDefenseScene extends PixiScene {
 	private grid: number[][];
@@ -18,6 +19,9 @@ export class TowerDefenseScene extends PixiScene {
 	private walkableCells: boolean[][] = [];
 	private occupiedCells: boolean[][] = [];  // Nueva matriz para las celdas ocupadas
 	public static readonly BUNDLES = ["towerdefense"];
+	private gameStats: GameStats = new GameStats(GameConfig.initialPoints); // Inicializamos con puntos iniciales
+	private towerCost: number = GameConfig.towerCost; // Costo de construir una torre
+	private pointsText: Text;
 
 	constructor() {
 		super();
@@ -28,6 +32,10 @@ export class TowerDefenseScene extends PixiScene {
 		this.initializeOccupiedCells();  // Inicializamos las celdas ocupadas
 		// this.createTowers();
 		this.setupClickListener();
+
+		this.pointsText = new Text(`Puntos: ${this.gameStats.getPoints()}`, { fill: "white" });
+		this.pointsText.position.set(10, 10);
+		this.addChild(this.pointsText);
 	}
 
 	private createBackground(): void {
@@ -85,16 +93,23 @@ export class TowerDefenseScene extends PixiScene {
 		return !isOccupied && isWalkable;
 	}
 
-	// Agregar la torre en la posición seleccionada
+	// Agregar torre solo si se tienen suficientes puntos
 	private addTower(x: number, y: number): void {
-		// Solo se agrega si la celda está vacía
 		if (this.isTileEmpty(x, y)) {
-			const tower = new Tower(x, y, this.tileSize); // Puedes cambiar el tipo de torre aquí
-			this.towers.push(tower);
-			this.gameContainer.addChild(tower.sprite);
+			if (this.gameStats.spendPoints(this.towerCost)) {
+				const tower = new Tower(x, y, this.tileSize);
+				this.towers.push(tower);
+				this.gameContainer.addChild(tower.sprite);
 
-			// Marcar la celda como ocupada en la nueva matriz
-			this.occupiedCells[y][x] = true;
+				// Marcar la celda como ocupada
+				this.occupiedCells[y][x] = true;
+
+				console.log(`Torre agregada en (${x}, ${y}). Puntos restantes: ${this.gameStats.getPoints()}`);
+			} else {
+				console.log("No tienes suficientes puntos para agregar una torre.");
+			}
+		} else {
+			console.log("La celda está ocupada o no es válida para una torre.");
 		}
 	}
 
@@ -104,10 +119,22 @@ export class TowerDefenseScene extends PixiScene {
 			this.lastSpawnTime = Date.now();
 		}
 
-		this.enemies.forEach((enemy) => enemy.update());
+		this.enemies.forEach((enemy, index) => {
+			enemy.update();
+			if (enemy.isDefeated()) {
+				this.enemies.splice(index, 1); // Eliminar enemigo derrotado
+				this.gameContainer.removeChild(enemy.sprite);
+
+				// Otorgar puntos al jugador por matar al enemigo
+				this.gameStats.addPoints(GameConfig.pointsPerKill);
+				console.log(`Enemigo derrotado. Puntos actuales: ${this.gameStats.getPoints()}`);
+			}
+		});
 		this.towers.forEach((tower) =>
 			tower.update(delta, this.enemies, this.gameContainer)
 		);
+
+		this.pointsText.text = `Puntos: ${this.gameStats.getPoints()}`;
 	}
 
 	public override onResize(newW: number, newH: number): void {

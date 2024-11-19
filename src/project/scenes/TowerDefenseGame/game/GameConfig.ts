@@ -37,4 +37,7 @@ export const GameConfig = {
 		enemy: 0xffffff, // Color de los enemigos
 		bullet: 0x0000ff, // Color de las balas
 	},
+	initialPoints: 100, // Puntos iniciales del jugador
+	towerCost: 50, // Costo de una torre
+	pointsPerKill: 10, // Puntos ganados por matar un enemigo
 };

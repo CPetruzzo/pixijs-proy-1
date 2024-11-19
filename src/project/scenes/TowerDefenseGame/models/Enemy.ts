@@ -107,4 +107,8 @@ export class Enemy {
 			this.isShaking = false;
 		}
 	}
+
+	public isDefeated(): boolean {
+		return this.health <= 0;
+	}
 }
