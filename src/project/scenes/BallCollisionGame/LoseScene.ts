@@ -19,7 +19,7 @@ export class LoseScene extends PixiScene {
 	constructor() {
 		super();
 
-		SoundLib.playMusic("haunting", {loop: true, volume: 0.05});
+		SoundLib.playMusic("haunting", { loop: true, volume: 0.05 });
 
 		this.frameContainer.pivot.set(this.frameContainer.width / 2, this.frameContainer.height / 2);
 		this.frameContainer.position.set(Manager.width / 2, Manager.height / 2);
@@ -67,7 +67,7 @@ export class LoseScene extends PixiScene {
 		const PLAY = Sprite.from("PLAY");
 		PLAY.anchor.set(0.5);
 		PLAY.scale.set(0.3);
-		PLAY.position.set(-this.loli.width / 2 + 3 * PLAY.width / 4, this.loli.height / 2 - 3 * PLAY.height / 4)
+		PLAY.position.set(-this.loli.width / 2 + (3 * PLAY.width) / 4, this.loli.height / 2 - (3 * PLAY.height) / 4);
 		this.loli.addChild(PLAY);
 
 		PLAY.interactive = true;
@@ -76,9 +76,7 @@ export class LoseScene extends PixiScene {
 			PLAY.scale.set(1.1);
 			Manager.changeScene(Scene3D);
 		});
-
 	}
-
 
 	public override onResize(newW: number, newH: number): void {
 		ScaleHelper.setScaleRelativeToIdeal(this.loli, newW, newH, 1920, 1080, ScaleHelper.FILL);

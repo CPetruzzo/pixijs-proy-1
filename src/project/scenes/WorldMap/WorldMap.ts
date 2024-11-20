@@ -82,14 +82,12 @@ export class RandomWorldMap extends PixiScene {
 		this.movementPointsText = new Text(`Movement Points: ${this.player.movementPoints}`);
 		this.movementPointsText.position.set(10, 10); // Ajusta la posición según tus necesidades
 		this.addChild(this.movementPointsText); // Agrega el texto a la escena
-
 	}
 
 	public override update(): void {
 		if (Keyboard.shared.justPressed("KeyW")) {
 			this.moveCharacterUp();
 			this.updateMovementPointsText();
-
 		}
 		if (Keyboard.shared.justPressed("KeyS")) {
 			this.moveCharacterDown();
@@ -138,7 +136,7 @@ export class RandomWorldMap extends PixiScene {
 				const tile = this.tiles_[x][y];
 				if (this.player.canReachTile(tile)) {
 					// Dibuja un resaltado en esta celda para indicar que es alcanzable
-					this.visibleZone.beginFill(0x00FF00, 0.2); // Color verde transparente
+					this.visibleZone.beginFill(0x00ff00, 0.2); // Color verde transparente
 					this.visibleZone.drawRect(x * 177, y * 177, 177, 177);
 					this.visibleZone.endFill();
 				}
@@ -174,7 +172,6 @@ export class RandomWorldMap extends PixiScene {
 	public moveCharacterRight(): void {
 		const targetTile = this.getTile(this.player.tileX + 1, this.player.tileY);
 		this.moveCharacter(targetTile, this.inputHandler.buttonRight.execute());
-		;
 	}
 
 	private moveCharacter(targetTile: Terrain, onComplete: void): void {

@@ -158,10 +158,8 @@ export class NutritionScene extends PixiScene {
 				total.x = 75;
 				total.y = 375;
 				this.addChild(total);
-
 			}
 		}
-
 	}
 
 	private createGenerateJsonButton(): void {
@@ -224,7 +222,7 @@ export class NutritionScene extends PixiScene {
 		this.clearTable();
 		this.updateTable(this.currentPatientData);
 		this.createBackButton();
-		this.createShowFoodButton(patient)
+		this.createShowFoodButton(patient);
 	}
 
 	private showAvailableFood(patient: NutritionData): void {
@@ -276,7 +274,6 @@ export class NutritionScene extends PixiScene {
 
 		this.addChild(button, buttonText);
 	}
-
 
 	private clearTable(): void {
 		this.removeChildren(); // Eliminar todos los elementos hijos

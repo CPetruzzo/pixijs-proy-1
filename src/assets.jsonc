@@ -300,6 +300,13 @@
 			}
 		},
 		{
+			"name": "dager",
+			"assets": {
+				"dagerBG": "./img/dager/dagerBG.webp",
+				"blackboard": "./img/engine/blackboard2.png"
+			}
+		},
+		{
 			"name": "engine",
 			"assets": {
 				"blackboard2": "./img/engine/blackboard.png",

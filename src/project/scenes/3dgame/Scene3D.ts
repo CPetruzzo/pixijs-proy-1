@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { Assets } from "@pixi/assets";
-import { AABB, CameraOrbitControl, StandardMaterial } from "pixi3d/pixi7";
+import type { AABB, CameraOrbitControl, StandardMaterial } from "pixi3d/pixi7";
 import { Light, LightingEnvironment, Model, LightType, Color, Point3D, ShadowCastingLight, ShadowQuality, Mesh3D } from "pixi3d/pixi7";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Manager, cameraControl } from "../../..";
@@ -21,7 +21,7 @@ import {
 	MINIMAP_WIDTH,
 	VEHICULE_SPEED,
 } from "../../../utils/constants";
-import { PhysicsContainer3d } from "./3DPhysicsContainer";
+import type { PhysicsContainer3d } from "./3DPhysicsContainer";
 import { UI } from "./UI";
 // import { Maze } from "./Maze";
 import { MazeFixed } from "./MazeFixed";
@@ -69,7 +69,6 @@ export class Scene3D extends PixiScene {
 
 	// private maze: Maze;
 	private maze: MazeFixed; // Cambia el tipo de la variable para usar MazeFixed
-
 
 	constructor() {
 		super();
@@ -250,7 +249,6 @@ export class Scene3D extends PixiScene {
 		this.ui = new UI(this.uiContainer);
 	}
 
-
 	public toggleFlashlight(): void {
 		if (this.flashlight.intensity === 0) {
 			// Encender la linterna
@@ -326,7 +324,6 @@ export class Scene3D extends PixiScene {
 		// 		}
 		// 	}
 		// }
-
 	}
 
 	/**
@@ -665,7 +662,6 @@ export class Scene3D extends PixiScene {
 		this.uiContainer.y = newH * 0.05;
 	}
 
-
 	private addWallsFromMaze(maze: MazeFixed): void {
 		const wallSize = 10; // Tamaño de cada celda del laberinto en la escena
 
@@ -723,7 +719,6 @@ export class Scene3D extends PixiScene {
 						}
 					}
 				} else if (direction === 1) {
-
 				} else {
 					// Avanzar hacia la derecha
 					for (let i = row; i < maze.rows; i++) {
@@ -736,8 +731,6 @@ export class Scene3D extends PixiScene {
 						}
 					}
 				}
-
-
 			}
 		}
 	}
