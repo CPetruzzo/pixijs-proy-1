@@ -1,5 +1,5 @@
 import type { Point } from "pixi.js";
-import { Container } from "pixi.js";
+import { Container, Sprite } from "pixi.js";
 import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { Enemy } from "../models/Enemy";
 import { Tower } from "../models/Tower";
@@ -19,20 +19,21 @@ export class TowerDefenseScene extends PixiScene {
 	private enemies: Enemy[] = [];
 	private towers: Tower[] = [];
 	private lastSpawnTime: number = 0;
-	private walkableCells: boolean[][] = [];
-	private occupiedCells: boolean[][] = []; // Nueva matriz para las celdas ocupadas
 	public static readonly BUNDLES = ["towerdefense"];
 	public static gameStats: GameStats = new GameStats(GameConfig.initialPoints); // Inicializamos con puntos iniciales
 	private towerCost: number = GameConfig.towerCost; // Costo de construir una torre
 	private uiContainer: UIContainer = new UIContainer();
+	private bgContainer: Container = new Container();
+	private frontContainer: Container = new Container();
 
 	constructor() {
 		super();
 		this.grid = Grid.createGridWithObstacles(GameConfig.gridWidth, GameConfig.gridHeight); // Usamos dimensiones desde GameConfig
-		this.addChild(this.gameContainer);
+		this.addChild(this.bgContainer, this.gameContainer, this.frontContainer);
 		this.createBackground();
-		this.initializeWalkableCells();
-		this.initializeOccupiedCells(); // Inicializamos las celdas ocupadas
+
+		Grid.initializeWalkableCells();
+		Grid.initializeOccupiedCells(); // Inicializamos las celdas ocupadas
 		// this.createTowers();
 		this.setupClickListener();
 
@@ -40,44 +41,21 @@ export class TowerDefenseScene extends PixiScene {
 	}
 
 	private createBackground(): void {
-		// Dibujar el fondo
-		Grid.drawBackground(GameConfig.gridWidth, GameConfig.gridHeight, this.tileSize, this.gameContainer);
+		const rows = GameConfig.gridHeight - 1; // Usamos la altura configurada
+		const cols = GameConfig.gridWidth - 1; // Usamos el ancho configurado
+		const start: [number, number] = [0, 0]; // Coordenadas de inicio
+		const end: [number, number] = [cols - 1, rows - 1]; // Coordenadas de fin
 
-		// Dibujar la grilla encima del fondo
+		const bg = Sprite.from("mainBG");
+		bg.anchor.set(0.5)
+		this.bgContainer.addChild(bg);
+
+		const frame = Sprite.from("tdBG");
+		frame.anchor.set(0.5)
+		this.frontContainer.addChild(frame);
+
+		this.grid = Grid.createMaze(rows, cols, start, end);
 		Grid.drawGrid(this.grid, this.tileSize, this.gameContainer);
-	}
-
-	public createTowers(): void {
-		const towerPositions = GameConfig.towerPositions; // Posiciones de torres definidas en GameConfig
-
-		towerPositions.forEach((pos) => {
-			const tower = new Tower(pos.x, pos.y, this.tileSize);
-			this.towers.push(tower);
-			this.gameContainer.addChild(tower.sprite);
-			this.occupiedCells[pos.y][pos.x] = true; // Marcar la celda como ocupada
-		});
-	}
-
-	private spawnEnemy(): void {
-		const startNode = new Node(9, 1);
-		const goalNode = new Node(9, GameConfig.gridHeight - 1);
-		const path = AStarPathfinding.findPath(this.grid, startNode, goalNode);
-
-		if (path) {
-			let enemyIndex = 0; // Por defecto, seleccionamos el primer enemigo
-
-			// Desbloquear enemigos más fuertes si el score supera ciertos valores
-			if (TowerDefenseScene.gameStats.getScore() > 200) {
-				enemyIndex = 1; // Por ejemplo, desbloqueamos el enemigo 2
-			}
-			if (TowerDefenseScene.gameStats.getScore() > 400) {
-				enemyIndex = 2; // Desbloqueamos el enemigo 3
-			}
-
-			const enemy = new Enemy(9, 1, path, this.tileSize, enemyIndex);
-			this.enemies.push(enemy);
-			this.gameContainer.addChild(enemy.sprite);
-		}
 	}
 
 	// Configurar el listener para los clics
@@ -88,7 +66,7 @@ export class TowerDefenseScene extends PixiScene {
 			const tileX = Math.floor(position.x / this.tileSize);
 			const tileY = Math.floor(position.y / this.tileSize);
 
-			if (this.isTileEmpty(tileX, tileY)) {
+			if (Grid.isTileEmpty(tileX, tileY)) {
 				this.addTower(tileX, tileY);
 			} else {
 				console.log("ocupado gato");
@@ -96,29 +74,68 @@ export class TowerDefenseScene extends PixiScene {
 		});
 	}
 
-	// Verificar si la celda está vacía y es válida para colocar una torre
-	private isTileEmpty(x: number, y: number): boolean {
-		// Comprobar si alguna torre ya está ocupando esa celda
-		const isOccupied = this.occupiedCells[y] && this.occupiedCells[y][x]; // Revisamos en la nueva matriz
 
-		// Verificar si la celda forma parte del camino de los enemigos
-		const isWalkable = this.walkableCells[y][x];
+	public createTowers(): void {
+		const towerPositions = GameConfig.towerPositions; // Posiciones de torres definidas en GameConfig
 
-		// La celda debe estar vacía y debe ser un lugar no transitado por los enemigos
-		return !isOccupied && isWalkable;
+		towerPositions.forEach((pos) => {
+			const tower = new Tower(pos.x, pos.y, this.tileSize);
+			this.towers.push(tower);
+			this.gameContainer.addChild(tower.sprite);
+			Grid.occupiedCells[pos.y][pos.x] = true; // Marcar la celda como ocupada
+		});
 	}
 
-	// Agregar torre solo si se tienen suficientes puntos
-	// Agregar torre solo si se tienen suficientes puntos
+	private spawnEnemy(): void {
+		const rows = GameConfig.gridHeight - 1;
+		const cols = GameConfig.gridWidth - 1;
+		// Verificar si la celda de inicio está ocupada
+		const startX = 0;
+		const startY = 0;
+		const startNode: Node = new Node(startX, startY);
+		const goalNode: Node = new Node(cols - 1, rows - 1);
+
+		if (!Grid.isTileEmpty(startNode.x, startNode.y)) {
+			console.log("La celda de inicio está ocupada o no es válida.");
+			return;
+		}
+		const path = AStarPathfinding.findPath(this.grid, startNode, goalNode);
+		if (!path) {
+			console.log("No se encontró un camino válido.");
+		}
+
+		if (path) {
+			let enemyIndex = 0; // Por defecto, seleccionamos el primer enemigo
+
+			// Desbloquear enemigos más fuertes si el score supera ciertos valores
+			if (TowerDefenseScene.gameStats.getScore() > 200) {
+				enemyIndex = 1; // Desbloqueamos el enemigo 2
+			}
+			if (TowerDefenseScene.gameStats.getScore() > 400) {
+				enemyIndex = 2; // Desbloqueamos el enemigo 3
+			}
+
+			if (!Grid.isTileEmpty(startX, startY)) {
+				console.log("La celda de inicio está ocupada o no es válida.");
+				return;
+			}
+
+			// Crear el enemigo en la posición de inicio y asignarle el camino calculado
+			const enemy = new Enemy(startX, startY, path, this.tileSize, enemyIndex);
+			this.enemies.push(enemy);
+			this.gameContainer.addChild(enemy.sprite);
+		}
+	}
+
 	private addTower(x: number, y: number): void {
-		if (this.isTileEmpty(x, y)) {
+		if (Grid.isTileEmpty(x, y)) {
 			if (TowerDefenseScene.gameStats.spendPoints(this.towerCost)) {
 				const tower = new Tower(x, y, this.tileSize);
 				this.towers.push(tower);
 				this.gameContainer.addChild(tower.sprite);
 
 				// Marcar la celda como ocupada
-				this.occupiedCells[y][x] = true;
+				Grid.occupiedCells[y][x] = true;
 
 				// Aumentar el costo de la próxima torre en 5
 				this.towerCost += 30;
@@ -166,46 +183,13 @@ export class TowerDefenseScene extends PixiScene {
 
 		const containerBounds = this.gameContainer.getLocalBounds();
 		this.gameContainer.pivot.set(containerBounds.width * 0.5, containerBounds.height * 0.5);
-	}
 
-	// Método para inicializar la matriz de celdas ocupadas
-	private initializeOccupiedCells(): void {
-		for (let y = 0; y < GameConfig.gridHeight; y++) {
-			this.occupiedCells[y] = [];
-			for (let x = 0; x < GameConfig.gridWidth; x++) {
-				this.occupiedCells[y][x] = false; // Inicializamos todas las celdas como no ocupadas
-			}
-		}
-	}
+		ScaleHelper.setScaleRelativeToIdeal(this.bgContainer, newW, newH, 1920, 1080, ScaleHelper.FILL);
+		this.bgContainer.x = newW * 0.5;
+		this.bgContainer.y = newH * 0.5;
 
-	// Método para inicializar las celdas caminables en forma de "U"
-	private initializeWalkableCells(): void {
-		// Inicializar la matriz de celdas caminables
-		for (let y = 0; y < GameConfig.gridHeight; y++) {
-			this.walkableCells[y] = [];
-			for (let x = 0; x < GameConfig.gridWidth; x++) {
-				// El camino de la "U" se define de la siguiente manera:
-				if (
-					(y === 0 && x >= 0 && x <= 9) ||
-					(y === 1 && x >= 0 && x <= 9) ||
-					(y === 2 && x >= 0 && x <= 9) ||
-					(y === 3 && x === 3) ||
-					(y === 5 && x === 3) ||
-					(y === 6 && x >= 0 && x <= 9) ||
-					(y === 7 && x >= 0 && x <= 9) ||
-					(y === 8 && x >= 0 && x <= 9) ||
-					(y === 9 && x >= 0 && x <= 9) ||
-					(x === 0 && y >= 0 && y <= 9) ||
-					(x === 1 && y >= 0 && y <= 9) ||
-					(x === 8 && y === 4) ||
-					(x === 9 && y >= 0 && y <= 9) ||
-					(x === 2 && y >= 0 && y <= 9)
-				) {
-					this.walkableCells[y][x] = false; // Las celdas por las que los enemigos pueden caminar
-				} else {
-					this.walkableCells[y][x] = true; // Las celdas que están bloqueadas
-				}
-			}
-		}
+		ScaleHelper.setScaleRelativeToIdeal(this.frontContainer, newW, newH, 320, 320, ScaleHelper.FIT);
+		this.frontContainer.x = newW * 0.5;
+		this.frontContainer.y = newH * 0.5;
 	}
 }
