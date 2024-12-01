@@ -1,4 +1,4 @@
-import { Sprite } from "pixi.js";
+import { Graphics, Sprite } from "pixi.js";
 import type { Node } from "./Node";
 import { GameConfig } from "../game/GameConfig";
 
@@ -7,6 +7,9 @@ export class Enemy {
 	public currentStep: number = 0;
 	public health: number;
 	public dead: boolean = false;
+	private healthBar: Graphics; // Barra de vida
+	private healthBarWidth: number = 80; // Ancho inicial de la barra de vida
+	private healthBarHeight: number = 10; // Alto de la barra de vida
 
 	private isShaking: boolean = false;
 	private shakeCount: number = 0;
@@ -15,20 +18,25 @@ export class Enemy {
 	private originalX: number = 0;
 	private originalY: number = 0;
 	private originalTint: any = 0;
-	private randomIndex: number;
+	private enemyIndex: number;
 
-	constructor(public x: number, public y: number, public path: Node[], tileSize: number, typeIndex: number = 0) {
-		this.randomIndex = typeIndex;
-		const randomSprite = GameConfig.enemyConfig.sprites[this.randomIndex];
+	constructor(public posX: number, public posY: number, public path: Node[], tileSize: number, typeIndex: number = 0) {
+		this.enemyIndex = typeIndex;
+		const randomSprite = GameConfig.enemyConfig.sprites[this.enemyIndex];
 		this.sprite = Sprite.from(randomSprite);
 		this.sprite.tint = GameConfig.colors.enemy;
 		this.sprite.width = tileSize;
 		this.sprite.height = tileSize;
 
-		this.sprite.x = x * tileSize;
-		this.sprite.y = y * tileSize;
+		this.sprite.x = posX * tileSize;
+		this.sprite.y = posY * tileSize;
 
-		this.health = GameConfig.enemyConfig.health[this.randomIndex];
+		this.health = GameConfig.enemyConfig.health[this.enemyIndex];
+
+		// Crear barra de vida
+		this.healthBar = new Graphics();
+		this.updateHealthBar();
+		this.sprite.addChild(this.healthBar); // Añadir la barra al sprite del enemigo
 	}
 
 	public update(): void {
@@ -57,6 +65,10 @@ export class Enemy {
 		if (this.isShaking) {
 			this.applyShakeEffect();
 		}
+
+		// Actualizar la posición de la barra de vida
+		this.healthBar.x = this.sprite.width;
+		this.healthBar.y = 10; // Posicionar justo encima del enemigo
 	}
 
 	public takeDamage(amount: number): void {
@@ -65,6 +77,8 @@ export class Enemy {
 		}
 		this.health -= amount;
 
+		this.updateHealthBar();
+
 		if (!this.isShaking) {
 			this.startShakeEffect();
 		}
@@ -72,6 +86,18 @@ export class Enemy {
 		if (this.health <= 0) {
 			this.die();
 		}
+	}
+
+	private updateHealthBar(): void {
+		this.healthBar.clear();
+		this.healthBar.beginFill(0xff0000); // Fondo rojo
+		this.healthBar.drawRect(0, 0, this.healthBarWidth, this.healthBarHeight);
+		this.healthBar.endFill();
+
+		const healthPercentage = Math.max(this.health / GameConfig.enemyConfig.health[this.enemyIndex], 0);
+		this.healthBar.beginFill(0x00ff00); // Barra verde
+		this.healthBar.drawRect(0, 0, this.healthBarWidth * healthPercentage, this.healthBarHeight);
+		this.healthBar.endFill();
 	}
 
 	private die(): void {
@@ -110,6 +136,11 @@ export class Enemy {
 	}
 
 	public getEnemyIndex(): number {
-		return this.randomIndex;
+		return this.enemyIndex;
 	}
+
+	public getCurrentPosition(): { x: number; y: number } {
+		return { x: this.path[this.currentStep].x, y: this.path[this.currentStep].y }; // Ajusta según la implementación de coordenadas en Enemy
+	}
+
 }

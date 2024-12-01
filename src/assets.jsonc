@@ -168,14 +168,28 @@
 				"enemy": "./img/towerdefense/towerEnemy1.png",
 				"enemy2": "./img/towerdefense/towerEnemy2.png",
 				"enemy3": "./img/towerdefense/towerEnemy3.png",
+				"enemy4": "./img/towerdefense/towerEnemy4.png",
+				"enemy5": "./img/towerdefense/towerEnemy5.png",
+				"enemy6": "./img/towerdefense/towerEnemy6.png",
 				"tower": "./img/towerdefense/towerBuilding.png",
+				"projectile": "./img/towerdefense/proyectile.png",
 				"bg": "./img/towerdefense/bg.jpg",
 				"grass": "./img/towerdefense/grass.jpg",
 				"mainBG": "./img/towerdefense/mainBG.jpg",
 				"tdBG": "./img/towerdefense/tdframe.png",
+				"uiFrame": "./img/towerdefense/tdframe2.png",
 				"wood": "./img/towerdefense/block.png",
-				"bgExtended": "./img/towerdefense/bgExtended.jpg"
-
+				"resetButton": "./img/towerdefense/resetButton.png",
+				"resetButtonPressed": "./img/towerdefense/resetButtonPressed.png",
+				"bgExtended": "./img/towerdefense/bgExtended.jpg",
+				"flag": "./img/towerdefense/flag.png",
+				"1": "./img/towerdefense/1.png",
+				"2": "./img/towerdefense/2.png",
+				"3": "./img/towerdefense/3.png",
+				"4": "./img/towerdefense/4.png",
+				"5": "./img/towerdefense/5.png",
+				"6": "./img/towerdefense/6.png"
+				
 			}
 		},
 		{

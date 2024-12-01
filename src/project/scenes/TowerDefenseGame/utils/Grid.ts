@@ -10,6 +10,17 @@ import { GameConfig } from "../game/GameConfig";
 export class Grid {
 	public static occupiedCells: boolean[][] = [];
 	public static walkableCells: boolean[][] = [];
+	public static woodTiles: boolean[][]; // Matriz para marcar tiles de tipo wood
+
+	public static initializeWoodTiles(grid: number[][]): void {
+		this.woodTiles = grid.map(row => row.map(cell => cell === 1)); // Suponiendo que 2 indica un tile de tipo wood
+	}
+
+	// Verificar si un tile es de tipo wood
+	public static isWoodTile(x: number, y: number): boolean {
+		return this.woodTiles[y] && this.woodTiles[y][x];
+	}
+
 	public static createGridWithObstacles(rows: number, cols: number): number[][] {
 		const grid = Array.from({ length: rows }, () => Array(cols).fill(0));
 
@@ -153,11 +164,11 @@ export class Grid {
 	public static isTileEmpty(x: number, y: number): boolean {
 		// Comprobar si la celda está ocupada por una torre (o cualquier otra estructura)
 		const isOccupied = this.occupiedCells[y] && this.occupiedCells[y][x]; // Revisamos en la nueva matriz
-		console.log('isOccupied', isOccupied)
+		// console.log('isOccupied', isOccupied)
 
 		// Verificamos si la celda es caminable para los enemigos
 		const isWalkable = this.walkableCells[y][x];
-		console.log('isWalkable', isWalkable)
+		// console.log('isWalkable', isWalkable)
 
 		// Si la celda está ocupada o no es caminable, no es válida
 		// Pero necesitamos permitir que las celdas de inicio sean caminables, aunque estén ocupadas
@@ -169,5 +180,10 @@ export class Grid {
 		// Para las demás celdas, verificamos si está ocupada y si no es caminable
 		return !isOccupied && isWalkable;
 	}
+
+	public static clearOccupiedCells(): void {
+		this.occupiedCells = [];
+	}
+
 
 }

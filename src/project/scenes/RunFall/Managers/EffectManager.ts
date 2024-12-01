@@ -10,15 +10,17 @@ export class EffectManager {
 	private stunFilter: GlowFilter;
 	private glowFilter: GlowFilter;
 
+	public glowInnerValue: number = 1;
+
 	constructor(player: any, background?: any) {
 		this.player = player;
 		this.background = background;
-		this.glowFilter = new GlowFilter();
+		this.glowFilter = new GlowFilter({ innerStrength: this.glowInnerValue });
 		this.blurFilter = new BlurFilter(20);
 		this.stunFilter = new GlowFilter({ color: 0xfff888 });
 	}
 
-	private applyFilter(target: any, filter: Filter, duration: number, onComplete: () => void): void {
+	public applyFilter(target: any, filter: Filter, duration: number, onComplete: () => void): void {
 		if (target) {
 			target.filters = [filter];
 			new Timer().to(duration).start().onComplete(onComplete);

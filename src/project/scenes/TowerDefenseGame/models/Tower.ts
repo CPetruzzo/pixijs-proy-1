@@ -16,8 +16,8 @@ export class Tower {
 
 		// Crear un sprite utilizando la textura "towerBuilding"
 		this.sprite = Sprite.from("tower");
-		this.sprite.width = tileSize * 0.8; // Escalado según el tamaño deseado
-		this.sprite.height = tileSize * 1.6;
+		this.sprite.width = tileSize * 0.5; // Escalado según el tamaño deseado
+		this.sprite.height = tileSize * 1;
 		this.sprite.anchor.set(0.5); // Anclar el sprite al centro para facilitar posicionamiento
 
 		// Posicionar el sprite en el mapa

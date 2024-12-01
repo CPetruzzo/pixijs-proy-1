@@ -28,8 +28,10 @@ export const GameConfig = {
 	// Enemigos y sus características (velocidad, salud, etc.)
 	enemyConfig: {
 		speed: 2, // Velocidad de los enemigos
-		health: [100, 750, 1500], // Salud base de los enemigos
-		sprites: ["enemy", "enemy2", "enemy3"], // Array con los nombres de los sprites
+		healthBarWidth: 200, // Ancho inicial de la barra de vida
+		healthBarHeight: 50, // Alto de la barra de vida
+		health: [100, 750, 1500, 2500, 3250, 5100], // Salud base de los enemigos
+		sprites: ["enemy", "enemy2", "enemy3", "enemy4", "enemy5", "enemy6"], // Array con los nombres de los sprites
 	},
 
 	// Colores para diferentes elementos del juego
@@ -37,9 +39,9 @@ export const GameConfig = {
 		grid: 0x00ff00, // Color de la grilla
 		tower: 0x00ff00, // Color de las torres
 		enemy: 0xffffff, // Color de los enemigos
-		bullet: 0x0000ff, // Color de las balas
+		bullet: 0x000046, // Color de las balas
 	},
 	initialPoints: 100, // Puntos iniciales del jugador
 	towerCost: 50, // Costo de una torre
-	pointsPerKill: [10, 30, 60], // Puntos ganados por matar un enemigo
+	pointsPerKill: [10, 30, 60, 80, 120, 150], // Puntos ganados por matar un enemigo
 };
