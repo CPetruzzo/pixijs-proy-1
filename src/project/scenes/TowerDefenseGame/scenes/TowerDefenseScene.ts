@@ -124,7 +124,6 @@ export class TowerDefenseScene extends PixiScene {
 
 	}
 
-	// Configurar el listener para los clics
 	private setupClickListener(): void {
 		this.gameContainer.eventMode = "static";
 		this.gameContainer.on("pointerdown", (event: { data: { getLocalPosition: (arg0: any) => Point } }) => {
@@ -132,14 +131,55 @@ export class TowerDefenseScene extends PixiScene {
 			const tileX = Math.floor(position.x / this.tileSize);
 			const tileY = Math.floor(position.y / this.tileSize);
 
-			if (Grid.isTileEmpty(tileX, tileY)) {
+			const clickedTower = this.towers.find(t => t.x === tileX && t.y === tileY);
+			if (clickedTower) {
+				this.tryUpgradeTower(clickedTower);
+			} else if (Grid.isTileEmpty(tileX, tileY)) {
 				this.addTower(tileX, tileY);
 			} else {
-				console.log("ocupado gato");
+				console.log("Ocupado.");
 			}
 		});
 	}
 
+	private tryUpgradeTower(clickedTower: Tower): void {
+		// Buscar torres contiguas del mismo nivel
+		const adjacentOffsets = [
+			{ dx: 1, dy: 0 },
+			{ dx: -1, dy: 0 },
+			{ dx: 0, dy: 1 },
+			{ dx: 0, dy: -1 }
+		];
+
+		for (const offset of adjacentOffsets) {
+			const adjacentTower = this.towers.find(t =>
+				t.x === clickedTower.x + offset.dx &&
+				t.y === clickedTower.y + offset.dy &&
+				t.level === clickedTower.level
+			);
+
+			if (adjacentTower) {
+				// Fusionar torres
+				if (clickedTower.level < GameConfig.towerConfig.maxLevel) {
+					this.upgradeTower(clickedTower, adjacentTower);
+					return;
+				} else {
+					console.log("no more lvls to upgrade")
+				}
+			}
+		}
+
+		console.log("No hay torres contiguas del mismo nivel para mejorar.");
+	}
+
+	private upgradeTower(baseTower: Tower, mergedTower: Tower): void {
+		baseTower.upgrade();
+		this.towers = this.towers.filter(t => t !== mergedTower); // Eliminar la torre fusionada
+		this.gameContainer.removeChild(mergedTower.sprite); // Quitar la torre fusionada del contenedor
+		console.log(`Torre en (${baseTower.x}, ${baseTower.y}) mejorada a nivel ${baseTower.level}`);
+		Grid.occupiedCells[mergedTower.y][mergedTower.x] = false; // Marcar la celda como ocupada
+
+	}
 
 	public createTowers(): void {
 		const towerPositions = GameConfig.towerPositions; // Posiciones de torres definidas en GameConfig

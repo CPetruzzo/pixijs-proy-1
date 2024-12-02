@@ -1,24 +1,25 @@
 import type { Container } from "pixi.js";
-import { Sprite } from "pixi.js";
+import { Sprite, Texture } from "pixi.js";
 import type { Enemy } from "./Enemy";
 import { ProjectileManager } from "../utils/ProjectileManager";
 import { DistanceHelper } from "../utils/DistanceHelper";
 import { GameConfig } from "../game/GameConfig"; // Asegúrate de importar GameConfig
 
 export class Tower {
+	public level: number = 1; // Nivel inicial de la torre
 	public sprite: Sprite;
 	public lastShotTime: number = 0;
 	public towerConfig: { range: number; damage: number; fireRate: number };
 
 	constructor(public x: number, public y: number, public tileSize: number) {
 		// Usar valores de GameConfig para la torre
-		this.towerConfig = GameConfig.towerConfig;
+		this.towerConfig = { ...GameConfig.towerConfig }; // Clonar para evitar modificar la configuración global
 
 		// Crear un sprite utilizando la textura "towerBuilding"
-		this.sprite = Sprite.from("tower");
-		this.sprite.width = tileSize * 0.5; // Escalado según el tamaño deseado
-		this.sprite.height = tileSize * 1;
-		this.sprite.anchor.set(0.5); // Anclar el sprite al centro para facilitar posicionamiento
+		this.sprite = Sprite.from("towerLevel1");
+		this.sprite.width = tileSize * 0.8; // Escalado según el tamaño deseado
+		this.sprite.height = tileSize * 1.2;
+		this.sprite.anchor.set(0.5, 0.7); // Anclar el sprite al centro para facilitar posicionamiento
 
 		// Posicionar el sprite en el mapa
 		this.sprite.x = (x + 0.5) * tileSize;
@@ -27,7 +28,7 @@ export class Tower {
 
 	public update(_delta: number, enemies: Enemy[], gameContainer: Container): void {
 		const now = Date.now();
-		const towerConfig = GameConfig.towerConfig;
+		const towerConfig = this.towerConfig; // Usar configuración específica de esta torre
 
 		// Eliminar enemigos muertos de la lista de enemigos
 		const activeEnemies = enemies.filter((e) => e.health > 0);
@@ -41,6 +42,17 @@ export class Tower {
 				// Disparar al enemigo usando la configuración de la torre
 				ProjectileManager.shootAtEnemy(this, enemy, gameContainer, this.tileSize);
 			}
+		}
+	}
+
+	public upgrade(): void {
+		if (this.level < GameConfig.towerConfig.maxLevel) {
+			this.level++;
+			this.sprite.texture = Texture.from(`towerLevel${this.level}`); // Cambia la textura según el nivel
+
+			// Incrementar el daño en un 5%
+			this.towerConfig.damage *= 1.15;
+			console.log('Daño de la nueva torre', this.towerConfig.damage)
 		}
 	}
 }

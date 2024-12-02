@@ -20,6 +20,7 @@ export const GameConfig = {
 
 	// Configuración para las torres (puedes personalizar la potencia, rango, etc.)
 	towerConfig: {
+		maxLevel: 6,
 		range: 4, // Rango de la torre en píxeles
 		damage: 10, // Daño de la torre
 		fireRate: 50, // Tasa de disparo (disparos por segundo) -> más grande, menos disparos

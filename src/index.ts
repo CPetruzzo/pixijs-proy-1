@@ -18,10 +18,8 @@ import { JoystickEmits } from "./utils/Joystick";
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
+// import { PianoGameScene } from "./project/scenes/PulseHeist/Piano";
 import { TowerDefenseScene } from "./project/scenes/TowerDefenseGame/scenes/TowerDefenseScene";
-// import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
-// import { TowerDefenseScene } from "./project/scenes/AStarAlgorithm/TowerDefenseScene";
-
 settings.RENDER_OPTIONS.hello = false;
 
 DEFAULTS.safetyCheckFunction = (obj: any) => !obj?.destroyed;

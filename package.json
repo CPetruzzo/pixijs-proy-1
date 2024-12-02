@@ -79,6 +79,7 @@
     "socket.io": "^4.8.0",
     "stats.js": "^0.17.0",
     "stream-http": "^3.2.0",
+    "tone": "^15.0.4",
     "tweedle.js": "2.1.0"
   }
 }
