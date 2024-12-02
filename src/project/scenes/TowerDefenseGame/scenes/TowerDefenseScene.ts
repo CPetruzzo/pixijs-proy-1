@@ -220,13 +220,13 @@ export class TowerDefenseScene extends PixiScene {
 			if (TowerDefenseScene.gameStats.getScore() > 400) {
 				enemyIndex = 2; // Desbloqueamos el enemigo 3
 			}
-			if (TowerDefenseScene.gameStats.getScore() > 1300) {
+			if (TowerDefenseScene.gameStats.getScore() > 1500) {
 				enemyIndex = 3; // Desbloqueamos el enemigo 4
 			}
-			if (TowerDefenseScene.gameStats.getScore() > 2000) {
+			if (TowerDefenseScene.gameStats.getScore() > 4000) {
 				enemyIndex = 4; // Desbloqueamos el enemigo 5
 			}
-			if (TowerDefenseScene.gameStats.getScore() > 3500) {
+			if (TowerDefenseScene.gameStats.getScore() > 7000) {
 				enemyIndex = 5; // Desbloqueamos el enemigo 6
 			}
 
@@ -335,7 +335,11 @@ export class TowerDefenseScene extends PixiScene {
 		});
 		this.towers.forEach((tower) => tower.update(delta, this.enemies, this.gameContainer));
 
-		this.uiLeftContainer.updateUI(TowerDefenseScene.gameStats, this.towerCost);
+		this.uiLeftContainer.updateUI(TowerDefenseScene.gameStats, this.towerCost, this.calculateTotalDamage());
+	}
+
+	private calculateTotalDamage(): number {
+		return this.towers.reduce((total, tower) => total + tower.towerConfig.damage, 0);
 	}
 
 	public override onResize(newW: number, newH: number): void {

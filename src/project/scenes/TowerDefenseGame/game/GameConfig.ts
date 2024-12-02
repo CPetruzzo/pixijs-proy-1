@@ -31,7 +31,7 @@ export const GameConfig = {
 		speed: 2, // Velocidad de los enemigos
 		healthBarWidth: 200, // Ancho inicial de la barra de vida
 		healthBarHeight: 50, // Alto de la barra de vida
-		health: [100, 750, 1500, 2500, 3250, 5100], // Salud base de los enemigos
+		health: [100, 750, 2000, 2500, 3500, 6000], // Salud base de los enemigos
 		sprites: ["enemy", "enemy2", "enemy3", "enemy4", "enemy5", "enemy6"], // Array con los nombres de los sprites
 	},
 
@@ -44,5 +44,5 @@ export const GameConfig = {
 	},
 	initialPoints: 100, // Puntos iniciales del jugador
 	towerCost: 50, // Costo de una torre
-	pointsPerKill: [10, 30, 60, 80, 120, 150], // Puntos ganados por matar un enemigo
+	pointsPerKill: [10, 30, 50, 70, 110, 140], // Puntos ganados por matar un enemigo
 };
