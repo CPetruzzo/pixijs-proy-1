@@ -171,12 +171,37 @@
 				"enemy4": "./img/towerdefense/towerEnemy4.png",
 				"enemy5": "./img/towerdefense/towerEnemy5.png",
 				"enemy6": "./img/towerdefense/towerEnemy6.png",
-				"towerLevel1": "./img/towerdefense/towers/2/0.png",
-				"towerLevel2": "./img/towerdefense/towers/3/0.png",
-				"towerLevel3": "./img/towerdefense/towers/4/0.png",
-				"towerLevel4": "./img/towerdefense/towers/5/0.png",
-				"towerLevel5": "./img/towerdefense/towers/6/0.png",
-				"towerLevel6": "./img/towerdefense/towers/7/0.png",
+
+				"towerLevel1A": "./img/towerdefense/towers/2/0.png",
+				"towerLevel1B": "./img/towerdefense/towers/2/1.png",
+				"towerLevel1C": "./img/towerdefense/towers/2/2.png",
+				"towerLevel1D": "./img/towerdefense/towers/2/3.png",
+				
+				"towerLevel2A": "./img/towerdefense/towers/3/0.png",
+				"towerLevel2B": "./img/towerdefense/towers/3/1.png",
+				"towerLevel2C": "./img/towerdefense/towers/3/2.png",
+				"towerLevel2D": "./img/towerdefense/towers/3/3.png",
+				
+				"towerLevel3A": "./img/towerdefense/towers/4/0.png",
+				"towerLevel3B": "./img/towerdefense/towers/4/1.png",
+				"towerLevel3C": "./img/towerdefense/towers/4/2.png",
+				"towerLevel3D": "./img/towerdefense/towers/4/3.png",
+				
+				"towerLevel4A": "./img/towerdefense/towers/5/0.png",
+				"towerLevel4B": "./img/towerdefense/towers/5/1.png",
+				"towerLevel4C": "./img/towerdefense/towers/5/2.png",
+				"towerLevel4D": "./img/towerdefense/towers/5/3.png",
+
+				"towerLevel5A": "./img/towerdefense/towers/6/0.png",
+				"towerLevel5B": "./img/towerdefense/towers/6/1.png",
+				"towerLevel5C": "./img/towerdefense/towers/6/2.png",
+				"towerLevel5D": "./img/towerdefense/towers/6/3.png",
+
+				"towerLevel6A": "./img/towerdefense/towers/7/0.png",
+				"towerLevel6B": "./img/towerdefense/towers/7/1.png",
+				"towerLevel6C": "./img/towerdefense/towers/7/2.png",
+				"towerLevel6D": "./img/towerdefense/towers/7/3.png",
+
 				"projectile": "./img/towerdefense/proyectile.png",
 				"bg": "./img/towerdefense/bg.jpg",
 				"grass": "./img/towerdefense/grass.jpg",

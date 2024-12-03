@@ -1,6 +1,19 @@
+import type { Container } from "pixi.js";
 import { Graphics, Sprite } from "pixi.js";
-import type { Node } from "./Node";
+import { Node } from "./Node";
 import { GameConfig } from "../game/GameConfig";
+import { Grid } from "../utils/Grid";
+import { AStarPathfinding } from "../utils/AStarPathFinding";
+import { TowerDefenseScene } from "../scenes/TowerDefenseScene";
+
+export enum EnemyTypes {
+	ENEMY1 = "ENEMY1",
+	ENEMY2 = "ENEMY2",
+	ENEMY3 = "ENEMY3",
+	ENEMY4 = "ENEMY4",
+	ENEMY5 = "ENEMY5",
+	ENEMY6 = "ENEMY6",
+}
 
 export class Enemy {
 	public sprite: Sprite;
@@ -143,4 +156,53 @@ export class Enemy {
 		return { x: this.path[this.currentStep].x, y: this.path[this.currentStep].y }; // Ajusta según la implementación de coordenadas en Enemy
 	}
 
+	public static spawnEnemy(grid: number[][], enemies: Enemy[], gameContainer: Container): void {
+		const rows = GameConfig.gridHeight - 1;
+		const cols = GameConfig.gridWidth - 1;
+		// Verificar si la celda de inicio está ocupada
+		const startX = 0;
+		const startY = 0;
+		const startNode: Node = new Node(startX, startY);
+		const goalNode: Node = new Node(cols - 1, rows - 1);
+
+		if (!Grid.isTileEmpty(startNode.x, startNode.y)) {
+			console.log("La celda de inicio está ocupada o no es válida.");
+			return;
+		}
+		const path = AStarPathfinding.findPath(grid, startNode, goalNode);
+		if (!path) {
+			console.log("No se encontró un camino válido.");
+		}
+
+		if (path) {
+			let enemyIndex = 0; // Por defecto, seleccionamos el primer enemigo
+
+			// Desbloquear enemigos más fuertes si el score supera ciertos valores
+			if (TowerDefenseScene.gameStats.getScore() > 150) {
+				enemyIndex = 1; // Desbloqueamos el enemigo 2
+			}
+			if (TowerDefenseScene.gameStats.getScore() > 400) {
+				enemyIndex = 2; // Desbloqueamos el enemigo 3
+			}
+			if (TowerDefenseScene.gameStats.getScore() > 1500) {
+				enemyIndex = 3; // Desbloqueamos el enemigo 4
+			}
+			if (TowerDefenseScene.gameStats.getScore() > 4000) {
+				enemyIndex = 4; // Desbloqueamos el enemigo 5
+			}
+			if (TowerDefenseScene.gameStats.getScore() > 7000) {
+				enemyIndex = 5; // Desbloqueamos el enemigo 6
+			}
+
+			if (!Grid.isTileEmpty(startX, startY)) {
+				console.log("La celda de inicio está ocupada o no es válida.");
+				return;
+			}
+
+			// Crear el enemigo en la posición de inicio y asignarle el camino calculado
+			const enemy = new Enemy(startX, startY, path, TowerDefenseScene.tileSize, enemyIndex);
+			enemies.push(enemy);
+			gameContainer.addChild(enemy.sprite);
+		}
+	}
 }

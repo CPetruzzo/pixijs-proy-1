@@ -4,8 +4,6 @@ import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { Enemy } from "../models/Enemy";
 import { Tower } from "../models/Tower";
 import { Grid } from "../utils/Grid";
-import { AStarPathfinding } from "../utils/AStarPathFinding";
-import { Node } from "../models/Node";
 import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
 import { GameConfig } from "../game/GameConfig";
 import { GameStats } from "../utils/GameStats";
@@ -14,62 +12,42 @@ import { ProjectileManager } from "../utils/ProjectileManager";
 import { Manager } from "../../../..";
 import { TowerDefenseNameInputPopUp } from "./TowerDefenseNameInputPopUp";
 import { Tween } from "tweedle.js";
+import { RestartButton } from "../ui/RestartButton";
 
 export class TowerDefenseScene extends PixiScene {
+	public static readonly BUNDLES = ["towerdefense"];
 	private grid: number[][];
-	private tileSize: number = GameConfig.tileSize; // Usamos GameConfig para el tamaño de los tiles
-	private gameContainer: Container = new Container();
+	public static tileSize: number = GameConfig.tileSize;
+	public static towerCost: number = GameConfig.towerCost;
+	public static gameStats: GameStats = new GameStats(GameConfig.initialPoints);
 	private enemies: Enemy[] = [];
 	private towers: Tower[] = [];
+
 	private lastSpawnTime: number = 0;
-	public static readonly BUNDLES = ["towerdefense"];
-	public static gameStats: GameStats = new GameStats(GameConfig.initialPoints); // Inicializamos con puntos iniciales
-	private towerCost: number = GameConfig.towerCost; // Costo de construir una torre
+
+	private gameContainer: Container = new Container();
 	private uiLeftContainer: UIContainer = new UIContainer();
 	private uiRightContainer: Container = new Container();
 	private bgContainer: Container = new Container();
 	private frontContainer: Container = new Container();
 	private fadeContainer: Container = new Container();
-	private restartButton: Sprite; // Botón de reinicio
+
 	private restart: boolean = false;
-	private gameOver: boolean = false; // Variable para controlar el estado del juego
+	private gameOver: boolean = false;
 
 	constructor() {
 		super();
-		this.grid = Grid.createGridWithObstacles(GameConfig.gridWidth, GameConfig.gridHeight); // Usamos dimensiones desde GameConfig
+		this.grid = Grid.createGridWithObstacles(GameConfig.gridWidth, GameConfig.gridHeight);
 		this.addChild(this.bgContainer, this.gameContainer, this.frontContainer, this.uiLeftContainer, this.uiRightContainer, this.fadeContainer);
 		this.createBackground();
 
 		Grid.initializeWalkableCells();
-		Grid.initializeOccupiedCells(); // Inicializamos las celdas ocupadas
-		Grid.initializeWoodTiles(this.grid); // Inicializa los tiles de tipo wood
+		Grid.initializeOccupiedCells();
+		Grid.initializeWoodTiles(this.grid);
 
-		// this.createTowers();
 		this.setupClickListener();
 
-		this.createRestartButton();
-	}
-
-	private createRestartButton(): void {
-		const resetBG = Sprite.from("resetButton"); // Asegúrate de tener una imagen para el botón
-		resetBG.anchor.set(0.5);
-		resetBG.x = resetBG.width * 0.5 - resetBG.width;
-		resetBG.y = resetBG.height * 0.5;
-
-		this.restartButton = Sprite.from("resetButtonPressed"); // Asegúrate de tener una imagen para el botón
-		this.restartButton.anchor.set(0.5);
-		this.restartButton.x = this.restartButton.width * 0.5 - resetBG.width; // Posición del botón
-		this.restartButton.y = resetBG.height * 0.5;
-		this.restartButton.interactive = true;
-
-		this.restartButton.on("pointerdown", () => {
-			this.restart = true;
-			this.cleanupBeforeRestart(); // Limpieza antes de reiniciar
-
-			Manager.changeScene(TowerDefenseScene); // Reiniciar la escena
-		});
-
-		this.uiRightContainer.addChild(resetBG, this.restartButton); // Agregar el botón al contenedor frontal
+		RestartButton.createRestartButton(this.uiRightContainer, () => this.cleanupBeforeRestart());
 	}
 
 	private cleanupBeforeRestart(): void {
@@ -85,11 +63,9 @@ export class TowerDefenseScene extends PixiScene {
 		this.uiRightContainer.removeAllListeners();
 		this.frontContainer.removeAllListeners();
 		TowerDefenseScene.gameStats = new GameStats(GameConfig.initialPoints);
-
 	}
 
 	private addFlagAtEndPoint(x: number, y: number): void {
-
 		// Crear el AnimatedSprite con las texturas
 		const animatedSprite = new AnimatedSprite([Texture.from("1"), Texture.from("2"), Texture.from("3"), Texture.from("4"), Texture.from("5"), Texture.from("6")], true);
 		// Agregar el AnimatedSprite al contenedor del personaje
@@ -97,45 +73,63 @@ export class TowerDefenseScene extends PixiScene {
 
 		// Configurar propiedades iniciales
 		animatedSprite.anchor.set(0.5);
-		animatedSprite.x = x * this.tileSize + this.tileSize / 2; // Centrar en el tile
-		animatedSprite.y = y * this.tileSize + this.tileSize / 2; // Centrar en el tile
+		animatedSprite.x = x * TowerDefenseScene.tileSize + TowerDefenseScene.tileSize / 2; // Centrar en el tile
+		animatedSprite.y = y * TowerDefenseScene.tileSize + TowerDefenseScene.tileSize / 2; // Centrar en el tile
 		animatedSprite.animationSpeed = 0.1; // Ajusta la velocidad de la animación
 		animatedSprite.play();
 	}
 
 	private createBackground(): void {
-		const rows = GameConfig.gridHeight - 1; // Usamos la altura configurada
-		const cols = GameConfig.gridWidth - 1; // Usamos el ancho configurado
-		const start: [number, number] = [0, 0]; // Coordenadas de inicio
-		const end: [number, number] = [cols - 1, rows - 1]; // Coordenadas de fin
+		const rows = GameConfig.gridHeight - 1;
+		const cols = GameConfig.gridWidth - 1;
+		const start: [number, number] = [0, 0];
+		const end: [number, number] = [cols - 1, rows - 1];
 
 		const bg = Sprite.from("mainBG");
-		bg.anchor.set(0.5)
+		bg.anchor.set(0.5);
 		this.bgContainer.addChild(bg);
 
 		const frame = Sprite.from("tdBG");
-		frame.anchor.set(0.5)
+		frame.anchor.set(0.5);
 		this.frontContainer.addChild(frame);
 
 		this.grid = Grid.createMaze(rows, cols, start, end);
-		Grid.drawGrid(this.grid, this.tileSize, this.gameContainer);
+		Grid.drawGrid(this.grid, TowerDefenseScene.tileSize, this.gameContainer);
 
 		this.addFlagAtEndPoint(end[0], end[1]);
-
 	}
 
 	private setupClickListener(): void {
 		this.gameContainer.eventMode = "static";
-		this.gameContainer.on("pointerdown", (event: { data: { getLocalPosition: (arg0: any) => Point } }) => {
-			const position = event.data.getLocalPosition(this.gameContainer);
-			const tileX = Math.floor(position.x / this.tileSize);
-			const tileY = Math.floor(position.y / this.tileSize);
 
-			const clickedTower = this.towers.find(t => t.x === tileX && t.y === tileY);
+		this.gameContainer.on("rightclick", (event: { data: { getLocalPosition: (arg0: any) => Point } }) => {
+			console.log("this.gameContainer", this.gameContainer);
+			const position = event.data.getLocalPosition(this.gameContainer);
+			const tileX = Math.floor(position.x / TowerDefenseScene.tileSize);
+			const tileY = Math.floor(position.y / TowerDefenseScene.tileSize);
+
+			const clickedTower = this.towers.find((t) => t.x === tileX && t.y === tileY);
 			if (clickedTower) {
+				// this.setupHoverListener(clickedTower);
 				this.tryUpgradeTower(clickedTower);
 			} else if (Grid.isTileEmpty(tileX, tileY)) {
-				this.addTower(tileX, tileY);
+				Tower.addTower(tileX, tileY, this.towers, this.gameContainer);
+			} else {
+				console.log("Ocupado.");
+			}
+		});
+
+		this.gameContainer.on("pointerdown", (event: { data: { getLocalPosition: (arg0: any) => Point } }) => {
+			const position = event.data.getLocalPosition(this.gameContainer);
+			const tileX = Math.floor(position.x / TowerDefenseScene.tileSize);
+			const tileY = Math.floor(position.y / TowerDefenseScene.tileSize);
+
+			const clickedTower = this.towers.find((t) => t.x === tileX && t.y === tileY);
+			if (clickedTower) {
+				// this.setupHoverListener(clickedTower);
+				this.tryUpgradeTower(clickedTower);
+			} else if (Grid.isTileEmpty(tileX, tileY)) {
+				Tower.addTower(tileX, tileY, this.towers, this.gameContainer);
 			} else {
 				console.log("Ocupado.");
 			}
@@ -148,15 +142,11 @@ export class TowerDefenseScene extends PixiScene {
 			{ dx: 1, dy: 0 },
 			{ dx: -1, dy: 0 },
 			{ dx: 0, dy: 1 },
-			{ dx: 0, dy: -1 }
+			{ dx: 0, dy: -1 },
 		];
 
 		for (const offset of adjacentOffsets) {
-			const adjacentTower = this.towers.find(t =>
-				t.x === clickedTower.x + offset.dx &&
-				t.y === clickedTower.y + offset.dy &&
-				t.level === clickedTower.level
-			);
+			const adjacentTower = this.towers.find((t) => t.x === clickedTower.x + offset.dx && t.y === clickedTower.y + offset.dy && t.level === clickedTower.level);
 
 			if (adjacentTower) {
 				// Fusionar torres
@@ -164,7 +154,7 @@ export class TowerDefenseScene extends PixiScene {
 					this.upgradeTower(clickedTower, adjacentTower);
 					return;
 				} else {
-					console.log("no more lvls to upgrade")
+					console.log("no more lvls to upgrade");
 				}
 			}
 		}
@@ -174,102 +164,11 @@ export class TowerDefenseScene extends PixiScene {
 
 	private upgradeTower(baseTower: Tower, mergedTower: Tower): void {
 		baseTower.upgrade();
-		this.towers = this.towers.filter(t => t !== mergedTower); // Eliminar la torre fusionada
-		this.gameContainer.removeChild(mergedTower.sprite); // Quitar la torre fusionada del contenedor
+		this.towers = this.towers.filter((t) => t !== mergedTower); // Eliminar la torre fusionada
+		this.gameContainer.removeChild(mergedTower.animatedSprite); // Quitar la torre fusionada del contenedor
 		console.log(`Torre en (${baseTower.x}, ${baseTower.y}) mejorada a nivel ${baseTower.level}`);
 		Grid.occupiedCells[mergedTower.y][mergedTower.x] = false; // Marcar la celda como ocupada
-
 	}
-
-	public createTowers(): void {
-		const towerPositions = GameConfig.towerPositions; // Posiciones de torres definidas en GameConfig
-
-		towerPositions.forEach((pos) => {
-			const tower = new Tower(pos.x, pos.y, this.tileSize);
-			this.towers.push(tower);
-			this.gameContainer.addChild(tower.sprite);
-			Grid.occupiedCells[pos.y][pos.x] = true; // Marcar la celda como ocupada
-		});
-	}
-
-	private spawnEnemy(): void {
-		const rows = GameConfig.gridHeight - 1;
-		const cols = GameConfig.gridWidth - 1;
-		// Verificar si la celda de inicio está ocupada
-		const startX = 0;
-		const startY = 0;
-		const startNode: Node = new Node(startX, startY);
-		const goalNode: Node = new Node(cols - 1, rows - 1);
-
-		if (!Grid.isTileEmpty(startNode.x, startNode.y)) {
-			console.log("La celda de inicio está ocupada o no es válida.");
-			return;
-		}
-		const path = AStarPathfinding.findPath(this.grid, startNode, goalNode);
-		if (!path) {
-			console.log("No se encontró un camino válido.");
-		}
-
-		if (path) {
-			let enemyIndex = 0; // Por defecto, seleccionamos el primer enemigo
-
-			// Desbloquear enemigos más fuertes si el score supera ciertos valores
-			if (TowerDefenseScene.gameStats.getScore() > 150) {
-				enemyIndex = 1; // Desbloqueamos el enemigo 2
-			}
-			if (TowerDefenseScene.gameStats.getScore() > 400) {
-				enemyIndex = 2; // Desbloqueamos el enemigo 3
-			}
-			if (TowerDefenseScene.gameStats.getScore() > 1500) {
-				enemyIndex = 3; // Desbloqueamos el enemigo 4
-			}
-			if (TowerDefenseScene.gameStats.getScore() > 4000) {
-				enemyIndex = 4; // Desbloqueamos el enemigo 5
-			}
-			if (TowerDefenseScene.gameStats.getScore() > 7000) {
-				enemyIndex = 5; // Desbloqueamos el enemigo 6
-			}
-
-			if (!Grid.isTileEmpty(startX, startY)) {
-				console.log("La celda de inicio está ocupada o no es válida.");
-				return;
-			}
-
-			// Crear el enemigo en la posición de inicio y asignarle el camino calculado
-			const enemy = new Enemy(startX, startY, path, this.tileSize, enemyIndex);
-			this.enemies.push(enemy);
-			this.gameContainer.addChild(enemy.sprite);
-		}
-	}
-
-	private addTower(x: number, y: number): void {
-		if (!Grid.isWoodTile(x, y)) {
-			console.log("Solo puedes colocar torres en tiles de tipo wood.");
-			return;
-		}
-
-		if (Grid.isTileEmpty(x, y)) {
-			if (TowerDefenseScene.gameStats.spendPoints(this.towerCost)) {
-				const tower = new Tower(x, y, this.tileSize);
-				this.towers.push(tower);
-				this.gameContainer.addChild(tower.sprite);
-
-				// Marcar la celda como ocupada
-				Grid.occupiedCells[y][x] = true;
-
-				// Aumentar el costo de la próxima torre en 5
-				this.towerCost += 30;
-
-				console.log(`Torre agregada en (${x}, ${y}). Puntos restantes: ${TowerDefenseScene.gameStats.getPoints()}`);
-				console.log(`Costo de la siguiente torre: ${this.towerCost}`);
-			} else {
-				console.log("No tienes suficientes puntos para agregar una torre.");
-			}
-		} else {
-			console.log("La celda está ocupada o no es válida para una torre.");
-		}
-	}
-
 
 	public override update(delta: number): void {
 		if (this.restart || this.gameOver) {
@@ -277,7 +176,7 @@ export class TowerDefenseScene extends PixiScene {
 		}
 
 		if (Date.now() - this.lastSpawnTime > GameConfig.spawnInterval) {
-			this.spawnEnemy();
+			Enemy.spawnEnemy(this.grid, this.enemies, this.gameContainer);
 			this.lastSpawnTime = Date.now();
 		}
 
@@ -331,15 +230,10 @@ export class TowerDefenseScene extends PixiScene {
 					return; // Salir del bucle para evitar más actualizaciones
 				}
 			}
-
 		});
 		this.towers.forEach((tower) => tower.update(delta, this.enemies, this.gameContainer));
 
-		this.uiLeftContainer.updateUI(TowerDefenseScene.gameStats, this.towerCost, this.calculateTotalDamage());
-	}
-
-	private calculateTotalDamage(): number {
-		return this.towers.reduce((total, tower) => total + tower.towerConfig.damage, 0);
+		this.uiLeftContainer.updateUI(TowerDefenseScene.gameStats, TowerDefenseScene.towerCost, UIContainer.calculateTotalDamage(this.towers));
 	}
 
 	public override onResize(newW: number, newH: number): void {
@@ -369,13 +263,9 @@ export class TowerDefenseScene extends PixiScene {
 		ScaleHelper.setScaleRelativeToIdeal(this.fadeContainer, newW, newH, 355, 355, ScaleHelper.FIT);
 		this.fadeContainer.x = newW * 0.5;
 		this.fadeContainer.y = newH * 0.5;
-
 	}
 
 	public async openTowerDefenseInputPopup(): Promise<void> {
-		// this.isPopupOpen = true;
-		// this.isPaused = true;
-
 		try {
 			const popupInstance = await Manager.openPopup(TowerDefenseNameInputPopUp);
 			if (popupInstance instanceof TowerDefenseNameInputPopUp) {
@@ -390,5 +280,4 @@ export class TowerDefenseScene extends PixiScene {
 			console.error("Error opening settings popup:", error);
 		}
 	}
-
 }

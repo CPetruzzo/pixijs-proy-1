@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import * as Tone from "tone";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
@@ -48,7 +49,7 @@ export class PianoGameScene extends PixiScene {
 
 	private startGame(): void {
 		this.isGameStarted = true;
-		this.removeChild(this.startButton!); // Elimina el botón de inicio
+		this.removeChild(this.startButton); // Elimina el botón de inicio
 		this.startButton = null;
 		Tone.start().then(() => {
 			console.log("Tone.js audio context started");
@@ -86,12 +87,16 @@ export class PianoGameScene extends PixiScene {
 
 			// Sonido al presionar
 			key.on("pointerdown", () => {
-				if (this.isGameStarted) this.playNote(whiteKeys[i], i);
+				if (this.isGameStarted) {
+					this.playNote(whiteKeys[i], i);
+				}
 			});
 
 			// Sonido al pasar con clic sostenido
 			key.on("pointerover", () => {
-				if (this.isGameStarted && isMouseDown) this.playNote(whiteKeys[i], i);
+				if (this.isGameStarted && isMouseDown) {
+					this.playNote(whiteKeys[i], i);
+				}
 			});
 
 			this.whiteKeys.push(key);
@@ -109,12 +114,16 @@ export class PianoGameScene extends PixiScene {
 
 			// Sonido al presionar
 			key.on("pointerdown", () => {
-				if (this.isGameStarted) this.playBlackKey(blackKeysPositions[i], i);
+				if (this.isGameStarted) {
+					this.playBlackKey(blackKeysPositions[i], i);
+				}
 			});
 
 			// Sonido al pasar con clic sostenido
 			key.on("pointerover", () => {
-				if (this.isGameStarted && isMouseDown) this.playBlackKey(blackKeysPositions[i], i);
+				if (this.isGameStarted && isMouseDown) {
+					this.playBlackKey(blackKeysPositions[i], i);
+				}
 			});
 
 			this.blackKeys.push(key);
@@ -165,7 +174,11 @@ export class PianoGameScene extends PixiScene {
 			4: "F#4",
 			5: "G#4",
 			6: "A#4",
-			8: "C#5", 9: "D#5", 11: "F#5", 12: "G#5", 13: "A#5",
+			8: "C#5",
+			9: "D#5",
+			11: "F#5",
+			12: "G#5",
+			13: "A#5",
 		};
 		this.synth.triggerAttackRelease(blackKeyNotes[position], "8n");
 		this.showDot(this.blackKeys[index]);
@@ -178,7 +191,7 @@ export class PianoGameScene extends PixiScene {
 		this.currentDot = new Graphics();
 		this.currentDot.beginFill(0xff0000).drawCircle(0, 0, 8).endFill();
 		this.currentDot.x = key.x + key.width / 2;
-		this.currentDot.y = key.y + 3 * key.height / 4;
+		this.currentDot.y = key.y + (3 * key.height) / 4;
 		this.gameContainer.addChild(this.currentDot);
 
 		setTimeout(() => {

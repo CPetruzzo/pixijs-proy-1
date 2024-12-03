@@ -27,7 +27,7 @@ export class EffectManager {
 		}
 	}
 
-	private clearFilters(target: any): void {
+	public clearFilters(target: any): void {
 		if (target) {
 			target.filters = [];
 		}

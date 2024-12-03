@@ -1,5 +1,6 @@
 import { Container, Sprite, Text } from "pixi.js";
 import type { GameStats } from "../utils/GameStats";
+import type { Tower } from "../models/Tower";
 
 export class UIContainer extends Container {
 	private pointsText: Text;
@@ -45,5 +46,9 @@ export class UIContainer extends Container {
 		this.scoreText.text = `Score: ${gameStats.getScore()}`;
 		this.towerCostText.text = `Costo Torre: ${towerCost}`;
 		this.totalDamageText.text = `Daño Total: ${totalDamage}`; // Actualiza el daño total
+	}
+
+	public static calculateTotalDamage(towers: Tower[]): number {
+		return towers.reduce((total, tower) => total + tower.towerConfig.damage, 0);
 	}
 }
