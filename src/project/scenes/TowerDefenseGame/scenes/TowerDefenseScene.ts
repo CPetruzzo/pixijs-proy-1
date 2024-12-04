@@ -62,6 +62,7 @@ export class TowerDefenseScene extends PixiScene {
 		this.uiLeftContainer.removeAllListeners();
 		this.uiRightContainer.removeAllListeners();
 		this.frontContainer.removeAllListeners();
+		TowerDefenseScene.towerCost = 50;
 		TowerDefenseScene.gameStats = new GameStats(GameConfig.initialPoints);
 	}
 
