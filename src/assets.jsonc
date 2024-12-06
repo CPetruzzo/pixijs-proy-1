@@ -231,6 +231,13 @@
 			}
 		},
 		{
+			"name": "storagescene",
+			"assets": {
+				"sword": "./img/player1.png",
+				"shield": "./img/player2.png"
+			}
+		},
+		{
 			"name": "fallrungame",
 			"assets": {
 				"package 1 background": "./img/image.jpg",

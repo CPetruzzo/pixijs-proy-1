@@ -156,6 +156,47 @@ export class Enemy {
 		return { x: this.path[this.currentStep].x, y: this.path[this.currentStep].y }; // Ajusta según la implementación de coordenadas en Enemy
 	}
 
+	// public static spawnEnemy(grid: number[][], enemies: Enemy[], gameContainer: Container): void {
+	// 	const rows = GameConfig.gridHeight - 1;
+	// 	const cols = GameConfig.gridWidth - 1;
+	// 	const startX = 0;
+	// 	const startY = 0;
+
+	// 	const startNode: Node = new Node(startX, startY);
+	// 	const goalNode: Node = new Node(cols - 1, rows - 1);
+
+	// 	if (!Grid.isTileEmpty(startNode.x, startNode.y)) {
+	// 		console.log("La celda de inicio está ocupada o no es válida.");
+	// 		return;
+	// 	}
+
+	// 	const path = AStarPathfinding.findPath(grid, startNode, goalNode);
+	// 	if (!path) {
+	// 		console.log("No se encontró un camino válido.");
+	// 		return;
+	// 	}
+
+	// 	// Determinar el nivel de generación según el puntaje
+	// 	const score = TowerDefenseScene.gameStats.getScore();
+	// 	const baseEnemyCount = GameConfig.enemyConfig.sprites.length; // Total de tipos base de enemigos
+	// 	const generationLevel = Math.floor(score / 150); // Cada 150 puntos, incrementa el nivel
+	// 	const enemyIndex = generationLevel % baseEnemyCount; // Cíclico entre los enemigos base
+	// 	console.log("enemyIndex", enemyIndex);
+
+	// 	// Incrementar HP según el nivel de generación
+	// 	const baseHealth = GameConfig.enemyConfig.health[enemyIndex];
+	// 	const healthMultiplier = 1 + Math.floor(generationLevel / baseEnemyCount) * 0.5; // Incremento del 50% por cada ciclo completo
+	// 	const adjustedHealth = Math.round(baseHealth * healthMultiplier);
+
+	// 	// Crear el enemigo con el HP ajustado
+	// 	const enemy = new Enemy(startX, startY, path, TowerDefenseScene.tileSize, enemyIndex);
+	// 	enemy.health = adjustedHealth; // Reemplazar el HP base con el ajustado
+	// 	enemy.updateHealthBar(); // Actualizar la barra de vida para reflejar el HP ajustado
+
+	// 	enemies.push(enemy);
+	// 	gameContainer.addChild(enemy.sprite);
+	// }
+
 	public static spawnEnemy(grid: number[][], enemies: Enemy[], gameContainer: Container): void {
 		const rows = GameConfig.gridHeight - 1;
 		const cols = GameConfig.gridWidth - 1;
