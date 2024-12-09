@@ -19,7 +19,7 @@ import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
 // import { PianoGameScene } from "./project/scenes/PulseHeist/Piano";
-import { StorageScene } from "./project/scenes/Storage/StorageScene";
+import { GuitarHeroScene } from "./project/scenes/PulseHeist/GuitarHero";
 settings.RENDER_OPTIONS.hello = false;
 
 DEFAULTS.safetyCheckFunction = (obj: any) => !obj?.destroyed;
@@ -100,7 +100,7 @@ window.addEventListener("contextmenu", (e) => {
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
 	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
-	Manager.changeScene(StorageScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(GuitarHeroScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

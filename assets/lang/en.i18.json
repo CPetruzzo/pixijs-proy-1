@@ -4,6 +4,11 @@
 		"title": "Your game",
 		"tagline": "Your tagline"
 	},
+	"piano": {
+		"title": "Your game",
+		"tagline": "Your tagline",
+		"start": "Start"
+	},
 	"settings": {
 		"muteSFX": "Mute Sounds",
 		"muteMusic": "Mute Music"

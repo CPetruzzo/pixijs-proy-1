@@ -3,6 +3,7 @@ import * as Tone from "tone";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import i18next from "i18next";
 
 export class PianoGameScene extends PixiScene {
 	private keys: Graphics[] = [];
@@ -31,7 +32,7 @@ export class PianoGameScene extends PixiScene {
 		this.startButton.eventMode = "dynamic";
 		this.startButton.pivot.set(this.startButton.width * 0.5, this.startButton.height * 0.5);
 		const textStyle = new TextStyle({ fill: "#ffffff", fontSize: 18, fontWeight: "bold" });
-		const buttonText = new Text("Start", textStyle);
+		const buttonText = new Text(i18next.t<string>("piano.start"), textStyle);
 		buttonText.anchor.set(0.5);
 		buttonText.x = this.startButton.width / 2;
 		buttonText.y = this.startButton.height / 2;
