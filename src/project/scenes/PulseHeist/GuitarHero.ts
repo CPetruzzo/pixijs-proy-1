@@ -16,6 +16,10 @@ export class GuitarHeroScene extends PixiScene {
 	private startButton: Graphics;
 	private pressedTracks: Set<number> = new Set();
 	private readonly HIT_MARGIN: number = 50; // Margen de error en píxeles
+	private correctNotesCount: number = 0; // Contador de notas bien tocadas
+	private currentCombo: number = 0; // Contador de combo actual
+	private maxCombo: number = 0; // Máximo combo alcanzado
+	private comboText: Text; // Texto para mostrar el combo actual
 
 	private readonly songNotes: { track: number; time: number; note: string }[] = [
 		{ track: 0, time: 500, note: "C4" }, // "Cum"
@@ -32,8 +36,8 @@ export class GuitarHeroScene extends PixiScene {
 		{ track: 1, time: 7000, note: "F4" }, // "liz"
 		{ track: 0, time: 7500, note: "C4" }, // "Que"
 		{ track: 0, time: 8000, note: "C4" }, // "los"
-		{ track: 2, time: 8500, note: "C5" }, // "cum"
-		{ track: 1, time: 9000, note: "A4" }, // "plas"
+		{ track: 4, time: 8500, note: "C5" }, // "cum"
+		{ track: 3, time: 9000, note: "A4" }, // "plas"
 		{ track: 2, time: 9500, note: "F4" }, // "fe"
 		{ track: 1, time: 10000, note: "E4" }, // "liz"
 		{ track: 0, time: 10500, note: "D4" }, // "liz"
@@ -51,6 +55,7 @@ export class GuitarHeroScene extends PixiScene {
 		this.isGameRunning = true;
 		this.startButton.visible = false;
 		this.songStartTime = Date.now(); // Marca el tiempo de inicio de la canción
+		this.correctNotesCount = 0;
 
 		// Programa las notas y arranca el transporte
 		this.scheduleNotes();
@@ -58,9 +63,21 @@ export class GuitarHeroScene extends PixiScene {
 		Tone.getTransport().start(); // Asegúrate de que el transporte está activo
 	}
 
+	private createUI(): void {
+		const textStyle = new TextStyle({
+			fill: "#ffffff",
+			fontSize: 24,
+			align: "center",
+		});
+		this.comboText = new Text("Combo: 0", textStyle);
+		this.comboText.x = 10; // Ajusta la posición
+		this.comboText.y = 10; // Ajusta la posición
+		this.addChild(this.comboText);
+	}
+
 	private scheduleNotes(): void {
-		const startTime = Tone.now();  // Get the current time from Tone.js
-		this.songNotes.forEach(note => {
+		const startTime = Tone.now(); // Get the current time from Tone.js
+		this.songNotes.forEach((note) => {
 			const delay = note.time / 1000 - (startTime % 1); // Adjust delay for exact timing
 			Tone.getTransport().schedule((_time) => {
 				this.spawnNoteAtTrack(note.track);
@@ -69,9 +86,11 @@ export class GuitarHeroScene extends PixiScene {
 	}
 
 	private spawnNoteAtTrack(trackIndex: number): void {
-		const nextNote = this.songNotes.find(note => note.track === trackIndex && note.time >= Date.now() - this.songStartTime);
+		const nextNote = this.songNotes.find((note) => note.track === trackIndex && note.time >= Date.now() - this.songStartTime);
 
-		if (!nextNote) return; // Asegúrate de que hay una nota asociada
+		if (!nextNote) {
+			return;
+		}
 
 		const note = new Graphics();
 		note.beginFill(0xffffff).drawCircle(0, 0, 20).endFill();
@@ -83,7 +102,7 @@ export class GuitarHeroScene extends PixiScene {
 		this.gameContainer.addChild(note);
 
 		// Asocia la nota musical con el gráfico
-		(note as any)["note"] = nextNote.note; // Propiedad personalizada
+		(note as any)["note"] = nextNote.note;
 
 		console.log(`Spawning note on track ${trackIndex} with sound ${nextNote.note}`);
 	}
@@ -93,10 +112,32 @@ export class GuitarHeroScene extends PixiScene {
 		this.synth = new Tone.Synth().toDestination();
 		this.createTracks();
 		this.createTargetLine();
+		this.createUI();
 		this.createStartButton();
 		this.addChild(this.gameContainer);
 		this.addChild(this.feedbackContainer);
 		this.addChild(this.startButton);
+	}
+
+	private updateCombo(isCorrect: boolean): void {
+		if (isCorrect) {
+			this.currentCombo += 1;
+			if (this.currentCombo > this.maxCombo) {
+				this.maxCombo = this.currentCombo;
+			}
+		} else {
+			this.currentCombo = 0; // Reinicia el combo al fallar
+		}
+
+		// Actualizar el texto del combo
+		this.comboText.text = `Combo: ${this.currentCombo} | Max: ${this.maxCombo}`;
+		console.log(`Current Combo: ${this.currentCombo}, Max Combo: ${this.maxCombo}`);
+	}
+
+	public override update(_dt: number): void {
+		if (this.isGameRunning) {
+			this.updateNotes(_dt);
+		}
 	}
 
 	private onTrackPress(trackIndex: number, isPressed: boolean): void {
@@ -111,12 +152,6 @@ export class GuitarHeroScene extends PixiScene {
 		this.updateFeedback();
 	}
 
-	public override update(_dt: number): void {
-		if (this.isGameRunning) {
-			this.updateNotes(_dt);
-		}
-	}
-
 	private updateNotes(_dt: number): void {
 		const speed = _dt / 3; // Velocidad de las notas
 		const notesToRemove: Graphics[] = []; // Arreglo temporal para las notas a eliminar
@@ -124,31 +159,34 @@ export class GuitarHeroScene extends PixiScene {
 		this.fallingNotes.forEach((note) => {
 			note.y += speed;
 
-			// Si la nota está dentro del margen de error
 			if (Math.abs(note.y - this.targetLine.y) <= this.HIT_MARGIN) {
 				const trackIndex = this.activeNotes.get(note);
 
 				if (trackIndex !== undefined && this.pressedTracks.has(trackIndex)) {
-					// Toca la nota si coincide
+					// Nota correcta
 					this.playNoteSound(trackIndex);
-					notesToRemove.push(note); // Marca como resuelta
+
+					// Incrementa el contador de notas correctas
+					this.correctNotesCount++;
+					console.log(`Correct notes: ${this.correctNotesCount}`); // Opcional: mostrar en consola
+					this.updateCombo(true); // Incrementar combo
+					notesToRemove.push(note);
 				}
 			}
-
 
 			// Si la nota pasó completamente la línea sin ser presionada
 			if (note.y > this.targetLine.y + this.HIT_MARGIN) {
 				const trackIndex = this.activeNotes.get(note);
 				console.log(`Note missed on track: ${trackIndex}`);
 				this.updateFeedback(trackIndex, false); // Feedback rojo para fallo
-				notesToRemove.push(note); // Eliminar nota
+				this.updateCombo(false); // Reiniciar combo
+				notesToRemove.push(note);
 			}
 		});
 
 		// Eliminar las notas marcadas
 		notesToRemove.forEach((note) => this.removeNote(note));
 	}
-
 
 	private removeNote(note: Graphics): void {
 		const index = this.fallingNotes.indexOf(note);
@@ -162,20 +200,19 @@ export class GuitarHeroScene extends PixiScene {
 	private createTracks(): void {
 		const trackWidth = 80;
 		const trackHeight = 800;
-		const trackCount = 3;
+		const trackCount = 5;
 
 		for (let i = 0; i < trackCount; i++) {
 			const track = new Graphics();
 			track.beginFill(0x333333).drawRect(0, 0, trackWidth, trackHeight).endFill();
 			track.x = i * (trackWidth + 10);
-			track.eventMode = "static"; // Habilita eventos de interacción
+			track.eventMode = "static";
 			track.on("pointerdown", (_event) => this.onTrackPress(i, true));
 			track.on("pointerup", (_event) => this.onTrackPress(i, false));
 			this.tracks.push(track);
 			this.gameContainer.addChild(track);
 		}
 	}
-
 
 	private createTargetLine(): void {
 		this.targetLine = new Graphics();
@@ -186,7 +223,6 @@ export class GuitarHeroScene extends PixiScene {
 		this.targetLine.y = 750; // Establece la posición vertical
 		this.gameContainer.addChild(this.targetLine);
 	}
-
 
 	private createStartButton(): void {
 		this.startButton = new Graphics();
@@ -207,37 +243,6 @@ export class GuitarHeroScene extends PixiScene {
 		this.startButton.on("pointerdown", () => this.startGame());
 	}
 
-	// private spawnNote(): void {
-	// 	if (!this.isGameRunning) return;
-
-	// 	const randomTrack = Math.floor(Math.random() * this.tracks.length);
-	// 	const note = new Graphics();
-	// 	note.beginFill(0xffffff).drawCircle(0, 0, 20).endFill();
-	// 	note.x = this.tracks[randomTrack].x + 40;
-	// 	note.y = 0;
-
-	// 	console.log(`Spawning note at track ${randomTrack}, position (${note.x}, ${note.y})`);
-	// 	this.fallingNotes.push(note);
-	// 	this.activeNotes.set(note, randomTrack);
-	// 	this.gameContainer.addChild(note);
-
-	// 	const randomSpeed = Random.shared.randomInt(250, 1000);
-
-	// 	setTimeout(() => this.spawnNote(), randomSpeed); // Intervalo ajustable
-	// }
-
-	// private checkCollision(_note: Graphics, trackIndex: number | undefined): void {
-	// 	if (trackIndex === undefined) return;
-
-	// 	if (this.pressedTracks.has(trackIndex)) {
-	// 		// Feedback verde para acierto
-	// 		this.updateFeedback(trackIndex, true);
-	// 		console.log(`Correct note pressed on track: ${trackIndex}`);
-	// 	} else {
-	// 		console.log(`Note missed or wrong track: ${trackIndex}`);
-	// 	}
-	// }
-
 	private updateFeedback(trackIndex?: number, isCorrect?: boolean): void {
 		this.feedbackContainer.removeChildren(); // Limpia el contenedor de feedback
 
@@ -256,16 +261,27 @@ export class GuitarHeroScene extends PixiScene {
 	}
 
 	private playNoteSound(trackIndex: number): void {
-		const fallingNote = this.fallingNotes.find(note => this.activeNotes.get(note) === trackIndex);
-		if (fallingNote && (fallingNote as any)["note"]) {
-			const noteToPlay = (fallingNote as any)["note"];
+		const fallingNote = this.fallingNotes.find((note) => this.activeNotes.get(note) === trackIndex);
+		if (!fallingNote) {
+			console.log(`No falling note found for track ${trackIndex}`);
+			return;
+		}
+
+		if (!(fallingNote as any)["note"]) {
+			console.log(`Falling note does not have a valid note property for track ${trackIndex}`);
+			return;
+		}
+
+		const noteToPlay: any = (fallingNote as any)["note"];
+		try {
 			this.synth.triggerAttackRelease(noteToPlay, "8n");
+			// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 			console.log(`Playing note: ${noteToPlay} on track ${trackIndex}`);
-		} else {
-			console.log(`No matching note to play for track ${trackIndex}`);
+		} catch (error) {
+			// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+			console.error(`Error while playing note ${noteToPlay}:`, error);
 		}
 	}
-
 
 	public override onResize(newW: number, newH: number): void {
 		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, newW, newH, 640, 840, ScaleHelper.FIT);
