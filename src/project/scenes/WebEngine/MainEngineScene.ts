@@ -1,8 +1,8 @@
-import { Container, Text, Graphics, Sprite } from 'pixi.js';
-import { PixiScene } from '../../../engine/scenemanager/scenes/PixiScene';
-import { ScaleHelper } from '../../../engine/utils/ScaleHelper';
-import { Player } from './Player';
-import { Easing, Tween } from 'tweedle.js';
+import { Container, Text, Graphics, Sprite } from "pixi.js";
+import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
+import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
+import { Player } from "./Player";
+import { Easing, Tween } from "tweedle.js";
 
 export class MainEngineScene extends PixiScene {
 	private backgroundContainer: Container;
@@ -22,8 +22,8 @@ export class MainEngineScene extends PixiScene {
 	private time: number = 0; // Mantener el tiempo acumulado
 
 	private createUI(): void {
-		this.scoreText = new Text('Puntuación: 0', { fontFamily: 'Arial', fontSize: 24, fill: 0xffffff });
-		this.timeText = new Text('Tiempo: 0', { fontFamily: 'Arial', fontSize: 24, fill: 0xffffff });
+		this.scoreText = new Text("Puntuación: 0", { fontFamily: "Arial", fontSize: 24, fill: 0xffffff });
+		this.timeText = new Text("Tiempo: 0", { fontFamily: "Arial", fontSize: 24, fill: 0xffffff });
 
 		this.scoreText.x = 10;
 		this.scoreText.y = 10;
@@ -50,7 +50,7 @@ export class MainEngineScene extends PixiScene {
 		this.blackboard = Sprite.from("blackboard");
 		this.blackboard.anchor.set(0.5);
 		this.blackboard.interactive = true;
-		this.blackboard.cursor = 'crosshair';
+		this.blackboard.cursor = "crosshair";
 		this.blackboard.interactiveChildren = false;
 
 		this.backgroundContainer.addChild(this.blackboard);
@@ -74,8 +74,8 @@ export class MainEngineScene extends PixiScene {
 	}
 
 	private createButtons(): void {
-		this.createButton('Agregar Cuadrado', 50, 50, () => this.setDispenser('square'));
-		this.createButton('Agregar Círculo', 50, 100, () => this.setDispenser('circle'));
+		this.createButton("Agregar Cuadrado", 50, 50, () => this.setDispenser("square"));
+		this.createButton("Agregar Círculo", 50, 100, () => this.setDispenser("circle"));
 	}
 
 	private createButton(text: string, x: number, y: number, onClick: () => void): void {
@@ -85,16 +85,16 @@ export class MainEngineScene extends PixiScene {
 		btnBackground.endFill();
 
 		const button = new Text(text, {
-			fontFamily: 'Arial',
+			fontFamily: "Arial",
 			fontSize: 24,
 			fill: 0xffffff,
-			align: 'center'
+			align: "center",
 		});
 
 		button.interactive = true;
 		button.x = x;
 		button.y = y;
-		button.on('pointerup', (event) => {
+		button.on("pointerup", (event) => {
 			onClick();
 			event.stopPropagation(); // Detiene la propagación del evento para evitar que se dibuje en el click del botón
 		});
@@ -105,47 +105,47 @@ export class MainEngineScene extends PixiScene {
 
 	private setDispenser(objectType: string): void {
 		this.currentDispenser = objectType;
-		document.body.style.cursor = 'crosshair';
+		document.body.style.cursor = "crosshair";
 	}
 
 	private setupInteractions(): void {
 		this.eventMode = "static";
 
-		this.blackboard.on('pointerdown', (event) => {
+		this.blackboard.on("pointerdown", (event) => {
 			if (this.isDrawing) {
 				this.isDrawing = false;
-				document.body.style.cursor = 'default';
+				document.body.style.cursor = "default";
 			} else if (event.data.button === 0 && this.currentDispenser) {
 				const localMousePosition = this.blackboard.toLocal(event.data.global);
 				this.addObject(this.currentDispenser, localMousePosition.x, localMousePosition.y);
 			}
 		});
 
-		this.blackboard.on('rightdown', () => {
+		this.blackboard.on("rightdown", () => {
 			this.isDrawing = false;
 			this.currentDispenser = null;
-			document.body.style.cursor = 'default';
+			document.body.style.cursor = "default";
 		});
 
-		this.blackboard.on('pointerover', () => {
+		this.blackboard.on("pointerover", () => {
 			this.canDraw = true;
 		});
 
-		this.blackboard.on('pointerout', () => {
+		this.blackboard.on("pointerout", () => {
 			this.canDraw = false;
 		});
 
-		this.blackboard.on('pointerdown', (event) => {
+		this.blackboard.on("pointerdown", (event) => {
 			const localMousePosition = this.blackboard.toLocal(event.data.global);
 			this.player.moveTowards(localMousePosition.x, localMousePosition.y, this);
 		});
 
-		this.on('pointermove', (event) => {
+		this.on("pointermove", (event) => {
 			if (this.isDrawing && this.currentDispenser && this.canDraw) {
 				const localMousePosition = this.blackboard.toLocal(event.data.global);
 				this.addObject(this.currentDispenser, localMousePosition.x, localMousePosition.y);
 			}
-			this.blackboard.on('pointerdown', (event) => {
+			this.blackboard.on("pointerdown", (event) => {
 				const localMousePosition = this.blackboard.toLocal(event.data.global);
 				this.player.moveTowards(localMousePosition.x, localMousePosition.y, this);
 			});
@@ -154,7 +154,7 @@ export class MainEngineScene extends PixiScene {
 
 	private createTreasures(): void {
 		for (let i = 0; i < 10; i++) {
-			const treasure = Sprite.from('coin');
+			const treasure = Sprite.from("coin");
 			treasure.anchor.set(0.5);
 			treasure.x = Math.random() * this.blackboard.width - this.blackboard.width * 0.5;
 			treasure.y = Math.random() * this.blackboard.height - this.blackboard.height * 0.5;
@@ -164,8 +164,9 @@ export class MainEngineScene extends PixiScene {
 	}
 
 	private createTraps(): void {
-		for (let i = 0; i < 5; i++) { // Generar 5 trampas
-			const trap = Sprite.from('obstacule');
+		for (let i = 0; i < 5; i++) {
+			// Generar 5 trampas
+			const trap = Sprite.from("obstacule");
 			trap.anchor.set(0.5);
 			trap.x = Math.random() * this.blackboard.width - this.blackboard.width * 0.5;
 			trap.y = Math.random() * this.blackboard.height - this.blackboard.height * 0.5;
@@ -175,8 +176,9 @@ export class MainEngineScene extends PixiScene {
 	}
 
 	private createEnemies(): void {
-		for (let i = 0; i < 3; i++) { // Generar 3 enemigos
-			const enemy = Sprite.from('enemy');
+		for (let i = 0; i < 3; i++) {
+			// Generar 3 enemigos
+			const enemy = Sprite.from("enemy");
 			enemy.anchor.set(0.5);
 			enemy.x = Math.random() * this.blackboard.width - this.blackboard.width * 0.5;
 			enemy.y = Math.random() * this.blackboard.height - this.blackboard.height * 0.5;
@@ -191,12 +193,12 @@ export class MainEngineScene extends PixiScene {
 			{ x: -this.blackboard.width / 2 + 50, y: -this.blackboard.height / 2 + 50 },
 			{ x: this.blackboard.width / 2 - 50, y: -this.blackboard.height / 2 + 50 },
 			{ x: this.blackboard.width / 2 - 50, y: this.blackboard.height / 2 - 50 },
-			{ x: -this.blackboard.width / 2 + 50, y: this.blackboard.height / 2 - 50 }
+			{ x: -this.blackboard.width / 2 + 50, y: this.blackboard.height / 2 - 50 },
 		];
 
 		let currentPointIndex = 0;
 
-		const moveToNextPoint = () => {
+		const moveToNextPoint = (): void => {
 			const nextPoint = patrolPoints[currentPointIndex];
 			const duration = 2000;
 			new Tween(enemy)
@@ -225,18 +227,14 @@ export class MainEngineScene extends PixiScene {
 	}
 
 	private isColliding(rect1: any, rect2: any): boolean {
-		return rect1.x < rect2.x + rect2.width &&
-			rect1.x + rect1.width > rect2.x &&
-			rect1.y < rect2.y + rect2.height &&
-			rect1.y + rect1.height > rect2.y;
+		// eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+		return rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y;
 	}
-
-
 
 	private addObject(objectType: string, x: number, y: number): void {
 		let newObject: Graphics;
 
-		if (objectType === 'square') {
+		if (objectType === "square") {
 			newObject = new Graphics();
 			newObject.beginFill(0xff0000);
 			newObject.drawRect(0, 0, 50, 50);
@@ -244,7 +242,7 @@ export class MainEngineScene extends PixiScene {
 
 			newObject.x = x - newObject.width / 2;
 			newObject.y = y - newObject.height / 2;
-		} else if (objectType === 'circle') {
+		} else if (objectType === "circle") {
 			newObject = new Graphics();
 			newObject.beginFill(0x00ff00);
 			newObject.drawCircle(0, 0, 25);

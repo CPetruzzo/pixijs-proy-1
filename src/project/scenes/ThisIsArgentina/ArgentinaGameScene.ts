@@ -3,7 +3,7 @@ import { Manager } from "../../..";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Personaje } from "./AuroraPlayer";
 
-export class GameScene extends PixiScene {
+export class ArgentinaGameScene extends PixiScene {
 	private heroe: Personaje;
 	private enemigo: Personaje;
 	public static readonly BUNDLES = ["fallrungame", "sfx"];

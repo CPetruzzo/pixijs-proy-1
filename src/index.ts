@@ -18,8 +18,11 @@ import { JoystickEmits } from "./utils/Joystick";
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
+// import { TopDownGameScene } from "./project/scenes/TopDown/TopDownScene";
+import { TopDownScene3D } from "./project/scenes/TopDown/TopDownScene3D";
 // import { PianoGameScene } from "./project/scenes/PulseHeist/Piano";
-import { GuitarHeroScene } from "./project/scenes/PulseHeist/GuitarHero";
+// import { GuitarHeroScene } from "./project/scenes/PulseHeist/GuitarHero";
+// import { ArgentinaGameScene } from "./project/scenes/ThisIsArgentina/ArgentinaGameScene";
 settings.RENDER_OPTIONS.hello = false;
 
 DEFAULTS.safetyCheckFunction = (obj: any) => !obj?.destroyed;
@@ -100,7 +103,7 @@ window.addEventListener("contextmenu", (e) => {
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
 	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
-	Manager.changeScene(GuitarHeroScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(TopDownScene3D, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

@@ -1,5 +1,5 @@
-import { Container, Sprite } from 'pixi.js';
-import { Easing, Tween } from 'tweedle.js';
+import { Container, Sprite } from "pixi.js";
+import { Easing, Tween } from "tweedle.js";
 
 export class Player extends Container {
 	public playerSprite: Sprite;
@@ -16,7 +16,7 @@ export class Player extends Container {
 		this.blackboard = blackboard;
 
 		// Crear el sprite del jugador (aquí debes reemplazar por tu sprite real del jugador)
-		this.playerSprite = Sprite.from('player1');
+		this.playerSprite = Sprite.from("player1");
 		this.playerSprite.anchor.set(0.5);
 		this.addChild(this.playerSprite);
 	}
@@ -40,7 +40,7 @@ export class Player extends Container {
 
 	private checkForTreasures(context: any): void {
 		const playerBounds = this.playerSprite.getBounds();
-		this.treasures = this.treasures.filter(treasure => {
+		this.treasures = this.treasures.filter((treasure) => {
 			const treasureBounds = treasure.getBounds();
 			if (this.isColliding(playerBounds, treasureBounds)) {
 				this.collectTreasure(context, treasure);
@@ -51,10 +51,8 @@ export class Player extends Container {
 	}
 
 	private isColliding(rect1: any, rect2: any): boolean {
-		return rect1.x < rect2.x + rect2.width &&
-			rect1.x + rect1.width > rect2.x &&
-			rect1.y < rect2.y + rect2.height &&
-			rect1.y + rect1.height > rect2.y;
+		// eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+		return rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y;
 	}
 
 	private collectTreasure(context: any, treasure: Sprite): void {
@@ -64,7 +62,7 @@ export class Player extends Container {
 
 	private checkForTraps(context: any): void {
 		const playerBounds = this.playerSprite.getBounds();
-		this.traps.forEach(trap => {
+		this.traps.forEach((trap) => {
 			const trapBounds = trap.getBounds();
 			if (this.isColliding(playerBounds, trapBounds)) {
 				this.triggerTrap(trap);
@@ -74,7 +72,8 @@ export class Player extends Container {
 	}
 
 	public triggerTrap(_trap: Sprite): void {
-		console.log("huy" + _trap);
+		// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+		console.log(`huy${_trap}`);
 	}
 
 	private updateScore(context: any, scoreDelta: number): void {

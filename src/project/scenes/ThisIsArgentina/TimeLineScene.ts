@@ -6,7 +6,7 @@ import { lerp } from "../../../engine/utils/MathUtils";
 import { Easing, Tween } from "tweedle.js";
 import { Manager } from "../../..";
 import events from "./events.json";
-import { GameScene } from "./ArgentinaGameScene";
+import { ArgentinaGameScene } from "./ArgentinaGameScene";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 
 export class TimeLineScene extends PixiScene {
@@ -258,7 +258,7 @@ export class TimeLineScene extends PixiScene {
 
 	private onStartButtonClick(): void {
 		// Cambiar a la escena de juego (GameScene) con la transición CircularLoadingTransition
-		Manager.changeScene(GameScene, { transitionClass: FadeColorTransition });
+		Manager.changeScene(ArgentinaGameScene, { transitionClass: FadeColorTransition });
 	}
 
 	// #endregion BEGINGAME
