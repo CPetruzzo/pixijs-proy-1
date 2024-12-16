@@ -1,10 +1,10 @@
 {
-  "name": "Run & Fall",
+  "name": "CachoPetruzzo",
   "version": "0.0.1",
   "description": "BunnyBox is a boilerplate/engine for pixijs. Descendant of the great killabunnies engine",
   "pwa": {
     "name": "BunnyBox powered PWA",
-    "short_name": "Run & Fall",
+    "short_name": "CachoPetruzzo",
     "description": "My awesome Progressive Web App!",
     "background_color": "#ee0000"
   },
@@ -17,14 +17,16 @@
     "lint": "eslint src/**/*.ts --fix",
     "clean": "rimraf ./dist",
     "check": "tsc --noEmit --skipLibCheck -p tsconfig.json",
-    "generateMap": "node ./.tools/CreateJsons.js"
+    "generateMap": "node ./.tools/CreateJsons.js",
+    "runTikTakTowServer": "node ./src/project/scenes/Multiplayer/Backend/server.js",
+    "runCarGameServer": "node ./src/project/scenes/CarGame/server.js"
   },
   "languages": [
     "en",
     "pt",
     "es"
   ],
-  "author": "ElementalCode (Milton Candelero) @ Killabunnies",
+  "author": "ElementalCode (Milton Candelero) @ Killabunnies | This particular template has some stuff added & modified by Facundo Wegher (CachoPetruzzo)",
   "devDependencies": {
     "@killabunnies/eslint-config": "^1.0.5",
     "@types/fontfaceobserver": "2.1.0",
@@ -64,7 +66,8 @@
     "axios": "^1.4.0",
     "box2d-wasm": "^7.0.0",
     "browserify-zlib": "^0.2.0",
-    "express": "^4.21.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
     "firebase": "^11.0.2",
     "i18next": "22.4.14",
     "localforage": "1.10.0",
@@ -76,7 +79,7 @@
     "pixi.js": "^7.2.4",
     "pixi3d": "^2.3.1",
     "sat": "^0.9.0",
-    "socket.io": "^4.8.0",
+    "socket.io": "^4.8.1",
     "stats.js": "^0.17.0",
     "stream-http": "^3.2.0",
     "tone": "^15.0.4",
