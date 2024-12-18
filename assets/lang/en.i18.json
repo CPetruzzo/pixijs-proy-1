@@ -10,8 +10,37 @@
 		"start": "Start"
 	},
 	"settings": {
+		"title": "Settings",
 		"muteSFX": "Mute Sounds",
-		"muteMusic": "Mute Music"
+		"muteMusic": "Mute Music",
+		"volumeUp": "Volume +",
+		"volumeDown": "Volume -"
+	},
+	"finish": {
+		"win": "Congratulations!",
+		"lose": "Don't worry you just have to try again",
+		"retry": "Try again",
+		"next": "Wanna keep going?",
+		"back": "Wanna go back?",
+		"points": "Clouds",
+		"time": "Time"
+	},
+	"guessGame": {
+		"title": "Hey look at that cloud!",
+		"instructions": "This game's about as a new cloud appears you have to click on the animal that looks alike, the more you guess the faster it gets",
+		"leave": "Are you sure you wanna leave?",
+		"save": "Save progress",
+		"yes": "yes",
+		"no": "no"
+	},
+	"soundGame": {
+		"title": "Who made that sound?",
+		"instructions": "This game consists in hearing a sound and in the given time you have to click on the correct animal, the more you choose correctly the longer it becomes",
+		"leave": "Are you sure you wanna leave?",
+		"save": "Save progress",
+		"yes": "yes",
+		"no": "no"
+
 	},
 	"demos": {
 		"text": {

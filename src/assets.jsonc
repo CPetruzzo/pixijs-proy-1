@@ -336,6 +336,73 @@
 			}
 		},
 		{
+			"name": "playWithSounds",
+			"assets": {
+				"farm-sfx": "./sfx/farm/farm-sfx.mp3",
+				"birds-sfx": "./sfx/farm/birds-sfx.mp3",
+				"cow-sfx": "./sfx/farm/cow-sfx.mp3",
+				"duck-sfx": "./sfx/farm/duck-sfx.mp3",
+				"fire-sfx": "./sfx/farm/fire-sfx.mp3",
+				"horse-sfx": "./sfx/farm/horse-sfx.mp3",
+				"pig-sfx": "./sfx/farm/pig-sfx.mp3",
+				"sheep-sfx": "./sfx/farm/sheep-sfx.mp3",
+				"windTransition-sfx": "./sfx/farm/windTransition-sfx.mp3",
+				"transitionDuck-sfx": "./sfx/farm/transitionDuck-sfx.mp3",
+				"success-sfx": "./sfx/farm/success-sfx.mp3",
+				"beep": "./sfx/farm/beep.mp3",
+				"rooster-sfx": "./sfx/farm/rooster-sfx.mp3",
+				"chooserMusic": "./music/chooserMusic.mp3",
+				
+				"BG0": "./img/BG/BG0.jpg",
+				"BG9": "./img/BG/BG9.png",
+
+				"frame1": "./img/farmAnimals/frame1.png",
+				"frame2": "./img/farmAnimals/frame2.png",
+
+				"TutorialBody2": "./img/farmAnimals/TutorialBody2.png",
+				"TutorialButton": "./img/farmAnimals/TutorialButton.png",
+
+				"button_plus": "./img/farmAnimals/button_plus.png",
+				"button_minus": "./img/farmAnimals/button_minus.png",
+				"button_1": "./img/farmAnimals/button_1.png",
+				"button_3": "./img/farmAnimals/button_3.png",
+				"btnPlay": "./img/farmAnimals/btnPlay.png",
+				"questionMark": "./img/farmAnimals/questionMark.png",
+
+				"chooserBirds": "./img/farmAnimals/birds.png",
+				"chooserSheep": "./img/farmAnimals/sheep.png",
+
+				"b_1": "./img/farmAnimals/b_1.png",
+				"b_2": "./img/farmAnimals/b_2.png",
+				"b_3": "./img/farmAnimals/b_3.png",
+				"b_4": "./img/farmAnimals/b_4.png",
+				"b_5": "./img/farmAnimals/b_5.png",
+				"b_6": "./img/farmAnimals/b_6.png",
+				"b_7": "./img/farmAnimals/b_7.png",
+				"b_8": "./img/farmAnimals/b_8.png",
+				
+				"farmAnimals0": "./img/farmAnimals/farmAnimals0.png",
+				"farmAnimals1": "./img/farmAnimals/farmAnimals1.png",
+				"farmAnimals2": "./img/farmAnimals/farmAnimals2.png",
+				"farmAnimals3": "./img/farmAnimals/farmAnimals3.png",
+				"farmAnimals4": "./img/farmAnimals/farmAnimals4.png",
+				"farmAnimals5": "./img/farmAnimals/farmAnimals5.png",
+				"farmAnimals6": "./img/farmAnimals/farmAnimals6.png",
+
+				"horseCloud": "./img/farmAnimals/horse-cloud.png",
+				"cowCloud": "./img/farmAnimals/cowCloud.png",
+				"duckCloud": "./img/farmAnimals/duckCloud.png",
+				"sheepCloud": "./img/farmAnimals/sheep.png",
+				"rooster": "./img/farmAnimals/rooster.png",
+				"pig": "./img/farmAnimals/pig.png",
+
+				"bar_1": "./img/farmAnimals/bar_1.png",
+				"s1": "./img/farmAnimals/s1.png",
+				"bar_2": "./img/farmAnimals/bar_2.png"
+
+			}
+		},
+		{
 			"name": "3d",
 			"assets": {
 				"duckModel": "./models/duck/Duck.gltf",
