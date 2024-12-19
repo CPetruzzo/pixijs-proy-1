@@ -1,18 +1,14 @@
 
 import { Container } from "@pixi/display";
-// import { sound } from "@pixi/sound";
-// import { Text, TextStyle } from "@pixi/text";
 import { Tween } from "tweedle.js";
 import { Manager } from "../../..";
 import { DataManager } from "../../../engine/datamanager/DataManager";
 import { SoundLib } from "../../../engine/sound/SoundLib";
-// import { ToggleCheck } from "../../../engine/ui/toggle/ToggleCheck";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
-// import { Intermission } from "./Intermission";
 import { PopUpAnimal } from "./PopUpAnimal";
-import { AnimalSounds } from "./Scenes/AnimalSounds";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { SimpleButton } from "../../../engine/button/SimpleButton";
+import { Chooser } from "./Scenes/Chooser";
 
 export class HudSounds extends PixiScene {
 
@@ -23,10 +19,7 @@ export class HudSounds extends PixiScene {
 	private btnBack: SimpleButton;
 	private info: SimpleButton;
 	public tunes: string[];
-	currentAnimal: string;
-	// private mute: ToggleCheck;
-	// private soundPlus: SimpleButton;
-	// private soundMinus: SimpleButton;
+	public currentAnimal: string;
 
 	constructor() {
 		super();
@@ -69,7 +62,7 @@ export class HudSounds extends PixiScene {
 	}
 
 	private backToStart() {
-		Manager.changeScene(AnimalSounds);
+		Manager.changeScene(Chooser);
 	}
 
 	private openPopup(): void {

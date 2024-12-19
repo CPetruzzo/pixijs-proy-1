@@ -1,11 +1,10 @@
-import { ref, set, onValue, onDisconnect } from 'firebase/database';
+import { ref, set, onValue, onDisconnect, remove } from 'firebase/database';
 import { db } from "../../.."; // Asegúrate de que db esté correctamente exportado desde tu configuración de Firebase
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { JoystickMultiplayerCachoWorld } from './JoystickMultiplayerCachoWorld';
 import { CachoWorldPlayer } from './CachoWorldPlayer';
-// import { Camera2D } from '../../../utils/Camera2D';
-import { Container } from 'pixi.js';
+import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { ScaleHelper } from '../../../engine/utils/ScaleHelper';
 
 export class MultiplayerCachoWorldGameScene extends PixiScene {
@@ -13,8 +12,13 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 	private playerId: string;
 	private joystick: JoystickMultiplayerCachoWorld;
 	public static readonly BUNDLES = ["joystick"];
-	// private camera: Camera2D;
 	private worldContainer: Container = new Container();
+
+	private chatContainer: Container;
+	private chatInput: HTMLInputElement;
+
+	private usernameInput: HTMLInputElement; // Nuevo input para username
+	private username: string = ''; // Almacenar el username localmente
 
 	constructor() {
 		super();
@@ -29,7 +33,55 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		// Añadir este jugador a Firebase
 		this.addPlayerToDatabase();
 
-		// this.camera = new Camera2D();
+		this.createChatUI();
+		this.createUsernameForm()
+		this.listenForChatUpdates();
+	}
+
+	// Mostrar formulario para ingresar el username
+	private createUsernameForm(): void {
+		// Crear un campo de texto para ingresar el username
+		this.usernameInput = document.createElement('input');
+		this.usernameInput.type = 'text';
+		this.usernameInput.placeholder = 'Enter your username';
+		this.usernameInput.style.position = 'absolute';
+		this.usernameInput.style.top = '10px';
+		this.usernameInput.style.left = '10px';
+		this.usernameInput.style.width = '200px';
+		document.body.appendChild(this.usernameInput);
+
+		// Crear botón para guardar el username
+		const saveButton = document.createElement('button');
+		saveButton.innerHTML = 'Save Username';
+		saveButton.style.position = 'absolute';
+		saveButton.style.top = '40px';
+		saveButton.style.left = '10px';
+		document.body.appendChild(saveButton);
+
+		// Acción al hacer clic en el botón de guardar username
+		saveButton.addEventListener('click', () => {
+			const inputValue = this.usernameInput.value.trim();
+			if (inputValue !== '') {
+				this.username = inputValue;
+				this.saveUsernameToDatabase(inputValue); // Guardar en Firebase
+				this.usernameInput.disabled = true; // Deshabilitar el campo después de guardarlo
+				saveButton.disabled = true; // Deshabilitar el botón después de guardar
+				this.chatInput.disabled = false; // Habilitar el chat después de guardar el username
+			} else {
+				alert('Please enter a valid username.');
+			}
+		});
+	}
+
+	// Guardar el username en Firebase
+	private async saveUsernameToDatabase(username: string): Promise<void> {
+		try {
+			const playerRef = ref(db, `players/${this.playerId}/username`);
+			await set(playerRef, username);
+			console.log("Username saved to Firebase.");
+		} catch (error) {
+			console.error("Error saving username to Firebase:", error);
+		}
 	}
 
 	// Escuchar cambios en la base de datos y actualizar jugadores en tiempo real
@@ -161,4 +213,118 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		ScaleHelper.setScaleRelativeToIdeal(this.worldContainer, _newW * 0.9, _newH * 0.9);
 
 	}
+
+	// Crear la UI del chat
+	// Crear la UI del chat
+	private createChatUI(): void {
+		// Contenedor para mensajes
+		this.chatContainer = new Container();
+		this.chatContainer.x = 10;
+		this.chatContainer.y = window.innerHeight - 150; // Posición al fondo
+		this.addChild(this.chatContainer);
+
+		// Fondo del chat (opcional, para visibilidad)
+		const background = new Graphics();
+		background.beginFill(0x000000, 0.5);
+		background.drawRect(0, 0, 300, 120);
+		background.endFill();
+		this.chatContainer.addChild(background);
+
+		// Campo de texto para mensajes
+		this.chatInput = document.createElement('input');
+		this.chatInput.type = 'text';
+		this.chatInput.placeholder = 'Type your message...';
+		this.chatInput.style.position = 'absolute';
+		this.chatInput.style.bottom = '10px';
+		this.chatInput.style.left = '10px';
+		this.chatInput.style.width = '200px';
+		this.chatInput.style.zIndex = '1000';
+		document.body.appendChild(this.chatInput);
+
+		// Deshabilitar el chat input hasta que se ingrese el username
+		this.chatInput.disabled = true;
+
+		// Enviar mensaje al presionar Enter
+		this.chatInput.addEventListener('keydown', (e) => {
+			// Solo verificar cuando se presiona Enter
+			if (e.key === 'Enter') {
+				// Verificar si ya se tiene un nombre de usuario
+				if (this.username !== '') {
+					this.sendMessage(this.chatInput.value);
+					this.chatInput.value = ''; // Limpiar el campo de texto
+				} else {
+					alert('You must enter a username first!');
+				}
+			}
+		});
+
+	}
+
+	// Escuchar actualizaciones del chat en Firebase
+	private listenForChatUpdates(): void {
+		const chatRef = ref(db, 'chat');
+		onValue(chatRef, (snapshot) => {
+			if (snapshot.exists()) {
+				const messages = snapshot.val(); // Recuperar los mensajes como un objeto
+				this.updateChat(messages);
+			} else {
+				console.log("No chat messages found in database.");
+			}
+		});
+	}
+
+	// Enviar mensaje al chat
+	private async sendMessage(message: string): Promise<void> {
+		if (message.trim() === '') return;
+
+		const timestamp = Date.now(); // Usar un timestamp único para identificar el mensaje
+		const chatRef = ref(db, `chat/${timestamp}`); // Indexar por timestamp
+		await set(chatRef, {
+			playerId: this.playerId,
+			username: this.username, // Incluir el username
+			message: message,
+		});
+
+		// Limitar a 5 mensajes: eliminar los más viejos si hay más de 5
+		const chatRefAll = ref(db, 'chat');
+		onValue(chatRefAll, (snapshot) => {
+			if (snapshot.exists()) {
+				const messages = snapshot.val();
+				const messageKeys = Object.keys(messages);
+
+				// Si hay más de 5 mensajes, eliminar el más viejo
+				if (messageKeys.length > 5) {
+					const oldestKey = messageKeys[0]; // El más antiguo es el primero en la lista
+					const oldestMessageRef = ref(db, `chat/${oldestKey}`);
+					// Eliminar el mensaje más antiguo
+					remove(oldestMessageRef);
+				}
+			}
+		});
+	}
+
+	// Actualizar los mensajes en pantalla
+	private updateChat(messages: Record<string, { playerId: string; username: string; message: string }>): void {
+		const childCount = this.chatContainer.children.length;
+
+		// Only remove children if there are more than just the background
+		if (childCount > 1) {
+			// Only remove the chat message children, leave the background (index 0)
+			this.chatContainer.removeChildren(1, childCount - 1);
+		}
+
+		// Add new chat messages
+		const textStyle = new TextStyle({
+			fontFamily: "Arial",
+			fontSize: 14,
+			fill: "white",
+		});
+
+		Object.values(messages).forEach((messageData, index) => {
+			const messageText = new Text(`${messageData.username}: ${messageData.message}`, textStyle);
+			messageText.y = index * 20; // Position each message vertically
+			this.chatContainer.addChild(messageText);
+		});
+	}
+
 }

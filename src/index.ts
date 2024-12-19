@@ -18,7 +18,7 @@ import { JoystickEmits } from "./utils/Joystick";
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
-import { StartScene } from "./project/scenes/PlayWithSounds/StartScene";
+import { MultiplayerCachoWorldGameScene } from "./project/scenes/CarGame/MultiplayerCachoWorldGameScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -100,7 +100,7 @@ window.addEventListener("contextmenu", (e) => {
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
 	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
-	Manager.changeScene(StartScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(MultiplayerCachoWorldGameScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

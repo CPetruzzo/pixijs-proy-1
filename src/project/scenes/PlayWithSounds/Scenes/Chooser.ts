@@ -99,13 +99,20 @@ export class Chooser extends PixiScene {
 			},
 			this
 		);
+		this.soundContainer.on("pointerdown",
+			() => {
+				SoundLib.playMusic("birds-sfx", { volume: 2, loop: false });
+				this.soundContainer.scale.set(1.2);
+			},
+			this
+		);
 		this.soundContainer.on("pointerout",
 			() => {
 				this.soundContainer.scale.set(1);
 			},
 			this
 		);
-		this.soundContainer.on("pointerdown",
+		this.soundContainer.on("pointerup",
 			() => {
 				Manager.changeScene(AnimalSounds
 					// , [], IntermissionDuck
@@ -128,13 +135,20 @@ export class Chooser extends PixiScene {
 			},
 			this
 		);
+		this.guessContainer.on("pointerdown",
+			() => {
+				SoundLib.playMusic("windTransition-sfx", { volume: 2, loop: false });
+				this.guessContainer.scale.set(1.2);
+			},
+			this
+		);
 		this.guessContainer.on("pointerout",
 			() => {
 				this.guessContainer.scale.set(1);
 			},
 			this
 		);
-		this.guessContainer.on("pointerdown",
+		this.guessContainer.on("pointerup",
 			() => {
 				Manager.changeScene(GuessShapes
 					// , [], IntermissionDuck

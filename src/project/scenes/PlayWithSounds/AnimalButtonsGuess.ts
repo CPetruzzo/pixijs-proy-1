@@ -1,7 +1,7 @@
 
 import { Container } from "@pixi/display";
 import { Sprite } from "@pixi/sprite";
-import { Tween } from "tweedle.js";
+import { Easing, Tween } from "tweedle.js";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 
@@ -27,37 +27,37 @@ export class AnimalButtonsGuess extends PixiScene {
 		this.gallo.anchor.set(0.5);
 		this.gallo.position.set(0, 200);
 		this.gallo.scale.set(0.7);
-		new Tween(this.gallo).from({ x: 520, y: 0, alpha: 0 }).to({ x: this.gallo.position.x, alpha: 1 }, 1000).start()
+		new Tween(this.gallo).from({ x: 520, y: 0, alpha: 0 }).to({ x: this.gallo.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out)
 
 		this.pig = Sprite.from("farmAnimals3");
 		this.pig.anchor.set(0.5);
 		this.pig.position.set(300, 200);
 		this.pig.scale.set(0.7);
-		new Tween(this.pig).from({ x: 520, alpha: 0 }).to({ x: this.pig.position.x, alpha: 1 }, 1000).start()
+		new Tween(this.pig).from({ x: 520, alpha: 0 }).to({ x: this.pig.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out)
 
 		this.cow = Sprite.from("farmAnimals0");
 		this.cow.anchor.set(0.5);
 		this.cow.position.set(600, 225);
 		this.cow.scale.set(0.7);
-		new Tween(this.cow).from({ x: 520, alpha: 0 }).to({ x: this.cow.position.x, alpha: 1 }, 1000).start()
+		new Tween(this.cow).from({ x: 520, alpha: 0 }).to({ x: this.cow.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out)
 
 		this.horse = Sprite.from("farmAnimals5");
 		this.horse.anchor.set(0.5);
 		this.horse.position.set(900, 200);
 		this.horse.scale.set(0.7);
-		new Tween(this.horse).from({ x: 520, alpha: 0 }).to({ x: this.horse.position.x, alpha: 1 }, 1000).start()
+		new Tween(this.horse).from({ x: 520, alpha: 0 }).to({ x: this.horse.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out)
 
 		this.sheep = Sprite.from("farmAnimals4");
 		this.sheep.anchor.set(0.5);
 		this.sheep.position.set(1200, 200);
 		this.sheep.scale.set(0.7);
-		new Tween(this.sheep).from({ x: 520, alpha: 0 }).to({ x: this.sheep.position.x, alpha: 1 }, 1000).start()
+		new Tween(this.sheep).from({ x: 520, alpha: 0 }).to({ x: this.sheep.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out)
 
 		this.duck = Sprite.from("farmAnimals6");
 		this.duck.anchor.set(0.5);
 		this.duck.position.set(1500, 200);
 		this.duck.scale.set(0.7);
-		new Tween(this.duck).from({ x: 520, alpha: 0 }).to({ x: this.duck.position.x, alpha: 1 }, 1000).start()
+		new Tween(this.duck).from({ x: 520, alpha: 0 }).to({ x: this.duck.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out)
 
 		this.cont.addChild(
 			this.gallo,
