@@ -1,17 +1,16 @@
 import { Vector2 } from "@dimforge/rapier2d";
-import { Graphics } from "pixi.js";
+import { Sprite } from "pixi.js";
 
-export class CachoWorldPlayer extends Graphics {
+export class CachoWorldPlayer extends Sprite {
 	public id: string;
 	public speed: number = 0; // Propiedad adicional ejemplo
 	public direction: number = 0; // Dirección de movimiento
 
 	constructor(id: string, x: number, y: number) {
-		super();
+		super(Sprite.from("viking").texture);
 		this.id = id;
-		this.beginFill(0xff0000); // Color rojo
-		this.drawRect(-10, -20, 20, 40);
-		this.endFill();
+		this.scale.set(0.3);
+		this.anchor.set(0.5); // Configura el punto de anclaje al centro
 		this.x = x;
 		this.y = y;
 	}
@@ -30,5 +29,4 @@ export class CachoWorldPlayer extends Graphics {
 		this.x += dx;
 		this.y += dy;
 	}
-
 }

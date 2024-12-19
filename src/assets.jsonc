@@ -238,6 +238,14 @@
 			}
 		},
 		{
+			"name": "cachoworld",
+			"assets": {
+				"viking": "./img/cachoworld/viking.png",
+				"player": "./img/player1.png",
+				"background": "./img/cachoworld/map1.png"
+			}
+		},
+		{
 			"name": "fallrungame",
 			"assets": {
 				"package 1 background": "./img/image.jpg",

@@ -13,7 +13,6 @@ import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
 import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
-// import { BasquetballMainScene } from "./project/scenes/BasquetballGame/BasquetballMainScene";
 
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";

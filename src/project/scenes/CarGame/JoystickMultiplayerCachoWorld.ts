@@ -1,7 +1,5 @@
 import { Container, Point, Sprite } from "pixi.js";
-// import { joystickComponentX, joystickComponentY } from "../../../utils/FunctionUtils";
-// import { JOYSTICK_MAXPOWER } from "../../../utils/constants";
-import { CachoWorldPlayer } from "./CachoWorldPlayer";
+import type { CachoWorldPlayer } from "./CachoWorldPlayer";
 import { isMobile } from "../../..";
 
 export enum JoystickEmits {
@@ -38,7 +36,7 @@ export class JoystickMultiplayerCachoWorld extends Container {
 	public joystickPower: number = 0;
 	public joystickAngle: number = 0;
 	public clickContainer: Container = new Container();
-	public moveDirection: Point | null = null;  // Para almacenar la dirección de movimiento
+	public moveDirection: Point | null = null; // Para almacenar la dirección de movimiento
 
 	constructor(player: CachoWorldPlayer) {
 		super();
@@ -60,7 +58,6 @@ export class JoystickMultiplayerCachoWorld extends Container {
 		this.resetJoystickPosition();
 
 		this.on(JoystickEmits.JOYSTICKUP as any, this.handleJoystickUp);
-
 	}
 
 	/** Set up the joystick sprites and add to the container */
@@ -134,7 +131,7 @@ export class JoystickMultiplayerCachoWorld extends Container {
 		this.moveDirection = new Point(dx, dy);
 
 		// Llama a la lógica de movimiento si el joystick ya está presionado
-		this.updateJoystick();  // Actualiza el ángulo y la potencia
+		this.updateJoystick(); // Actualiza el ángulo y la potencia
 		this.updatePlayerPosition(this.player.x + this.joystickPower * Math.cos(this.joystickAngle), this.player.y + this.joystickPower * Math.sin(this.joystickAngle));
 
 		// Emite eventos de movimiento del joystick
@@ -193,8 +190,8 @@ export class JoystickMultiplayerCachoWorld extends Container {
 			power: this.joystickPower,
 			angle: this.joystickAngle,
 		});
-		this.joystickHandle.alpha = 0;  // Hide joystick handle when released
-		this.joystickBG.alpha = 0;     // Hide joystick background when released
+		this.joystickHandle.alpha = 0; // Hide joystick handle when released
+		this.joystickBG.alpha = 0; // Hide joystick background when released
 	};
 
 	private centerJoystick = (_event: { data: { getLocalPosition: (arg0: any) => Point } }): void => {
@@ -248,4 +245,3 @@ export class JoystickMultiplayerCachoWorld extends Container {
 		this.resetJoystickPosition();
 	};
 }
-
