@@ -13,6 +13,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 	private joystick: JoystickMultiplayerCachoWorld;
 	public static readonly BUNDLES = ["joystick", "cachoworld"];
 	private worldContainer: Container = new Container();
+	private backgroundContainer: Container = new Container();
 
 	private chatContainer: Container;
 	private chatInput: HTMLInputElement;
@@ -23,7 +24,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 	constructor() {
 		super();
 
-		this.addChild(this.worldContainer);
+		this.addChild(this.backgroundContainer, this.worldContainer);
 		// Crear un ID único para este jugador
 		this.playerId = Date.now().toString(); // Usamos un timestamp único para el ID
 		// console.log('this.playerId', this.playerId)
@@ -211,14 +212,16 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		// this.camera.anchoredOnLevel(this.worldContainer, this.players[this.playerId]);
 	}
 
-	// Responder a cambios en el tamaño de la ventana
 	public override onResize(_newW: number, _newH: number): void {
-		// Redimensiona elementos si es necesario
 		ScaleHelper.setScaleRelativeToIdeal(this.worldContainer, _newW, _newH, 1600, 720, ScaleHelper.FIT);
-		this.worldContainer.x = _newW * 0.5;
-		this.worldContainer.y = _newH * 0.5;
 		const worldContainerBounds = this.worldContainer.getLocalBounds();
 		this.worldContainer.pivot.set(worldContainerBounds.width * 0.5, worldContainerBounds.height * 0.5);
+
+		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, _newW, _newH, 1600, 720, ScaleHelper.FILL);
+		this.backgroundContainer.x = _newW * 0.5;
+		this.backgroundContainer.y = _newH * 0.5;
+		const backgroundContainerBounds = this.backgroundContainer.getLocalBounds();
+		this.backgroundContainer.pivot.set(backgroundContainerBounds.width * 0.5, backgroundContainerBounds.height * 0.5);
 
 		// ScaleHelper.setScaleRelativeToIdeal(this.chatContainer, _newW, _newH, 1600, 720, ScaleHelper.FIT);
 		// const chatContainerBounds = this.chatContainer.getLocalBounds();
@@ -226,7 +229,6 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		// this.chatContainer.y = _newH - this.chatContainer.height * 0.5;
 	}
 
-	// Crear la UI del chat
 	// Crear la UI del chat
 	private createChatUI(): void {
 		// Contenedor para mensajes
@@ -243,7 +245,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		backgroundSprite.anchor.set(0.5); // Centrar el anclaje
 		backgroundSprite.x = window.innerWidth / 2;
 		backgroundSprite.y = window.innerHeight / 2;
-		this.addChildAt(backgroundSprite, 0); // Asegúrate de añadirlo como el primer hijo
+		this.backgroundContainer.addChildAt(backgroundSprite, 0); // Asegúrate de añadirlo como el primer hijo
 
 		// Campo de texto para mensajes
 		this.chatInput = document.createElement("input");
