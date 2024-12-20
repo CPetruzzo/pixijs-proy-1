@@ -27,11 +27,14 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 
 	private usernameInput: HTMLInputElement; // Nuevo input para username
 	private username: string = ""; // Almacenar el username localmente
+	private localPlayerId: string;
 	// private hasSentMessage: boolean = false; // Flag para evitar el reenvío
 
 	constructor() {
 		super();
-
+		// Asignar nombres a los contenedores principales
+		this.worldContainer.name = "WorldContainer";
+		this.backgroundContainer.name = "BackgroundContainer";
 		this.addChild(this.backgroundContainer, this.worldContainer);
 		// Crear un ID único para este jugador
 		this.playerId = Date.now().toString(); // Usamos un timestamp único para el ID
@@ -96,22 +99,37 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 
 			// Usar onValue para escuchar actualizaciones en tiempo real
 			onValue(playersRef, (snapshot) => {
-				if (snapshot.exists()) {
-					const serverPlayers = snapshot.val() as Record<string, { x: number; y: number }>;
-					console.log("Players received:", serverPlayers);
+				const serverPlayers = snapshot.exists() ? (snapshot.val() as Record<string, { x: number; y: number }>) : {};
 
-					for (const [id, playerData] of Object.entries(serverPlayers)) {
-						// Si ya existe el jugador en el local, solo actualiza la posición
-						if (this.players[id]) {
-							this.players[id].x = playerData.x;
-							this.players[id].y = playerData.y;
-						} else if (id !== this.playerId) {
-							// Crear sprites solo para jugadores remotos
-							this.createPlayer(id, playerData.x, playerData.y);
-						}
+				// // Detectar jugadores eliminados
+				// const disconnectedPlayers = Object.keys(this.players).filter((id) => !serverPlayers[id]);
+
+				// // Eliminar los jugadores desconectados de la escena
+				// disconnectedPlayers.forEach((id) => {
+				// 	console.log(`Player ${id} disconnected, removing from scene.`);
+				// 	const player = this.players[id];
+				// 	if (player) {
+				// 		this.worldContainer.removeChild(player); // Eliminar del contenedor
+				// 		delete this.players[id]; // Eliminar del registro local
+				// 	}
+				// });
+
+				// Actualizar o añadir jugadores activos
+				for (const [id, playerData] of Object.entries(serverPlayers)) {
+					// Ignorar al jugador local
+					if (id === this.localPlayerId) {
+						continue;
 					}
-				} else {
-					console.log("No players in the database.");
+
+					if (this.players[id]) {
+						// Actualizar posición
+						this.players[id].x = playerData.x;
+						this.players[id].y = playerData.y;
+					} else {
+						// Crear sprites para nuevos jugadores
+						this.createPlayer(id, playerData.x, playerData.y);
+						console.log("id", id);
+					}
 				}
 			});
 		} catch (error) {
@@ -123,6 +141,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		if (id !== this.playerId) {
 			console.log(`Creating player ${id} at (${x}, ${y})`);
 			const player = new CachoWorldPlayer(id, x, y);
+			player.name = `Player_${id}`; // Asignar nombre único al jugador
 			this.players[id] = player;
 			this.worldContainer.addChild(player);
 		}
@@ -131,7 +150,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 	private async addPlayerToDatabase(): Promise<void> {
 		try {
 			const playerRef = ref(db, `players/${this.playerId}`);
-			await set(playerRef, { x: 0, y: 0 });
+			await set(playerRef, { x: 150, y: 150 });
 
 			// Establecer desconexión
 			const playerOnDisconnectRef = ref(db, `players/${this.playerId}`);
@@ -148,13 +167,16 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 
 	private createLocalPlayer(): void {
 		// Crear el jugador local en la escena
-		const myPlayer = new CachoWorldPlayer(this.playerId, 0, 0);
-		myPlayer.name = `Player${this.playerId}`;
+		const myPlayer = new CachoWorldPlayer(this.playerId, 150, 150);
+		myPlayer.name = `Player_${this.playerId}`; // Asignar nombre único al jugador local
+		this.localPlayerId = this.playerId;
 		this.players[this.playerId] = myPlayer;
+		console.log("this.playerId", this.playerId);
 		this.worldContainer.addChild(myPlayer);
 
 		// Crear el joystick
 		this.joystick = new JoystickMultiplayerCachoWorld(myPlayer);
+		this.joystick.name = `Joystick_Player_${this.playerId}`; // Nombre para el joystick
 		this.worldContainer.addChild(this.joystick);
 	}
 
