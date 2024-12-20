@@ -101,18 +101,18 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 			onValue(playersRef, (snapshot) => {
 				const serverPlayers = snapshot.exists() ? (snapshot.val() as Record<string, { x: number; y: number }>) : {};
 
-				// // Detectar jugadores eliminados
-				// const disconnectedPlayers = Object.keys(this.players).filter((id) => !serverPlayers[id]);
+				// Detectar jugadores eliminados
+				const disconnectedPlayers = Object.keys(this.players).filter((id) => !serverPlayers[id]);
 
-				// // Eliminar los jugadores desconectados de la escena
-				// disconnectedPlayers.forEach((id) => {
-				// 	console.log(`Player ${id} disconnected, removing from scene.`);
-				// 	const player = this.players[id];
-				// 	if (player) {
-				// 		this.worldContainer.removeChild(player); // Eliminar del contenedor
-				// 		delete this.players[id]; // Eliminar del registro local
-				// 	}
-				// });
+				// Eliminar los jugadores desconectados de la escena
+				disconnectedPlayers.forEach((id) => {
+					console.log(`Player ${id} disconnected, removing from scene.`);
+					const player = this.players[id];
+					if (player) {
+						this.worldContainer.removeChild(player); // Eliminar del contenedor
+						delete this.players[id]; // Eliminar del registro local
+					}
+				});
 
 				// Actualizar o añadir jugadores activos
 				for (const [id, playerData] of Object.entries(serverPlayers)) {
