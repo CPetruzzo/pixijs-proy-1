@@ -7,6 +7,13 @@ import { CachoWorldPlayer } from "./CachoWorldPlayer";
 import { Container, Sprite, Text, TextStyle } from "pixi.js";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 
+// Define the type for chat messages
+type ChatMessage = {
+	playerId: string;
+	username: string;
+	message: string;
+};
+
 export class MultiplayerCachoWorldGameScene extends PixiScene {
 	private players: Record<string, CachoWorldPlayer> = {};
 	private playerId: string;
@@ -20,6 +27,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 
 	private usernameInput: HTMLInputElement; // Nuevo input para username
 	private username: string = ""; // Almacenar el username localmente
+	// private hasSentMessage: boolean = false; // Flag para evitar el reenvío
 
 	constructor() {
 		super();
@@ -27,7 +35,6 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		this.addChild(this.backgroundContainer, this.worldContainer);
 		// Crear un ID único para este jugador
 		this.playerId = Date.now().toString(); // Usamos un timestamp único para el ID
-		// console.log('this.playerId', this.playerId)
 
 		// Escuchar las actualizaciones de la base de datos
 		this.listenForPlayersUpdates();
@@ -39,9 +46,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		this.listenForChatUpdates();
 	}
 
-	// Mostrar formulario para ingresar el username
 	private createUsernameForm(): void {
-		// Crear un campo de texto para ingresar el username
 		this.usernameInput = document.createElement("input");
 		this.usernameInput.type = "text";
 		this.usernameInput.placeholder = "Enter your username";
@@ -51,7 +56,6 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		this.usernameInput.style.width = "200px";
 		document.body.appendChild(this.usernameInput);
 
-		// Crear botón para guardar el username
 		const saveButton = document.createElement("button");
 		saveButton.innerHTML = "Save Username";
 		saveButton.style.position = "absolute";
@@ -59,7 +63,6 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		saveButton.style.left = "10px";
 		document.body.appendChild(saveButton);
 
-		// Acción al hacer clic en el botón de guardar username
 		saveButton.addEventListener("click", () => {
 			const inputValue = this.usernameInput.value.trim();
 			if (inputValue !== "") {
@@ -156,7 +159,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 	}
 
 	// Actualizar la posición del jugador en Firebase
-	private async updatePlayerPosition(): Promise<void> {
+	private async updatePlayerPositionInFirebase(): Promise<void> {
 		try {
 			const player = this.players[this.playerId];
 			// console.log('player', player)
@@ -174,6 +177,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		let speed = 0;
 		let direction = 0;
 
+		// Procesar entrada del teclado para el jugador local
 		if (Keyboard.shared.isDown("ArrowUp")) {
 			speed = 5;
 			direction = -Math.PI / 2;
@@ -191,13 +195,28 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 			direction = 0;
 		}
 
-		if (speed !== 0 || direction !== 0) {
-			const player = this.players[this.playerId];
-			console.log("this.players", this.players);
-			if (player) {
-				player.move(speed, direction);
-				this.updatePlayerPosition(); // Actualiza posición en Firebase
+		// Obtener el jugador local
+		const player = this.players[this.playerId];
+		if (!player) {
+			console.warn("No local player found with ID:", this.playerId);
+			return;
+		}
+
+		// Actualizar animación solo para el jugador local
+		if (speed === 0) {
+			if (player.animator.currentStateName !== "idle") {
+				player.animator.playState("idle");
 			}
+		} else {
+			if (player.animator.currentStateName !== "bouncing") {
+				player.animator.playState("bouncing");
+			}
+		}
+
+		// Mover al jugador local si hay velocidad
+		if (speed !== 0 || direction !== 0) {
+			player.move(speed, direction);
+			this.updatePlayerPositionInFirebase(); // Actualizar en Firebase solo para el jugador local
 		}
 	}
 
@@ -205,11 +224,20 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 	public override update(_dt: number): void {
 		if (this.joystick) {
 			this.joystick.updateJoystick();
-			this.updatePlayerPosition(); // Actualiza posición en Firebase
+			this.updatePlayerPositionInFirebase();
 		}
-		this.handleInput(); // Procesar la entrada del jugador local
-		// console.log("Current players' positions:", this.players);
-		// this.camera.anchoredOnLevel(this.worldContainer, this.players[this.playerId]);
+
+		if (this.players[this.playerId]) {
+			this.handleInput(); // Procesar la entrada del jugador local
+		}
+
+		// Actualizar todos los jugadores en la escena
+		for (const playerId in this.players) {
+			const player = this.players[playerId];
+			if (player instanceof CachoWorldPlayer) {
+				player.update(_dt); // Llama al método `update` de cada jugador
+			}
+		}
 	}
 
 	public override onResize(_newW: number, _newH: number): void {
@@ -217,7 +245,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		const worldContainerBounds = this.worldContainer.getLocalBounds();
 		this.worldContainer.pivot.set(worldContainerBounds.width * 0.5, worldContainerBounds.height * 0.5);
 
-		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, _newW, _newH, 1600, 720, ScaleHelper.FILL);
+		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, _newW, _newH, 720, 720, ScaleHelper.FILL);
 		this.backgroundContainer.x = _newW * 0.5;
 		this.backgroundContainer.y = _newH * 0.5;
 		const backgroundContainerBounds = this.backgroundContainer.getLocalBounds();
@@ -277,17 +305,43 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 	}
 
 	// Escuchar actualizaciones del chat en Firebase
+	// Update the chat listener
 	private listenForChatUpdates(): void {
 		const chatRef = ref(db, "chat");
 		onValue(chatRef, (snapshot) => {
 			if (snapshot.exists()) {
-				const messages = snapshot.val(); // Recuperar los mensajes como un objeto
-				console.log("messages", messages);
+				const messages: Record<string, ChatMessage & { x: number; y: number }> = snapshot.val() as Record<string, ChatMessage & { x: number; y: number }>;
+
+				// Actualiza los mensajes en el chat del HUD
 				this.updateChat(messages);
+
+				// Actualiza los mensajes flotantes sobre los jugadores
+				Object.values(messages).forEach((message) => {
+					const player = this.getPlayerById(message.playerId); // Busca el jugador por su ID
+					if (player) {
+						// Verifica si el mensaje ya fue visto por el jugador
+						const messageKey = `${message.playerId}:${message.message}`; // Combinamos el playerId y el mensaje para asegurar que sea único
+
+						if (!player.seenMessages.has(messageKey)) {
+							// Eliminar mensaje previo si existe
+							player.removeMessage(); // Asegúrate de que tengas este método en el jugador
+
+							// Mostrar el mensaje sobre el jugador
+							player.showMessageAbove(message.message);
+
+							// Marcar el mensaje como visto
+							player.seenMessages.add(messageKey); // Agregamos el mensaje al conjunto de mensajes vistos
+						}
+					}
+				});
 			} else {
 				console.log("No chat messages found in database.");
 			}
 		});
+	}
+
+	private getPlayerById(playerId: string): CachoWorldPlayer | undefined {
+		return this.players[playerId]; // Direct access by key
 	}
 
 	// Enviar mensaje al chat
@@ -300,9 +354,17 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		const chatRef = ref(db, `chat/${timestamp}`); // Indexar por timestamp
 		await set(chatRef, {
 			playerId: this.playerId,
-			username: this.username, // Incluir el username
+			username: this.username,
 			message: message,
+			x: this.x, // Posición X del jugador
+			y: this.y, // Posición Y del jugador
 		});
+
+		// Mostrar el mensaje sobre el jugador local solo si no hay un mensaje previo
+		const player = this.players[this.playerId];
+		if (player) {
+			player.showMessageAbove(message); // Asegúrate de que este método maneja la eliminación de mensajes anteriores
+		}
 
 		// Limitar a 5 mensajes: eliminar los más viejos si hay más de 5
 		const chatRefAll = ref(db, "chat");
@@ -322,17 +384,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		});
 	}
 
-	// Actualizar los mensajes en pantalla
 	private updateChat(messages: Record<string, { playerId: string; username: string; message: string }>): void {
-		const childCount = this.chatContainer.children.length;
-
-		// Only remove children if there are more than just the background
-		if (childCount > 1) {
-			// Only remove the chat message children, leave the background (index 0)
-			this.chatContainer.removeChildren(1, childCount - 1);
-		}
-
-		// Add new chat messages
 		const textStyle = new TextStyle({
 			fontFamily: "Arial",
 			fontSize: 14,
@@ -341,11 +393,31 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 			wordWrapWidth: 300,
 		});
 
-		Object.values(messages).forEach((messageData, index) => {
-			const messageText = new Text(`${messageData.username}: ${messageData.message}`, textStyle);
-			messageText.x = 0;
-			messageText.y = index * 20; // Position each message vertically
-			this.chatContainer.addChild(messageText);
+		// Crear un arreglo con los nuevos mensajes ordenados por su ID o cualquier otro criterio
+		const sortedMessages = Object.values(messages);
+
+		// Eliminar todos los mensajes anteriores
+		this.chatContainer.removeChildren(); // Eliminar todos los mensajes previos, solo deja el fondo
+
+		let positionY = 0; // Inicializamos la posición Y para los mensajes
+
+		// Agregar los nuevos mensajes
+		sortedMessages.forEach((messageData, _index) => {
+			// Verifica si ya existe un mensaje con este contenido
+			const existingMessage = this.chatContainer.children.find((child) => {
+				return child instanceof Text && child.text === `${messageData.username}: ${messageData.message}`;
+			});
+
+			if (!existingMessage) {
+				const messageText = new Text(`${messageData.username}: ${messageData.message}`, textStyle);
+				messageText.x = 0;
+				messageText.y = positionY; // Posicionamos el mensaje en la posición actual
+
+				this.chatContainer.addChild(messageText);
+
+				// Aumentamos la posición Y para el siguiente mensaje
+				positionY += messageText.height + 5; // Añadimos un pequeño margen entre los mensajes
+			}
 		});
 	}
 }

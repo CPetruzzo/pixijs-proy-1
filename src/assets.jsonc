@@ -242,7 +242,22 @@
 			"assets": {
 				"viking": "./img/cachoworld/viking.png",
 				"player": "./img/player1.png",
-				"background": "./img/cachoworld/map1.png"
+				"background": "./img/cachoworld/map1.png",
+
+				"bouncing0": "./img/cachoworld/BouncingSpritesheet/0.png",
+				"bouncing1": "./img/cachoworld/BouncingSpritesheet/1.png",
+				"bouncing2": "./img/cachoworld/BouncingSpritesheet/2.png",
+				"bouncing3": "./img/cachoworld/BouncingSpritesheet/3.png",
+				"bouncing4": "./img/cachoworld/BouncingSpritesheet/4.png",
+				"bouncing5": "./img/cachoworld/BouncingSpritesheet/5.png",
+				"bouncing6": "./img/cachoworld/BouncingSpritesheet/5.png",
+
+				"idle0": "./img/cachoworld/IdleSpritesheet/0.png",
+				"idle1": "./img/cachoworld/IdleSpritesheet/1.png",
+				"idle2": "./img/cachoworld/IdleSpritesheet/2.png",
+				"idle3": "./img/cachoworld/IdleSpritesheet/3.png",
+				"idle4": "./img/cachoworld/IdleSpritesheet/4.png",
+				"idle5": "./img/cachoworld/IdleSpritesheet/5.png"
 			}
 		},
 		{

@@ -52,7 +52,6 @@ export class JoystickMultiplayerCachoWorld extends Container {
 		this.setupClickContainer();
 		this.setupJoystick();
 
-		this.setupEventListeners();
 		this.setupClickZone();
 		this.setupEventListeners();
 		this.resetJoystickPosition();
@@ -80,7 +79,7 @@ export class JoystickMultiplayerCachoWorld extends Container {
 	private setupClickContainer(): void {
 		this.clickContainer = new Container();
 		this.addChild(this.clickContainer);
-		this.clickZone.scale.set(4, 4);
+		this.clickZone.scale.set(10, 10);
 		this.clickZone.alpha = 0;
 		this.clickZone.interactive = true;
 
@@ -158,7 +157,7 @@ export class JoystickMultiplayerCachoWorld extends Container {
 			// Normaliza el vector de dirección y aplica una velocidad constante
 			const distance = Math.sqrt(dx * dx + dy * dy);
 			if (distance > 0) {
-				const speed = 2; // Define la velocidad constante
+				const speed = 4; // Define la velocidad constante
 				const normalizedX = (dx / distance) * speed;
 				const normalizedY = (dy / distance) * speed;
 
