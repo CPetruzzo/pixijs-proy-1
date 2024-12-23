@@ -45,6 +45,7 @@ export class JoystickMultiplayerCachoWorld extends Container {
 		this.joystickStartPos = new Point(100, 300); // Example position, adjust as needed
 
 		this.clickZone = this.joystickParams.clickZone;
+		this.clickZone.anchor.set(0.5);
 		this.joystickBG = this.joystickParams.outer;
 		this.joystickBG.anchor.set(0.5);
 		this.joystickHandle = this.joystickParams.inner;
@@ -61,9 +62,9 @@ export class JoystickMultiplayerCachoWorld extends Container {
 
 	/** Set up the joystick sprites and add to the container */
 	private setupJoystick(): void {
+		// this.addChild(this.joystickBG);
+		// this.addChild(this.joystickHandle);
 		this.clickContainer.addChild(this.clickZone);
-		this.addChild(this.joystickBG);
-		this.addChild(this.joystickHandle);
 
 		this.positionSprite(this.joystickBG, this.joystickStartPos);
 		this.positionSprite(this.joystickHandle, this.joystickStartPos);
@@ -93,7 +94,7 @@ export class JoystickMultiplayerCachoWorld extends Container {
 	/** Configura la zona clickeable */
 	private setupClickZone(): void {
 		this.clickZone.alpha = 0;
-		this.addChild(this.clickZone, this.joystickBG, this.joystickHandle);
+		this.addChild(this.joystickBG, this.joystickHandle, this.clickZone);
 	}
 
 	/** Set up event listeners for joystick and rock button */
