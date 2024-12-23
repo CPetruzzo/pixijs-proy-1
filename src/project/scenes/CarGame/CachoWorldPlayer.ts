@@ -1,6 +1,7 @@
 import { Vector2 } from "@dimforge/rapier2d";
 import { Sprite, Text, TextStyle, Texture } from "pixi.js";
 import { StateMachineAnimator } from "../../../engine/animation/StateMachineAnimation";
+import type { Room } from "./Room";
 
 export type Player = {
 	playerId: string;
@@ -18,6 +19,7 @@ export class CachoWorldPlayer extends Sprite {
 	private messageText: Text | null = null; // Texto para mostrar el mensaje
 	private shownMessages: Set<string> = new Set();
 	public seenMessages: any;
+	public currentRoom: Room | null = null; // Add this property
 
 	constructor(id: string, x: number, y: number) {
 		super(Sprite.from(Texture.WHITE).texture);
@@ -60,11 +62,9 @@ export class CachoWorldPlayer extends Sprite {
 	public shootHim(charge: { x: number; y: number }): void {
 		const force = new Vector2(charge.x * 10, charge.y * 10);
 		console.log(`Force applied: (${force.x}, ${force.y})`);
-		// Aquí puedes integrar lógica para aplicar la fuerza en el sistema de físicas
 		this.x += force.x;
 		this.y += force.y;
 
-		// Cambiar animación a "bouncing"
 		this.animator.playState("bouncing");
 	}
 
@@ -74,7 +74,6 @@ export class CachoWorldPlayer extends Sprite {
 		this.x += dx;
 		this.y += dy;
 
-		// Cambiar animación si se está moviendo
 		if (speed > 0 && this.animator.currentStateName !== "bouncing") {
 			this.animator.playState("bouncing");
 		} else if (speed === 0 && this.animator.currentStateName !== "idle") {
@@ -83,22 +82,18 @@ export class CachoWorldPlayer extends Sprite {
 	}
 
 	public update(_dt: number): void {
-		// Actualizar lógica o animaciones si es necesario
-		this.animator.update(_dt * 5); // Asegúrate de que el animator actualice su estado
+		this.animator.update(_dt * 5);
 	}
 
 	public showMessageAbove(message: string): void {
-		// Verifica si el mensaje ya ha sido mostrado
 		if (this.seenMessages.has(message)) {
 			console.log("Message already seen, not showing again.");
-			return; // No mostrar el mensaje si ya ha sido visto
+			return;
 		}
 
-		// Si ya existe un mensaje, elimínalo
 		if (this.messageText) {
-			console.log("this.messageText.text", this.messageText.text);
 			this.removeChild(this.messageText);
-			this.messageText.destroy(); // Asegúrate de destruir la instancia anterior
+			this.messageText.destroy();
 		}
 
 		const textStyle = new TextStyle({
@@ -108,25 +103,21 @@ export class CachoWorldPlayer extends Sprite {
 		});
 
 		this.messageText = new Text(message, textStyle);
-		console.log('this.messageText', this.messageText.text)
 		this.messageText.anchor.set(0.5);
-		this.messageText.y = -50; // Posición encima del jugador
+		this.messageText.y = -50;
 		this.addChild(this.messageText);
 
-		// Marca este mensaje como visto
 		this.seenMessages.add(message);
 
-		// Elimina el mensaje después de un tiempo
 		setTimeout(() => {
 			if (this.messageText) {
 				this.removeChild(this.messageText);
 				this.messageText.destroy();
 				this.messageText = null;
 			}
-		}, 3000); // Mensaje desaparece después de 3 segundos
+		}, 3000);
 	}
 
-	// Asegúrate de que la clase CachoWorldPlayer tenga un método para eliminar mensajes previos
 	public removeMessage(): void {
 		if (this.messageText) {
 			this.removeChild(this.messageText);
@@ -135,7 +126,6 @@ export class CachoWorldPlayer extends Sprite {
 		}
 	}
 
-	// Método para limpiar el historial de mensajes (opcional)
 	public clearShownMessages(): void {
 		this.shownMessages.clear();
 	}
