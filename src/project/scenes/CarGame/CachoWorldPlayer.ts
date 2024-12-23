@@ -9,6 +9,7 @@ export type Player = {
 	showMessageAbove: (message: string) => void; // Método para mostrar el mensaje flotante
 	removeMessage: () => void; // Método para eliminar el mensaje flotante
 };
+
 export class CachoWorldPlayer extends Sprite {
 	public id: string;
 	public speed: number = 0; // Propiedad adicional ejemplo
@@ -107,6 +108,7 @@ export class CachoWorldPlayer extends Sprite {
 		});
 
 		this.messageText = new Text(message, textStyle);
+		console.log('this.messageText', this.messageText.text)
 		this.messageText.anchor.set(0.5);
 		this.messageText.y = -50; // Posición encima del jugador
 		this.addChild(this.messageText);

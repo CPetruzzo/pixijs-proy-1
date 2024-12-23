@@ -1,54 +1,71 @@
 import { ref, set, onValue, onDisconnect, remove } from "firebase/database";
-import { db } from "../../.."; // Asegúrate de que db esté correctamente exportado desde tu configuración de Firebase
+import { db } from "../../..";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { JoystickMultiplayerCachoWorld } from "./JoystickMultiplayerCachoWorld";
 import { CachoWorldPlayer } from "./CachoWorldPlayer";
-import { Container, Sprite, Text, TextStyle } from "pixi.js";
-import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
+import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import { MAX_MESSAGES } from "../../../utils/constants";
 
-// Define the type for chat messages
-type ChatMessage = {
-	playerId: string;
-	username: string;
-	message: string;
-};
+import { WorldMap } from "./WorldMap";
+import {
+	ChatMessage,
+	// Chat, 
+	Routes
+} from "./Chat";
 
 export class MultiplayerCachoWorldGameScene extends PixiScene {
+	//#region VARIABLES
 	private players: Record<string, CachoWorldPlayer> = {};
 	private playerId: string;
 	private joystick: JoystickMultiplayerCachoWorld;
 	public static readonly BUNDLES = ["joystick", "cachoworld"];
 	private worldContainer: Container = new Container();
-	private backgroundContainer: Container = new Container();
-
 	private chatContainer: Container;
 	private chatInput: HTMLInputElement;
 
 	private usernameInput: HTMLInputElement; // Nuevo input para username
 	private username: string = ""; // Almacenar el username localmente
-	private localPlayerId: string;
-	// private hasSentMessage: boolean = false; // Flag para evitar el reenvío
 
+
+	private localPlayerId: string;
+	private worldMap: WorldMap;
+	private debugGraphics: Graphics;
+	// private chat: Chat;
+	//#endregion VARIABLES
 	constructor() {
 		super();
-		// Asignar nombres a los contenedores principales
 		this.worldContainer.name = "WorldContainer";
-		this.backgroundContainer.name = "BackgroundContainer";
-		this.addChild(this.backgroundContainer, this.worldContainer);
-		// Crear un ID único para este jugador
-		this.playerId = Date.now().toString(); // Usamos un timestamp único para el ID
+		this.addChild(this.worldContainer);
 
-		// Escuchar las actualizaciones de la base de datos
+		this.playerId = Date.now().toString();
+
+		this.createMap();
+		this.debugGraphics = new Graphics();
+
 		this.listenForPlayersUpdates();
-		// Añadir este jugador a Firebase
 		this.addPlayerToDatabase();
-
 		this.createChatUI();
+
+
+		// this.chat = new Chat(db, this.playerId, this.players);
+		// this.addChild(this.chat);
 		this.createUsernameForm();
 		this.listenForChatUpdates();
+
 	}
 
+	private createMap(debug: boolean = false): void {
+		this.worldMap = new WorldMap();
+		// this.worldMap.pivot.set(this.worldMap.width * 0.5, this.worldMap.height * 0.5);
+		this.worldContainer.addChildAt(this.worldMap, 0);
+
+		if (debug) {
+			this.worldMap.addChild(this.debugGraphics);
+		}
+	}
+
+	//#region USERFORM
 	private createUsernameForm(): void {
 		this.usernameInput = document.createElement("input");
 		this.usernameInput.type = "text";
@@ -80,22 +97,23 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		});
 	}
 
-	// Guardar el username en Firebase
 	private async saveUsernameToDatabase(username: string): Promise<void> {
 		try {
-			const playerRef = ref(db, `players/${this.playerId}/username`);
+			const playerRef = ref(db, `${Routes.PLAYERS}/${this.playerId}/username`);
 			await set(playerRef, username);
 			console.log("Username saved to Firebase.");
 		} catch (error) {
 			console.error("Error saving username to Firebase:", error);
 		}
 	}
+	//#endregion USERFORM
 
+	//#region PLAYER
 	// Escuchar cambios en la base de datos y actualizar jugadores en tiempo real
 	// eslint-disable-next-line @typescript-eslint/require-await
 	private async listenForPlayersUpdates(): Promise<void> {
 		try {
-			const playersRef = ref(db, "players");
+			const playersRef = ref(db, `${Routes.PLAYERS}`);
 
 			// Usar onValue para escuchar actualizaciones en tiempo real
 			onValue(playersRef, (snapshot) => {
@@ -147,27 +165,9 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		}
 	}
 
-	private async addPlayerToDatabase(): Promise<void> {
-		try {
-			const playerRef = ref(db, `players/${this.playerId}`);
-			await set(playerRef, { x: 150, y: 150 });
-
-			// Establecer desconexión
-			const playerOnDisconnectRef = ref(db, `players/${this.playerId}`);
-			onDisconnect(playerOnDisconnectRef).remove();
-
-			console.log("Player added to Firebase.");
-
-			// Crear al jugador local después de añadirlo a Firebase
-			this.createLocalPlayer();
-		} catch (error) {
-			console.error("Error adding player to Firebase:", error);
-		}
-	}
-
 	private createLocalPlayer(): void {
 		// Crear el jugador local en la escena
-		const myPlayer = new CachoWorldPlayer(this.playerId, 150, 150);
+		const myPlayer = new CachoWorldPlayer(this.playerId, 0, 0);
 		myPlayer.name = `Player_${this.playerId}`; // Asignar nombre único al jugador local
 		this.localPlayerId = this.playerId;
 		this.players[this.playerId] = myPlayer;
@@ -180,13 +180,31 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		this.worldContainer.addChild(this.joystick);
 	}
 
+	private async addPlayerToDatabase(): Promise<void> {
+		try {
+			const playerRef = ref(db, `${Routes.PLAYERS}/${this.playerId}`);
+			await set(playerRef, { x: 150, y: 150 });
+
+			// Establecer desconexión
+			const playerOnDisconnectRef = ref(db, `${Routes.PLAYERS}/${this.playerId}`);
+			onDisconnect(playerOnDisconnectRef).remove();
+
+			console.log("Player added to Firebase.");
+
+			// Crear al jugador local después de añadirlo a Firebase
+			this.createLocalPlayer();
+		} catch (error) {
+			console.error("Error adding player to Firebase:", error);
+		}
+	}
+
 	// Actualizar la posición del jugador en Firebase
 	private async updatePlayerPositionInFirebase(): Promise<void> {
 		try {
 			const player = this.players[this.playerId];
 			// console.log('player', player)
 			if (player) {
-				const playerRef = ref(db, `players/${this.playerId}`);
+				const playerRef = ref(db, `${Routes.PLAYERS}/${this.playerId}`);
 				await set(playerRef, { x: player.x, y: player.y });
 				// console.log("Player position updated in Firebase.");
 			}
@@ -241,44 +259,9 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 			this.updatePlayerPositionInFirebase(); // Actualizar en Firebase solo para el jugador local
 		}
 	}
+	//#endregion PLAYER
 
-	// Lógica de actualización de la escena
-	public override update(_dt: number): void {
-		if (this.joystick) {
-			this.joystick.updateJoystick();
-			this.updatePlayerPositionInFirebase();
-		}
-
-		if (this.players[this.playerId]) {
-			this.handleInput(); // Procesar la entrada del jugador local
-		}
-
-		// Actualizar todos los jugadores en la escena
-		for (const playerId in this.players) {
-			const player = this.players[playerId];
-			if (player instanceof CachoWorldPlayer) {
-				player.update(_dt); // Llama al método `update` de cada jugador
-			}
-		}
-	}
-
-	public override onResize(_newW: number, _newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this.worldContainer, _newW, _newH, 1600, 720, ScaleHelper.FIT);
-		const worldContainerBounds = this.worldContainer.getLocalBounds();
-		this.worldContainer.pivot.set(worldContainerBounds.width * 0.5, worldContainerBounds.height * 0.5);
-
-		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, _newW, _newH, 720, 720, ScaleHelper.FILL);
-		this.backgroundContainer.x = _newW * 0.5;
-		this.backgroundContainer.y = _newH * 0.5;
-		const backgroundContainerBounds = this.backgroundContainer.getLocalBounds();
-		this.backgroundContainer.pivot.set(backgroundContainerBounds.width * 0.5, backgroundContainerBounds.height * 0.5);
-
-		// ScaleHelper.setScaleRelativeToIdeal(this.chatContainer, _newW, _newH, 1600, 720, ScaleHelper.FIT);
-		// const chatContainerBounds = this.chatContainer.getLocalBounds();
-		// this.chatContainer.pivot.set(0, chatContainerBounds.height * 0.5);
-		// this.chatContainer.y = _newH - this.chatContainer.height * 0.5;
-	}
-
+	// //#region CHAT
 	// Crear la UI del chat
 	private createChatUI(): void {
 		// Contenedor para mensajes
@@ -287,15 +270,12 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		this.chatContainer.y = window.innerHeight - 150; // Posición al fondo
 		this.addChild(this.chatContainer);
 
-		// Fondo del chat (opcional, para visibilidad)
-		// Crear y añadir el Sprite de fondo
-		const backgroundSprite = Sprite.from("background"); // Reemplaza "backgroundImage" con el nombre o ruta de tu recurso
-		backgroundSprite.width = window.innerWidth;
-		backgroundSprite.height = window.innerHeight;
-		backgroundSprite.anchor.set(0.5); // Centrar el anclaje
-		backgroundSprite.x = window.innerWidth / 2;
-		backgroundSprite.y = window.innerHeight / 2;
-		this.backgroundContainer.addChildAt(backgroundSprite, 0); // Asegúrate de añadirlo como el primer hijo
+		this.worldMap = new WorldMap();
+		this.worldMap.pivot.set(this.worldMap.width * 0.5, this.worldMap.height * 0.5);
+		this.worldContainer.addChildAt(this.worldMap, 0);
+
+		this.debugGraphics = new Graphics();
+		this.worldMap.addChild(this.debugGraphics);
 
 		// Campo de texto para mensajes
 		this.chatInput = document.createElement("input");
@@ -327,9 +307,8 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 	}
 
 	// Escuchar actualizaciones del chat en Firebase
-	// Update the chat listener
 	private listenForChatUpdates(): void {
-		const chatRef = ref(db, "chat");
+		const chatRef = ref(db, Routes.CHAT);
 		onValue(chatRef, (snapshot) => {
 			if (snapshot.exists()) {
 				const messages: Record<string, ChatMessage & { x: number; y: number }> = snapshot.val() as Record<string, ChatMessage & { x: number; y: number }>;
@@ -366,14 +345,14 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		return this.players[playerId]; // Direct access by key
 	}
 
-	// Enviar mensaje al chat
+	// // Enviar mensaje al chat
 	private async sendMessage(message: string): Promise<void> {
 		if (message.trim() === "") {
 			return;
 		}
 
 		const timestamp = Date.now(); // Usar un timestamp único para identificar el mensaje
-		const chatRef = ref(db, `chat/${timestamp}`); // Indexar por timestamp
+		const chatRef = ref(db, `${Routes.CHAT}/${timestamp}`); // Indexar por timestamp
 		await set(chatRef, {
 			playerId: this.playerId,
 			username: this.username,
@@ -396,7 +375,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 				const messageKeys = Object.keys(messages);
 
 				// Si hay más de 5 mensajes, eliminar el más viejo
-				if (messageKeys.length > 5) {
+				if (messageKeys.length > MAX_MESSAGES) {
 					const oldestKey = messageKeys[0]; // El más antiguo es el primero en la lista
 					const oldestMessageRef = ref(db, `chat/${oldestKey}`);
 					// Eliminar el mensaje más antiguo
@@ -441,5 +420,52 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 				positionY += messageText.height + 5; // Añadimos un pequeño margen entre los mensajes
 			}
 		});
+	}
+	//#endregion CHAT
+	public override onResize(_newW: number, _newH: number): void {
+		this.worldContainer.x = _newW * 0.5;
+		this.worldContainer.y = _newH * 0.5;
+
+		const worldContainerBounds = this.worldContainer.getLocalBounds();
+		// Dibujar los límites en el debugGraphics
+		this.debugGraphics.clear();
+		this.debugGraphics.lineStyle(2, 0xff0000, 1); // Líneas rojas para debug
+		this.debugGraphics.drawRect(
+			this.worldMap.x - this.worldMap.width * 0.5,
+			this.worldMap.y - this.worldMap.height * 0.5,
+			worldContainerBounds.width,
+			worldContainerBounds.height
+		);
+	}
+
+	// Lógica de actualización de la escena
+	public override update(_dt: number): void {
+		if (this.joystick) {
+			this.joystick.updateJoystick();
+			this.updatePlayerPositionInFirebase();
+		}
+
+		if (this.players[this.playerId]) {
+			this.handleInput();
+		}
+
+		// Actualizar todos los jugadores en la escena
+		for (const playerId in this.players) {
+			const player = this.players[playerId];
+			if (player instanceof CachoWorldPlayer) {
+				// Centrar la cámara en el jugador local
+				if (playerId === this.playerId) {
+					const scale = this.worldTransform.a; // Factor de escala
+					const targetX = -player.x * scale + window.innerWidth * 0.5;
+					const targetY = -player.y * scale + window.innerHeight * 0.5;
+
+					// Aplicar interpolación suave para evitar desfase
+					this.worldContainer.x += (targetX - this.worldContainer.x) * 0.1; // Ajusta el factor para suavizar
+					this.worldContainer.y += (targetY - this.worldContainer.y) * 0.1;
+				}
+				player.update(_dt); // Llama al método `update` de cada jugador
+			}
+		}
+
 	}
 }

@@ -58,3 +58,6 @@ export const SOUNDPARAMS2 = { allowOverlap: false, singleInstance: true, loop: f
 // MULTIPLAYER TIC TAC TOE
 
 export const SERVER_PORT: number = 1234;
+
+// MULTIPLAYER CACHO WORLD
+export const MAX_MESSAGES: number = 5;
