@@ -1,4 +1,3 @@
-
 import { Container } from "@pixi/display";
 import { Sprite } from "@pixi/sprite";
 import { Text, TextStyle } from "@pixi/text";
@@ -10,9 +9,9 @@ import { AnimalSounds } from "./AnimalSounds";
 import { GuessShapes } from "./GuessShapes";
 import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { ToggleCheck } from "../../RunFall/Utils/toggle/ToggleCheck";
-import { ToggleButton } from "../../BasquetballGame/Utils/ToggleButton";
-import { Button } from "@pixi/ui";
-import { SimpleButton } from "../../../../engine/button/SimpleButton";
+import type { ToggleButton } from "../../BasquetballGame/Utils/ToggleButton";
+import type { Button } from "@pixi/ui";
+import type { SimpleButton } from "../../../../engine/button/SimpleButton";
 
 export class Chooser extends PixiScene {
 	public static readonly BUNDLES = ["playWithSounds"];
@@ -31,9 +30,9 @@ export class Chooser extends PixiScene {
 	private mute: ToggleCheck;
 
 	public toggled: boolean = true;
-	muted: ToggleButton;
-	soundPlus: Button;
-	soundMinus: SimpleButton;
+	public muted: ToggleButton;
+	public soundPlus: Button;
+	public soundMinus: SimpleButton;
 
 	constructor() {
 		super();
@@ -84,37 +83,42 @@ export class Chooser extends PixiScene {
 			padding: 5,
 			stroke: "#582d2d",
 			strokeThickness: 24,
-			wordWrapWidth: 160
+			wordWrapWidth: 160,
 		});
 
-		this.sounds = new Text('Play with sounds', style);
+		this.sounds = new Text("Play with sounds", style);
 		this.sounds.position.set(10, 250);
 		this.sounds.anchor.set(0.5);
 
 		this.soundContainer.interactive = true;
-		this.soundContainer.on("pointerover",
+		this.soundContainer.on(
+			"pointerover",
 			() => {
 				SoundLib.playMusic("birds-sfx", { volume: 2, loop: false });
 				this.soundContainer.scale.set(1.2);
 			},
 			this
 		);
-		this.soundContainer.on("pointerdown",
+		this.soundContainer.on(
+			"pointerdown",
 			() => {
 				SoundLib.playMusic("birds-sfx", { volume: 2, loop: false });
 				this.soundContainer.scale.set(1.2);
 			},
 			this
 		);
-		this.soundContainer.on("pointerout",
+		this.soundContainer.on(
+			"pointerout",
 			() => {
 				this.soundContainer.scale.set(1);
 			},
 			this
 		);
-		this.soundContainer.on("pointerup",
+		this.soundContainer.on(
+			"pointerup",
 			() => {
-				Manager.changeScene(AnimalSounds
+				Manager.changeScene(
+					AnimalSounds
 					// , [], IntermissionDuck
 				);
 
@@ -123,34 +127,39 @@ export class Chooser extends PixiScene {
 			this
 		);
 
-		this.guess = new Text('Guess the shape', style);
+		this.guess = new Text("Guess the shape", style);
 		this.guess.position.set(10, 250);
 		this.guess.anchor.set(0.5);
 
 		this.guessContainer.interactive = true;
-		this.guessContainer.on("pointerover",
+		this.guessContainer.on(
+			"pointerover",
 			() => {
 				SoundLib.playMusic("windTransition-sfx", { volume: 2, loop: false });
 				this.guessContainer.scale.set(1.2);
 			},
 			this
 		);
-		this.guessContainer.on("pointerdown",
+		this.guessContainer.on(
+			"pointerdown",
 			() => {
 				SoundLib.playMusic("windTransition-sfx", { volume: 2, loop: false });
 				this.guessContainer.scale.set(1.2);
 			},
 			this
 		);
-		this.guessContainer.on("pointerout",
+		this.guessContainer.on(
+			"pointerout",
 			() => {
 				this.guessContainer.scale.set(1);
 			},
 			this
 		);
-		this.guessContainer.on("pointerup",
+		this.guessContainer.on(
+			"pointerup",
 			() => {
-				Manager.changeScene(GuessShapes
+				Manager.changeScene(
+					GuessShapes
 					// , [], IntermissionDuck
 				);
 
@@ -166,59 +175,49 @@ export class Chooser extends PixiScene {
 
 		this.frame2 = Sprite.from("frame1");
 		this.frame2.scale.set(0.6);
-		this.frame2.position.set(this.guess.position.x - this.frame2.width / 2, this.guess.position.y - this.frame2.height)
+		this.frame2.position.set(this.guess.position.x - this.frame2.width / 2, this.guess.position.y - this.frame2.height);
 		this.frame2.alpha = 0.8;
 
 		this.sheep = Sprite.from("chooserSheep");
 		this.sheep.scale.set(0.6);
-		this.sheep.anchor.set(0.5)
+		this.sheep.anchor.set(0.5);
 		this.sheep.position.set(this.guess.position.x, this.guess.position.y - this.sheep.height / 1.5);
 
 		this.birds = Sprite.from("chooserBirds");
 		this.birds.scale.set(0.6);
-		this.birds.anchor.set(0.5)
+		this.birds.anchor.set(0.5);
 		this.birds.position.set(this.sounds.position.x, this.sounds.position.y - this.birds.height / 1.5);
 
 		this.bg = Sprite.from("BG0");
-		this.bg.scale.set(1, 1.46)
+		this.bg.scale.set(1, 1.46);
 
 		this.soundContainer.addChild(
 			this.frame1,
 			this.sounds,
-			this.birds,
+			this.birds
 			// auxZero
-		)
+		);
 
 		this.guessContainer.addChild(
 			this.frame2,
 			this.guess,
-			this.sheep,
+			this.sheep
 			// auxZero2
-		)
+		);
 
 		this.cont.addChild(
 			this.bg,
 			this.soundContainer,
-			this.guessContainer,
+			this.guessContainer
 			// auxZero3
 		);
 		this.cont.pivot.set(this.cont.width / 2, this.cont.height / 2);
 
 		this.addChild(this.cont);
 
-		new Tween(this.soundContainer)
-			.from({ angle: -1 })
-			.to({ angle: 1 }, 1000)
-			.yoyo()
-			.repeat(Infinity)
-			.start();
+		new Tween(this.soundContainer).from({ angle: -1 }).to({ angle: 1 }, 1000).yoyo().repeat(Infinity).start();
 
-		new Tween(this.guessContainer)
-			.from({ angle: -1 })
-			.to({ angle: 1 }, 1000)
-			.yoyo()
-			.repeat(Infinity)
-			.start();
+		new Tween(this.guessContainer).from({ angle: -1 }).to({ angle: 1 }, 1000).yoyo().repeat(Infinity).start();
 
 		this.mute = new ToggleCheck({
 			buttonTexture: "b_4",
@@ -234,10 +233,10 @@ export class Chooser extends PixiScene {
 
 				SoundLib.muteSound = false;
 			},
-			startingValue: false
+			startingValue: false,
 		});
-		this.mute.position.set(this.cont.width / 2 - 100, 10)
-		this.mute.scale.set(0.4)
+		this.mute.position.set(this.cont.width / 2 - 100, 10);
+		this.mute.scale.set(0.4);
 
 		// this.soundPlus = new SimpleButton(
 		// 	"ui-placeholder-demo/button_plus.png", () => {
@@ -256,11 +255,10 @@ export class Chooser extends PixiScene {
 		// this.soundMinus.position.set(this.mute.position.x - 100, this.mute.position.y + 65)
 
 		this.cont.addChild(
-			this.mute,
+			this.mute
 			// this.soundPlus,
 			// this.soundMinus
-		)
-
+		);
 	}
 
 	public override onResize(newW: number, newH: number): void {

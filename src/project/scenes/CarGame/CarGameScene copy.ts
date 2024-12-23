@@ -1,5 +1,6 @@
 import { Graphics } from "pixi.js";
-import { io, Socket } from "socket.io-client";
+import type { Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 
@@ -11,8 +12,8 @@ export class CarGameScene extends PixiScene {
 		super();
 
 		// Conexión con el servidor
-		this.socket = io('http://192.168.1.5:1234/', {
-			transports: ['websocket', 'polling']  // Try using both WebSocket and polling.
+		this.socket = io("http://192.168.1.5:1234/", {
+			transports: ["websocket", "polling"], // Try using both WebSocket and polling.
 		});
 
 		// Manejo de conexión
@@ -82,10 +83,18 @@ export class CarGameScene extends PixiScene {
 		let speed = 0;
 		let direction = 0;
 
-		if (Keyboard.shared.isDown("ArrowUp")) speed = 1;
-		if (Keyboard.shared.isDown("ArrowDown")) speed = -1;
-		if (Keyboard.shared.isDown("ArrowLeft")) direction = -Math.PI / 4;
-		if (Keyboard.shared.isDown("ArrowRight")) direction = Math.PI / 4;
+		if (Keyboard.shared.isDown("ArrowUp")) {
+			speed = 1;
+		}
+		if (Keyboard.shared.isDown("ArrowDown")) {
+			speed = -1;
+		}
+		if (Keyboard.shared.isDown("ArrowLeft")) {
+			direction = -Math.PI / 4;
+		}
+		if (Keyboard.shared.isDown("ArrowRight")) {
+			direction = Math.PI / 4;
+		}
 
 		// Only emit if there's input
 		if (speed !== 0 || direction !== 0) {
