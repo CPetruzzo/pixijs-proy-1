@@ -17,7 +17,7 @@ import { JoystickEmits } from "./utils/Joystick";
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
-import { MultiplayerCachoWorldGameScene } from "./project/scenes/CarGame/MultiplayerCachoWorldGameScene";
+import { MultiplayerCachoWorldGameScene } from "./project/scenes/CachoWorld/MultiplayerCachoWorldGameScene";
 
 settings.RENDER_OPTIONS.hello = false;
 

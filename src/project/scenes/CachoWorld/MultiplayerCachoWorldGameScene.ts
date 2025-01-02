@@ -57,7 +57,7 @@ export class MultiplayerCachoWorldGameScene extends Room {
 
 		const room2 = new Room("1", RoomScene, this.playerIdInRoom, false);
 		this.portal = new Portal(200, 300, 50, 100, room2); // Destino: room2, posición y tamaño
-		// this.worldContainer.addChild(this.portal); // Agregar el portal al contenedor principal
+		this.worldContainer.addChild(this.portal); // Agregar el portal al contenedor principal
 	}
 
 	private createMap(debug: boolean = false): void {

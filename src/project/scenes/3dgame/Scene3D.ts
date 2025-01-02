@@ -194,8 +194,9 @@ export class Scene3D extends PixiScene {
 		shadowCastingLight.shadowArea = 15;
 
 		this.cameraControl = cameraControl;
-		this.cameraControl.distance = 0;
-		(this.cameraControl.target.x = 20), (this.cameraControl.target.y = 2), (this.cameraControl.target.z = 50);
+		this.cameraControl.distance = 15;
+		this.cameraControl.angles.x = 20;
+		(this.cameraControl.target.x = 20), (this.cameraControl.target.y = 0), (this.cameraControl.target.z = 50);
 
 		this.hauntedhouse.animations[0].loop = true;
 		this.hauntedhouse.animations[0].play();
