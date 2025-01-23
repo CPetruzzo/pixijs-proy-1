@@ -1,19 +1,19 @@
 import { ref, set, onValue, onDisconnect, remove } from "firebase/database";
-import { db } from "../../..";
-import { Keyboard } from "../../../engine/input/Keyboard";
-import { JoystickMultiplayerCachoWorld } from "./JoystickMultiplayerCachoWorld";
-import { CachoWorldPlayer } from "./CachoWorldPlayer";
+import { db } from "../../../..";
+import { Keyboard } from "../../../../engine/input/Keyboard";
+import { JoystickMultiplayerCachoWorld } from "../JoystickMultiplayerCachoWorld";
+import { CachoWorldPlayer } from "../CachoWorldPlayer";
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
-import { MAX_MESSAGES } from "../../../utils/constants";
+import { MAX_MESSAGES } from "../../../../utils/constants";
 
-import { WorldMap } from "./WorldMap";
-import type { ChatMessage } from "./Chat";
+import { WorldMap } from "../WorldMap";
+import type { ChatMessage } from "../Chat";
 import {
 	// Chat,
 	Routes,
-} from "./Chat";
-import { Portal } from "./Portal";
-import { Room } from "./Room";
+} from "../Chat";
+import { Room } from "../Classes/Room";
+import { Portal } from "../Classes/Portal";
 import { RoomScene } from "./RoomScene";
 
 export class MultiplayerCachoWorldGameScene extends Room {

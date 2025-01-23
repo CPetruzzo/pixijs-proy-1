@@ -1,15 +1,15 @@
 import { ref, set, onValue, onDisconnect, remove } from "firebase/database";
-import { db } from "../../..";
-import { Keyboard } from "../../../engine/input/Keyboard";
-import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
+import { db } from "../../../..";
+import { Keyboard } from "../../../../engine/input/Keyboard";
+import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { Container } from "pixi.js";
-import { CachoWorldPlayer } from "./CachoWorldPlayer";
-import { NewWorldMap } from "./NewWorldMap";
-import { Routes } from "./Chat";
-import { JoystickMultiplayerCachoWorld } from "./JoystickMultiplayerCachoWorld";
-import { PortalToMenu } from "./PortalToMenu";
-import { Room } from "./Room";
-import { MultiplayerCachoWorldGameScene } from "./MultiplayerCachoWorldGameScene";
+import { CachoWorldPlayer } from "../CachoWorldPlayer";
+import { NewWorldMap } from "../NewWorldMap";
+import { Routes } from "../Chat";
+import { JoystickMultiplayerCachoWorld } from "../JoystickMultiplayerCachoWorld";
+import { PortalToMenu } from "../PortalToMenu";
+import { Room } from "../Classes/Room";
+import { MultiplayerCachoWorldGameScene } from "../Scenes/MultiplayerCachoWorldGameScene";
 
 export class RoomScene extends PixiScene {
 	private players: Record<string, CachoWorldPlayer> = {};

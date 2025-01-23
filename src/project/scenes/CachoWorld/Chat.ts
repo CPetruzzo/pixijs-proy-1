@@ -1,5 +1,5 @@
 import { Container, Text, TextStyle } from "pixi.js";
-import { CachoWorldPlayer } from "./CachoWorldPlayer";
+import type { CachoWorldPlayer } from "./CachoWorldPlayer";
 import { onValue, ref, remove, set } from "firebase/database";
 import { MAX_MESSAGES } from "../../../utils/constants";
 
@@ -11,7 +11,7 @@ export type ChatMessage = {
 
 export enum Routes {
 	CHAT = "chat",
-	PLAYERS = "players"
+	PLAYERS = "players",
 }
 
 export class Chat extends Container {
@@ -36,7 +36,6 @@ export class Chat extends Container {
 		this.createChatUI();
 		this.listenForChatUpdates();
 	}
-
 
 	public createChatUI(): void {
 		// Contenedor para mensajes
@@ -88,7 +87,7 @@ export class Chat extends Container {
 				Object.values(messages).forEach((message) => {
 					const player = this.getPlayerById(); // Busca el jugador por su ID
 					if (player) {
-						console.log('player', player.name)
+						console.log("player", player.name);
 						// Verifica si el mensaje ya fue visto por el jugador
 						const messageKey = `${message.playerId}:${message.message}`; // Combinamos el playerId y el mensaje para asegurar que sea único
 
@@ -154,8 +153,7 @@ export class Chat extends Container {
 		});
 	}
 
-	private updateChat(messages: Record<string, { playerId: string; username: string; message: string }>
-	): void {
+	private updateChat(messages: Record<string, { playerId: string; username: string; message: string }>): void {
 		const textStyle = new TextStyle({
 			fontFamily: "Arial",
 			fontSize: 14,
@@ -232,6 +230,4 @@ export class Chat extends Container {
 			console.error("Error saving username to Firebase:", error);
 		}
 	}
-
-
 }

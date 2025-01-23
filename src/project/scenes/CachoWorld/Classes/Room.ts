@@ -1,8 +1,8 @@
-import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
-import type { CachoWorldPlayer } from "./CachoWorldPlayer";
-import { Manager } from "../../..";
+import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
+import type { CachoWorldPlayer } from "../CachoWorldPlayer";
+import { Manager } from "../../../..";
 import { getDatabase, ref, update } from "firebase/database"; // Asegúrate de importar Firebase
-import { MultiplayerCachoWorldGameScene } from "./MultiplayerCachoWorldGameScene"; // Asegúrate de importar la escena principal
+import { MultiplayerCachoWorldGameScene } from "../Scenes/MultiplayerCachoWorldGameScene"; // Asegúrate de importar la escena principal
 
 export class Room extends PixiScene {
 	private players: Set<CachoWorldPlayer>;

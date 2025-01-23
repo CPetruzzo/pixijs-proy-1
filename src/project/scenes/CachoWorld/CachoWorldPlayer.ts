@@ -1,7 +1,7 @@
 import { Vector2 } from "@dimforge/rapier2d";
 import { Sprite, Text, TextStyle, Texture } from "pixi.js";
 import { StateMachineAnimator } from "../../../engine/animation/StateMachineAnimation";
-import type { Room } from "./Room";
+import type { Room } from "./Classes/Room";
 
 export type Player = {
 	playerId: string;

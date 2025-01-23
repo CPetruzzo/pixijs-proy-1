@@ -2,7 +2,7 @@ import type { Container } from "pixi.js";
 import { Graphics, Rectangle } from "pixi.js";
 import { getDatabase, ref, remove, update } from "firebase/database"; // Importa Firebase
 import { CachoWorldPlayer } from "./CachoWorldPlayer";
-import type { Room } from "./Room";
+import type { Room } from "./Classes/Room";
 
 export class PortalToMenu extends Graphics {
 	private destinationRoom: Room;
