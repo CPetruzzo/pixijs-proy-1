@@ -163,6 +163,17 @@
 			}
 		},
 		{
+			"name": "bubble",
+			"assets": {
+				"bubble": "./img/ggj/burbuja.png",
+				"knife": "./img/ggj/knife.png",
+				"kitchen": "./img/ggj/kitchen.png",
+				"sfxBubble": "sfx/runfall/bubble-popping.mp3",
+				"bgMusic": "./music/wizard.wav"
+				
+			}
+		},
+		{
 			"name": "towerdefense",
 			"assets": {
 				"enemy": "./img/towerdefense/towerEnemy1.png",
