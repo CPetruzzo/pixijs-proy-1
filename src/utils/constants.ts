@@ -61,3 +61,6 @@ export const SERVER_PORT: number = 1234;
 
 // MULTIPLAYER CACHO WORLD
 export const MAX_MESSAGES: number = 5;
+
+// BLUE WIZARD
+export const AIR_TOLERANCE: number = 5;
