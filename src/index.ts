@@ -98,7 +98,6 @@ window.addEventListener("contextmenu", (e) => {
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
-	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
 	Manager.changeScene(BurbujeandoMainScene, { transitionClass: CircularLoadingTransition });
 };
 

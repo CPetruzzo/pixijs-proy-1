@@ -165,13 +165,19 @@
 		{
 			"name": "bubble",
 			"assets": {
+				"bar_1": "./img/ggj/bar_1.png",
+				"bar_2": "./img/ggj/bar_2.png",
 				"bubble": "./img/ggj/burbuja.png",
+				"bubbleLB": "./img/ggj/bubbleLB.jpg",
 				"bubbleknob": "./img/ggj/bubbleknob.png",
 				"knife": "./img/ggj/knife.png",
+		 		"frame": "./img/ggj/frame1.png",
+		 		"play": "./img/ggj/play.png",
 				"kitchen": "./img/ggj/kitchen.png",
+				"bubbleParticle": "./img/ggj/Bubbles50px.png",
 				"title": "./img/ggj/burbujeandotitle.jpg",
-				"sfxBubble": "sfx/runfall/bubble-popping.mp3",
-				"bgMusic": "./music/wizard.wav"	
+				"sfxBubble": "/img/ggj/bubble-popping.mp3",
+				"bgMusic": "./img/ggj/wizard.wav"	
 			}
 		},
 		{

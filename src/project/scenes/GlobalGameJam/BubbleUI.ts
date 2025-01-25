@@ -11,14 +11,14 @@ export class UIContainerRight extends Container {
 			fill: "white",
 			fontFamily: "DK Boarding House III",
 			align: "left",
-			fontSize: 80,
+			fontSize: 50,
 			lineHeight: 50,
 			dropShadow: true,
 			dropShadowColor: "black",
 		});
-		this.distanceText.anchor.set(0);
+		this.distanceText.anchor.set(1, 0.5);
 
-		this.distanceText.position.set(50, 50);
+		this.distanceText.position.set(20 + this.distanceText.width, 50);
 
 		this.addChild(this.distanceText);
 	}
@@ -47,10 +47,5 @@ export class UIContainerRight extends Container {
 	public getHighScores(): number[] {
 		const savedScores = localStorage.getItem("highscores");
 		return savedScores ? JSON.parse(savedScores) : [];
-	}
-
-	public getHighScore(): number {
-		const highscore = Math.floor(this.distance * 100);
-		return highscore;
 	}
 }

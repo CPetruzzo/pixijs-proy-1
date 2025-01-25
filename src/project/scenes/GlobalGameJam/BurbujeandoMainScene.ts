@@ -5,18 +5,16 @@ import { SoundLib } from "../../../engine/sound/SoundLib";
 import { Manager } from "../../..";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 import { Easing, Tween } from "tweedle.js";
-import { Sounds } from "../RunFall/Managers/SoundManager";
-import { BurbujeandoGameScene } from "./BurbujeandoGameScene";
+import { BubbleLoaderScene } from "./LoaderScene";
 
 export class BurbujeandoMainScene extends PixiScene {
-	public static readonly BUNDLES = ["joystick", "basquet", "runfallsfx", "bubble"];
+	public static readonly BUNDLES = ["bubble", "ggj", "fallrungame", "sfx", "music"];
 	private backgroundContainer: Container = new Container();
+	private video: HTMLVideoElement;
 	constructor() {
 		super();
 
 		this.addChild(this.backgroundContainer);
-
-		SoundLib.playMusic(Sounds.BASKET_MUSIC, { loop: true, singleInstance: true });
 
 		const bG = Sprite.from("title");
 		bG.anchor.set(0.5);
@@ -32,13 +30,18 @@ export class BurbujeandoMainScene extends PixiScene {
 		play.y = 937;
 		this.backgroundContainer.addChild(play);
 
+		this.video = document.createElement("video");
+		this.video.preload = "auto";
+		this.video.src = "../../../../../img/ggj/kidbubble.mp4";
+		this.video.muted = true;
+
 		play.eventMode = "static";
 		play.on("pointerover", () => {
 			new Tween(play)
 				.to({ scale: { x: 1.3, y: 1.3 } }, 500)
 				.easing(Easing.Bounce.Out)
 				.start();
-			SoundLib.playSound("bounce", {});
+			SoundLib.playSound("sfxBubble", {});
 		});
 		play.on("pointerout", () => {
 			new Tween(play)
@@ -51,8 +54,8 @@ export class BurbujeandoMainScene extends PixiScene {
 				.to({ scale: { x: 1.3, y: 1.3 } }, 500)
 				.easing(Easing.Bounce.Out)
 				.start();
-			SoundLib.playSound("bounce", {});
-			Manager.changeScene(BurbujeandoGameScene, { transitionClass: FadeColorTransition });
+			SoundLib.playSound("sfxBubble", {});
+			Manager.changeScene(BubbleLoaderScene, { transitionClass: FadeColorTransition });
 		});
 
 		this.backgroundContainer.pivot.set(this.backgroundContainer.width * 0.5, this.backgroundContainer.height * 0.5);

@@ -1,7 +1,7 @@
 import { Container } from "pixi.js";
 import { ProgressBar } from "../../../engine/progressbar/ProgressBar";
 
-export class UIContainerLeft extends Container {
+export class UIContainerMiddle extends Container {
 	public hpBar: ProgressBar;
 	public currentPoints: number = 250;
 	constructor() {
@@ -16,7 +16,7 @@ export class UIContainerLeft extends Container {
 			minValue: 0,
 		});
 		this.hpBar.scale.set(0.3);
-		this.hpBar.position.set(1000, 100);
+		this.hpBar.position.set(0, 100);
 
 		this.addChild(this.hpBar);
 	}
