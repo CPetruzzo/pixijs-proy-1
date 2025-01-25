@@ -17,7 +17,7 @@ import { JoystickEmits } from "./utils/Joystick";
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
-import { TestScene } from "./project/scenes/GlobalGameJam/TestScene";
+import { BurbujeandoMainScene } from "./project/scenes/GlobalGameJam/BurbujeandoMainScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -99,7 +99,7 @@ window.addEventListener("contextmenu", (e) => {
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
 	// Manager.changeScene(LDTKMapScene, { transitionClass: CircularLoadingTransition });
-	Manager.changeScene(TestScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(BurbujeandoMainScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

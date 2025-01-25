@@ -4,59 +4,65 @@ import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Timer } from "../../../engine/tweens/Timer";
 import { Easing, Tween } from "tweedle.js";
 import { SoundLib } from "../../../engine/sound/SoundLib";
+import { Manager } from "../../..";
+import { UIContainerLeft } from "./BubbleUILeft";
+import { UIContainerRight } from "./BubbleUIRight";
+import { Keyboard } from "../../../engine/input/Keyboard";
 
-export class TestScene extends PixiScene {
+export class BurbujeandoGameScene extends PixiScene {
 	// Control del movimiento
-	private velocityX = 5; // Velocidad horizontal constante de los enemigos
-	private velocityY = 0; // Velocidad vertical (afectada por gravedad)
-	private gravity = 0; // Gravedad que afecta a la burbuja
-	private lift = -2; // Fuerza hacia arriba cuando el jugador presiona espacio
-	private bubbleSize = 0.2; // Tamaño inicial de la burbuja
-	private bubble!: Sprite; // Sprite de la burbuja principal
-	private obstacles: Sprite[] = []; // Lista de obstáculos
-	private collectibleBubbles: Sprite[] = []; // Lista de burbujas recolectables
-	private isJumping = false; // Control del salto
-	private moveLeft = false; // Control para mover la burbuja hacia la izquierda
+	private velocityX = 5;
+	private velocityY = 0;
+	private gravity = 0;
+	private lift = -2;
+	private bubbleSize = 0.2;
+	private bubble!: Sprite;
+	private obstacles: Sprite[] = [];
+	private collectibleBubbles: Sprite[] = [];
+	private isJumping = false;
 
-	public static readonly BUNDLES = ["storagescene", "basquet", "bubble", "package-2", "fallrungame"];
+	public static readonly BUNDLES = ["storagescene", "basquet", "bubble", "package-2", "package-1", "playWithSounds"];
 	private sceneContainer: Container = new Container();
 	private backgroundContainer: Container = new Container();
 	private backgrounds: TilingSprite[] = [];
 
-	private lastShrinkTime: number = 0; // Último tiempo registrado para reducir el tamaño
-	private shrinkInterval: number = 2500; // Intervalo en milisegundos para reducir el tamaño
+	private lastShrinkTime: number = 0;
+	private shrinkInterval: number = 1500;
+	private gameOver: boolean = false;
+	private kitchenBackground: TilingSprite;
+
+	private uiLeftContainer: UIContainerLeft = new UIContainerLeft();
+	private uiRightContainer: UIContainerRight = new UIContainerRight();
 
 	constructor() {
 		super();
 
 		SoundLib.playMusic("bgMusic", { loop: true });
-		// Agregar el contenedor principal
-		this.addChild(this.backgroundContainer, this.sceneContainer);
+		this.addChild(this.backgroundContainer, this.sceneContainer, this.uiLeftContainer, this.uiRightContainer);
 
-		// Configurar el fondo como TilingSprite
-		const kitchenBackground = new TilingSprite(Texture.from("kitchen"), ScaleHelper.IDEAL_WIDTH * 100, ScaleHelper.IDEAL_HEIGHT * 100);
-		kitchenBackground.x = 0;
-		kitchenBackground.y = 0;
-		this.backgroundContainer.addChild(kitchenBackground);
-		this.backgrounds.push(kitchenBackground);
+		this.kitchenBackground = new TilingSprite(Texture.from("kitchen"), ScaleHelper.IDEAL_WIDTH * 100, ScaleHelper.IDEAL_HEIGHT * 100);
+		this.kitchenBackground.x = 0;
+		this.kitchenBackground.y = 0;
+		this.sceneContainer.interactive = true;
+		this.sceneContainer.eventMode = "static";
+		this.backgroundContainer.addChild(this.kitchenBackground);
+		this.backgrounds.push(this.kitchenBackground);
 
 		this.sceneContainer.addChild(this.backgroundContainer);
 
-		// Crear decoraciones y burbuja inicial
 		this.createBubble();
-
-		// Configurar controles
-		this.setupKeyboardControls();
 
 		new Timer()
 			.to(3000)
 			.start()
 			.onComplete(() => {
-				this.gravity = 0.03;
+				this.gravity = 0.01;
 			});
 
 		setInterval(() => this.spawnObstacle(), 2000);
-		setInterval(() => this.spawnCollectibleBubble(), 1500);
+		setInterval(() => this.spawnCollectibleBubble(), 500);
+
+		this.setupKeyboardControls();
 	}
 
 	private createBubble(): void {
@@ -75,16 +81,16 @@ export class TestScene extends PixiScene {
 		const obstacle = Sprite.from(Texture.from("knife"));
 		obstacle.anchor.set(0.5);
 		obstacle.scale.set(0.25);
-		obstacle.x = ScaleHelper.IDEAL_WIDTH + 50; // Aparece fuera de la pantalla
-		obstacle.y = Math.random() * (ScaleHelper.IDEAL_HEIGHT - 200) + 100; // Altura aleatoria
+		obstacle.x = ScaleHelper.IDEAL_WIDTH + 50;
+		obstacle.y = Math.random() * (ScaleHelper.IDEAL_HEIGHT - 200) + 100;
 		this.sceneContainer.addChild(obstacle);
 		this.obstacles.push(obstacle);
 		new Tween(obstacle).to({ angle: -360 }, 500).start().repeat(Infinity);
 	}
 
 	private spawnCollectibleBubble(): void {
-		const collectible = Sprite.from(Texture.from("loli"));
-		collectible.scale.set(0.3);
+		const collectible = Sprite.from(Texture.from("bubble"));
+		collectible.scale.set(0.05);
 		collectible.anchor.set(0.5);
 		collectible.x = ScaleHelper.IDEAL_WIDTH + 50;
 		collectible.y = Math.random() * (ScaleHelper.IDEAL_HEIGHT - 200) + 100;
@@ -93,17 +99,14 @@ export class TestScene extends PixiScene {
 	}
 
 	private setupKeyboardControls(): void {
-		// Listener para controles de teclado
-		window.addEventListener("keydown", (event) => {
-			if (event.code === "Space") {
-				this.isJumping = true; // Saltar cuando se presiona espacio
-			}
+		this.sceneContainer.on("pointerdown", () => {
+			console.log("Pointer down detected");
+			this.isJumping = true;
 		});
 
-		window.addEventListener("keyup", (event) => {
-			if (event.code === "Space") {
-				this.isJumping = false; // Dejar de saltar al soltar espacio
-			}
+		this.sceneContainer.on("pointerup", () => {
+			console.log("Pointer up detected");
+			this.isJumping = false;
 		});
 	}
 
@@ -114,49 +117,40 @@ export class TestScene extends PixiScene {
 	}
 
 	public override update(_dt: number): void {
-		const currentTime = performance.now(); // Obtén el tiempo actual
-		// Movimiento del fondo
+		if (this.gameOver) {
+			console.log("Game Over: Restarting scene...");
+			Manager.changeScene(BurbujeandoGameScene);
+			return;
+		}
+
+		const currentTime = performance.now();
 		for (let i = 0; i < this.backgrounds.length; i++) {
 			const background = this.backgrounds[i];
 
-			// Mover el fondo en función del movimiento de la burbuja
 			if (this.bubble.x < 0) {
 				background.tilePosition.x += 0.2 * _dt;
 			} else {
-				// Ajustar la posición del fondo cuando la burbuja se mueve hacia la izquierda
 				background.tilePosition.x -= 0.2 * _dt;
 			}
 		}
 
-		// Movimiento horizontal de la burbuja (solo hacia la izquierda)
-		if (this.moveLeft) {
-			this.bubble.x -= 5; // Mover la burbuja hacia la izquierda
+		if (Keyboard.shared.justReleased("Space")) {
+			this.isJumping = true;
 		}
 
-		// Aplicar gravedad
 		this.velocityY += this.gravity;
 
-		// Si el jugador está presionando espacio, aplica fuerza hacia arriba
 		if (this.isJumping) {
 			this.velocityY = this.lift;
+			this.isJumping = false;
 		}
 
-		// Actualizar posición de la burbuja
 		this.bubble.y += this.velocityY;
 
-		// Limitar el tamaño de la burbuja
-		if (this.bubbleSize > 3 || this.bubbleSize < 0) {
-			console.log("Game Over: Bubble size limit exceeded");
-			this.endGame();
-		}
-
-		// Actualizar posición de obstáculos y recolectables
 		this.updateObstacles();
 		this.updateCollectibles();
 
-		// Verificar si la burbuja toca el suelo o sale de pantalla
 		if (this.bubble.y > ScaleHelper.IDEAL_HEIGHT || this.bubble.y < 0) {
-			console.log("Game Over: Bubble fell or flew out of bounds");
 			this.endGame();
 		}
 
@@ -172,22 +166,29 @@ export class TestScene extends PixiScene {
 				.easing(Easing.Quadratic.InOut) // Agregar un easing para suavizar la animación
 				.start();
 
+			// Reducir la barra de vida
+			const newValue = this.uiLeftContainer.currentPoints - 10;
+			this.uiLeftContainer.hpBar.updateValue(newValue, 200);
+			this.uiLeftContainer.currentPoints = newValue;
 			// Verificar los límites del tamaño de la burbuja
-			if (this.bubbleSize > 3 || this.bubbleSize < 0.5) {
+			if (this.bubbleSize > 3 || this.bubbleSize < 0.1) {
 				console.log("Game Over: Bubble size limit exceeded");
 				this.endGame();
 			}
 
-			if (this.bubbleSize >= 3) {
-				this.gravity = 0.9;
-			} else if (this.bubbleSize >= 2) {
-				this.gravity = 0.5;
-			} else if (this.bubbleSize >= 1) {
+			console.log("this.bubbleSize", this.bubbleSize);
+			if (this.bubbleSize >= 0.35) {
 				this.gravity = 0.2;
+			} else if (this.bubbleSize >= 0.25) {
+				this.gravity = 0.03;
+			} else if (this.bubbleSize >= 0.2) {
+				this.gravity = 0.01;
 			} else {
 				console.log("acabas de arrancar a jugar tu escala es a la inicial");
 			}
 		}
+
+		this.uiRightContainer.updateScore(_dt);
 	}
 
 	private updateObstacles(): void {
@@ -195,8 +196,6 @@ export class TestScene extends PixiScene {
 			// Los obstáculos se mueven hacia la izquierda
 			obstacle.x -= this.velocityX;
 			if (obstacle.x < -50) {
-				console.log("obstacle.x", obstacle.x);
-				console.log("obstacle.y", obstacle.y);
 				// Si el obstáculo ya salió de la pantalla (considerando su ancho)
 				this.sceneContainer.removeChild(obstacle);
 				this.obstacles.splice(index, 1);
@@ -205,7 +204,7 @@ export class TestScene extends PixiScene {
 			if (this.hitTest(this.bubble, obstacle)) {
 				// Verificar colisión con la burbuja
 				// console.log("Game Over: Hit an obstacle");
-				this.endGame();
+				new Tween(this.bubble).from({ alpha: 0.1 }).to({ alpha: 0.8 }, 100).repeat(10).yoyo(true).start();
 			}
 		});
 	}
@@ -223,8 +222,16 @@ export class TestScene extends PixiScene {
 			if (this.hitTest(this.bubble, collectible)) {
 				// Verificar si la burbuja tocó un objeto coleccionable
 				this.bubbleSize += 0.01;
-				this.bubble.scale.set(this.bubbleSize);
-				SoundLib.playSound("sfxBubble", {});
+				new Tween(this.bubble.scale)
+					.to({ x: this.bubbleSize, y: this.bubbleSize }, 200) // Escala progresiva en 500 ms
+					.easing(Easing.Bounce.Out) // Agregar un easing para suavizar la animación
+					.start();
+
+				const newValue = this.uiLeftContainer.currentPoints + 10;
+				this.uiLeftContainer.hpBar.updateValue(newValue, 200);
+				this.uiLeftContainer.currentPoints = newValue;
+
+				// SoundLib.playSound("sfxBubble", {});
 				this.sceneContainer.removeChild(collectible);
 				this.collectibleBubbles.splice(index, 1);
 			}
@@ -232,7 +239,26 @@ export class TestScene extends PixiScene {
 	}
 
 	private endGame(): void {
+		this.gameOver = true;
 		// console.log("Game Over: Restarting scene...");
 		// Lógica para reiniciar o finalizar el juego
+
+		this.uiRightContainer.saveScore();
+
+		console.log(this.uiRightContainer.getHighScores());
+		// Opcional: Reinicia la distancia para un nuevo intento
+		this.uiRightContainer.resetScore();
+	}
+
+	public override onResize(_newW: number, _newH: number): void {
+		ScaleHelper.setScaleRelativeToIdeal(this.sceneContainer, _newW, _newH, 1920, 1080, ScaleHelper.FILL);
+
+		ScaleHelper.setScaleRelativeToIdeal(this.uiLeftContainer, _newW, _newH, 1920, 1080, ScaleHelper.FIT);
+		this.uiLeftContainer.x = 0;
+		this.uiLeftContainer.y = 0;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.uiRightContainer, _newW, _newH, 1920, 1080, ScaleHelper.FIT);
+		this.uiRightContainer.x = 0;
+		this.uiRightContainer.y = 0;
 	}
 }

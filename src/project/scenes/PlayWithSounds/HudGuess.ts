@@ -54,6 +54,7 @@ export class HudGuess extends PixiScene {
 		this.btnOpenPlay.visible = false;
 		this.btnPause.visible = true;
 	}
+
 	private pauseGuessing(): void {
 		this.emit(HudGuess.PAUSE_EVENT as any);
 		console.log(HudGuess.PAUSE_EVENT);

@@ -166,11 +166,12 @@
 			"name": "bubble",
 			"assets": {
 				"bubble": "./img/ggj/burbuja.png",
+				"bubbleknob": "./img/ggj/bubbleknob.png",
 				"knife": "./img/ggj/knife.png",
 				"kitchen": "./img/ggj/kitchen.png",
+				"title": "./img/ggj/burbujeandotitle.jpg",
 				"sfxBubble": "sfx/runfall/bubble-popping.mp3",
-				"bgMusic": "./music/wizard.wav"
-				
+				"bgMusic": "./music/wizard.wav"	
 			}
 		},
 		{
