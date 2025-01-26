@@ -43,7 +43,7 @@ export class BubbleNameInputPopUp extends PixiScene {
 		this.fadeAndBlocker.scale.set(10);
 
 		// Create background sprite
-		this.background = new NineSlicePlane(Texture.from("scoreFrame"), 10, 10, 10, 10);
+		this.background = new NineSlicePlane(Texture.from("bubbleFrame"), 10, 10, 10, 10);
 		this.background.pivot.set(this.background.width * 0.5, this.background.height * 0.5);
 		this.addChild(this.background);
 	}
@@ -75,7 +75,9 @@ export class BubbleNameInputPopUp extends PixiScene {
 			this.playerName,
 			new TextStyle({
 				fontSize: 50,
-				fill: 0xffffff,
+				fill: 0x97d9be,
+				dropShadow: true,
+				dropShadowColor: 0x000000,
 				fontFamily: "DK Boarding House III",
 			})
 		);
@@ -159,15 +161,15 @@ export class BubbleNameInputPopUp extends PixiScene {
 			})
 		);
 		titleText.anchor.set(0.5);
-		titleText.position.set(titleText.width, titleText.height * 1.55);
+		titleText.position.set(titleText.width - 15, titleText.height * 1.55);
 		this.background.addChild(titleText);
 	}
 
 	private createConfirmButton(): void {
-		this.confirmButton = Sprite.from("continueBTN");
+		this.confirmButton = Sprite.from("continue");
 		this.confirmButton.anchor.set(0.5);
-		this.confirmButton.scale.set(0.6);
-		this.confirmButton.position.set(460, 380);
+		this.confirmButton.scale.set(0.25);
+		this.confirmButton.position.set(420, 380);
 		this.confirmButton.eventMode = "static";
 		this.background.addChild(this.confirmButton);
 
@@ -186,13 +188,13 @@ export class BubbleNameInputPopUp extends PixiScene {
 	private addButtonHoverEffect(button: Sprite): void {
 		button.on("pointerover", () => {
 			new Tween(button)
-				.to({ scale: { x: 0.65, y: 0.65 } }, 200)
+				.to({ scale: { x: 0.3, y: 0.3 } }, 200)
 				.easing(Easing.Quadratic.Out)
 				.start();
 		});
 		button.on("pointerout", () => {
 			new Tween(button)
-				.to({ scale: { x: 0.6, y: 0.6 } }, 200)
+				.to({ scale: { x: 0.25, y: 0.25 } }, 200)
 				.easing(Easing.Quadratic.Out)
 				.start();
 		});

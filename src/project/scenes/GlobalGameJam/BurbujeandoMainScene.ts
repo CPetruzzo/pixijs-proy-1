@@ -1,20 +1,23 @@
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Container, Sprite } from "pixi.js";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
-import { SoundLib } from "../../../engine/sound/SoundLib";
+//  import { SoundLib } from "../../../engine/sound/SoundLib";
 import { Manager } from "../../..";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 import { Easing, Tween } from "tweedle.js";
 import { BubbleLoaderScene } from "./LoaderScene";
+import { SoundLib } from "../../../engine/sound/SoundLib";
 
 export class BurbujeandoMainScene extends PixiScene {
-	public static readonly BUNDLES = ["bubble", "ggj", "fallrungame", "sfx", "music"];
+	public static readonly BUNDLES = ["bubble", "sfx", "music"];
 	private backgroundContainer: Container = new Container();
 	private video: HTMLVideoElement;
 	constructor() {
 		super();
 
 		this.addChild(this.backgroundContainer);
+
+		SoundLib.playMusic("pinkocean", { loop: true, volume: 0.2 });
 
 		const bG = Sprite.from("title");
 		bG.anchor.set(0.5);
@@ -32,7 +35,7 @@ export class BurbujeandoMainScene extends PixiScene {
 
 		this.video = document.createElement("video");
 		this.video.preload = "auto";
-		this.video.src = "../../../../../img/ggj/kidbubble.mp4";
+		this.video.src = "../../../../../preloader/bubblevideo.mp4";
 		this.video.muted = true;
 
 		play.eventMode = "static";
@@ -41,7 +44,7 @@ export class BurbujeandoMainScene extends PixiScene {
 				.to({ scale: { x: 1.3, y: 1.3 } }, 500)
 				.easing(Easing.Bounce.Out)
 				.start();
-			SoundLib.playSound("sfxBubble", {});
+			SoundLib.playSound("sfxBubble", { volume: 0.2 });
 		});
 		play.on("pointerout", () => {
 			new Tween(play)
@@ -54,7 +57,8 @@ export class BurbujeandoMainScene extends PixiScene {
 				.to({ scale: { x: 1.3, y: 1.3 } }, 500)
 				.easing(Easing.Bounce.Out)
 				.start();
-			SoundLib.playSound("sfxBubble", {});
+			SoundLib.playSound("sfxBubble", { volume: 0.2 });
+			SoundLib.stopAllMusic();
 			Manager.changeScene(BubbleLoaderScene, { transitionClass: FadeColorTransition });
 		});
 

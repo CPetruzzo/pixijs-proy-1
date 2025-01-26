@@ -11,6 +11,7 @@ import { BurbujeandoGameScene } from "./BurbujeandoGameScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Timer } from "../../../engine/tweens/Timer";
 import { BubbleNameInputPopUp } from "./BurbujeandoNameInputPopUp";
+import { SoundLib } from "../../../engine/sound/SoundLib";
 
 interface HighscoreEntry {
 	playerName: string;
@@ -103,6 +104,12 @@ export class BurbujeandoHighScorePopUp extends PixiScene {
 
 	public async showHighscores(playerScore: number): Promise<void> {
 		const playerName = await this.showNameInputDialog();
+
+		const frame = Sprite.from("frame");
+		frame.anchor.set(0.5);
+		frame.scale.set(0.4);
+		frame.position.set(0, 180);
+		// this.background.addChild(frame);
 
 		const title = new Text("Highscores", { fontSize: 90, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
 		title.anchor.set(0.5);
@@ -204,6 +211,7 @@ export class BurbujeandoHighScorePopUp extends PixiScene {
 				resolve(true);
 
 				if (this.restart) {
+					SoundLib.stopAllMusic();
 					Manager.changeScene(BurbujeandoGameScene);
 				}
 			});
@@ -243,6 +251,7 @@ export class BurbujeandoHighScorePopUp extends PixiScene {
 			.start()
 			.onComplete(() => {
 				this.closeHandler();
+				SoundLib.stopAllMusic();
 				Manager.changeScene(BurbujeandoGameScene);
 			});
 	}

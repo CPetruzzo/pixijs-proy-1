@@ -26,7 +26,7 @@ export class BurbujeandoGameScene extends PixiScene {
 	private collectibleBubbles: Sprite[] = [];
 	private isJumping = false;
 
-	public static readonly BUNDLES = ["bubble", "basquet"];
+	public static readonly BUNDLES = ["bubble"];
 	private sceneContainer: Container = new Container();
 	private backgroundContainer: Container = new Container();
 	private backgrounds: TilingSprite[] = [];
@@ -44,18 +44,20 @@ export class BurbujeandoGameScene extends PixiScene {
 	private difficultyLevel: number = 1;
 	private static BASE_BUBBLE_SPAWN_TIME: number = 500;
 	private static BASE_OBSTACLE_SPAWN_TIME: number = 2000;
-	public static OBSTACLE_SPAWN_TIME: number;
-	public static BUBBLE_SPAWN_TIME: number;
 	private popupOpened: boolean = false;
 	private bubbleEmitter: BubbleEmitter;
 	private bubbleParticleContainer: Container = new Container();
+	private obstacleSpawnTime: number;
+	private bubbleSpawnTime: number;
+	private obstacleSpawnTimer: Timer;
+	private bubbleSpawnTimer: Timer;
 
 	constructor() {
 		super();
 		// Opcional: Reinicia la distancia para un nuevo intento
 		this.uiRightContainer.resetScore();
 
-		SoundLib.playMusic("bgMusic", { loop: true });
+		SoundLib.playMusic("bouncy", { loop: true, volume: 0.1 });
 		this.addChild(this.backgroundContainer, this.sceneContainer, this.uiMiddleContainer, this.uiRightContainer);
 
 		this.kitchenBackground = new TilingSprite(Texture.from("kitchen"), ScaleHelper.IDEAL_WIDTH * 100, ScaleHelper.IDEAL_HEIGHT * 100);
@@ -90,9 +92,35 @@ export class BurbujeandoGameScene extends PixiScene {
 	}
 
 	private scheduleSpawn(): void {
-		// Usa los tiempos ajustados según el nivel de dificultad
-		setInterval(() => this.spawnObstacle(), BurbujeandoGameScene.BASE_OBSTACLE_SPAWN_TIME / this.difficultyLevel);
-		setInterval(() => this.spawnCollectibleBubble(), BurbujeandoGameScene.BASE_BUBBLE_SPAWN_TIME / this.difficultyLevel);
+		// Establecemos los tiempos base
+		this.obstacleSpawnTime = BurbujeandoGameScene.BASE_OBSTACLE_SPAWN_TIME;
+		this.bubbleSpawnTime = BurbujeandoGameScene.BASE_BUBBLE_SPAWN_TIME;
+
+		// Inicia el ciclo de aparición de obstáculos
+		const obstacleSpawnTimer = new Timer()
+			.to(this.obstacleSpawnTime)
+			.repeat(Infinity)
+			.start()
+			.onRepeat(() => {
+				if (!this.isPaused && !this.isPopupOpen) {
+					this.spawnObstacle();
+				}
+			});
+
+		// Inicia el ciclo de aparición de burbujas coleccionables
+		const bubbleSpawnTimer = new Timer()
+			.to(this.bubbleSpawnTime)
+			.repeat(Infinity)
+			.start()
+			.onRepeat(() => {
+				if (!this.isPaused && !this.isPopupOpen) {
+					this.spawnCollectibleBubble();
+				}
+			});
+
+		// Guarda los temporizadores para ajustar la dificultad más adelante
+		this.obstacleSpawnTimer = obstacleSpawnTimer;
+		this.bubbleSpawnTimer = bubbleSpawnTimer;
 	}
 
 	private createBubble(): void {
@@ -161,6 +189,7 @@ export class BurbujeandoGameScene extends PixiScene {
 
 	public override update(_dt: number): void {
 		if (this.endGame()) {
+			SoundLib.playSound("sfxLose", { volume: 0.3 });
 			this.isPaused = true;
 			return;
 		}
@@ -172,6 +201,7 @@ export class BurbujeandoGameScene extends PixiScene {
 		this.onLevelProgressDifficulty();
 
 		if (Keyboard.shared.justPressed("Escape")) {
+			SoundLib.stopAllMusic();
 			Manager.changeScene(BurbujeandoMainScene, { transitionClass: FadeColorTransition });
 			return;
 		}
@@ -222,7 +252,7 @@ export class BurbujeandoGameScene extends PixiScene {
 		if (currentTime - this.lastShrinkTime > this.shrinkInterval) {
 			this.lastShrinkTime = currentTime; // Actualiza el tiempo
 			this.bubbleSize -= 0.01; // Reduce el tamaño de la burbuja
-			console.log("Bubble size reduced:", this.bubbleSize);
+			// console.log("Bubble size reduced:", this.bubbleSize);
 
 			// Aplicar el tween a la escala de la burbuja
 			new Tween(this.bubble.scale)
@@ -235,16 +265,25 @@ export class BurbujeandoGameScene extends PixiScene {
 			this.uiMiddleContainer.hpBar.updateValue(newValue, 200);
 			this.uiMiddleContainer.currentPoints = newValue;
 			// Verificar los límites del tamaño de la burbuja
-			if (this.bubbleSize > 3 || this.bubbleSize <= 0) {
-				console.log("this.bubbleSize", this.bubbleSize);
-				console.log("Game Over: Bubble size limit exceeded");
-				this.endGame();
+			if (this.bubbleSize > 0.4 || this.bubbleSize <= 0) {
+				if (this.bubbleSize >= 1) {
+					new Tween(this.bubble)
+						.to({ scale: { x: 2, y: 2 } }, 500)
+						.start()
+						.onComplete(() => {
+							this.endGame();
+						});
+				} else {
+					this.endGame();
+				}
+				// console.log("Game Over: Bubble size limit exceeded");
 
 				this.gameOver = true; // esto es raro
 				this.isPaused = true;
 			}
-
 			console.log("this.bubbleSize", this.bubbleSize);
+
+			// console.log("this.bubbleSize", this.bubbleSize);
 			if (this.bubbleSize >= 0.35) {
 				this.gravity = 0.1;
 			} else if (this.bubbleSize >= 0.25) {
@@ -252,7 +291,7 @@ export class BurbujeandoGameScene extends PixiScene {
 			} else if (this.bubbleSize >= 0.2) {
 				this.gravity = 0.01;
 			} else {
-				console.log("acabas de arrancar a jugar tu escala es a la inicial");
+				//  console.log("acabas de arrancar a jugar tu escala es a la inicial");
 			}
 		}
 
@@ -272,6 +311,8 @@ export class BurbujeandoGameScene extends PixiScene {
 			if (this.hitTest(this.bubble, obstacle)) {
 				// Verificar colisión con la burbuja
 				// console.log("Game Over: Hit an obstacle");
+				SoundLib.playSound("sfxWhoosh", { volume: 0.4, speed: 5 });
+
 				new Tween(this.bubble)
 					.from({ alpha: 0.1 })
 					.to({ alpha: 0.8 }, 100)
@@ -307,6 +348,8 @@ export class BurbujeandoGameScene extends PixiScene {
 			}
 
 			if (this.hitTest(this.bubble, collectible)) {
+				SoundLib.playSound("sfxBubblePop", { volume: 0.9 });
+
 				// Verificar si la burbuja tocó un objeto coleccionable
 				this.bubbleSize += 0.015;
 				new Tween(this.bubble.scale)
@@ -349,18 +392,20 @@ export class BurbujeandoGameScene extends PixiScene {
 	}
 
 	private onLevelProgressDifficulty(): void {
-		// Incrementa la dificultad con base en el puntaje
-		const currentScore = this.uiRightContainer.getHighScore() * 0.1;
-		if (currentScore > 100 * this.difficultyLevel) {
-			this.difficultyLevel++;
-			console.log(`Increased difficulty to level: ${this.difficultyLevel}`);
+		// Ajusta la dificultad cada cierto tiempo
+		const newLevel = Math.floor(this.uiRightContainer.currentScore / 100); // Cambia la escala según tu juego
+		if (newLevel > this.difficultyLevel) {
+			this.difficultyLevel = newLevel;
 
-			BurbujeandoGameScene.OBSTACLE_SPAWN_TIME = Math.max(500, BurbujeandoGameScene.BASE_OBSTACLE_SPAWN_TIME / this.difficultyLevel);
-			BurbujeandoGameScene.BUBBLE_SPAWN_TIME = Math.max(300, BurbujeandoGameScene.BASE_BUBBLE_SPAWN_TIME / this.difficultyLevel);
+			// Reduce el tiempo de aparición según la dificultad
+			this.obstacleSpawnTime = Math.max(500, BurbujeandoGameScene.BASE_OBSTACLE_SPAWN_TIME - this.difficultyLevel * 100);
+			this.bubbleSpawnTime = Math.max(200, BurbujeandoGameScene.BASE_BUBBLE_SPAWN_TIME - this.difficultyLevel * 50);
 
-			// Opcional: Incrementar la velocidad de los obstáculos
-			this.velocityX += 0.3;
-			console.log(`Obstacle speed increased to: ${this.velocityX}`);
+			// Actualiza los temporizadores con los nuevos valores
+			this.obstacleSpawnTimer.to(this.obstacleSpawnTime);
+			this.bubbleSpawnTimer.to(this.bubbleSpawnTime);
+
+			console.log(`Dificultad aumentada a nivel ${this.difficultyLevel}. Nuevos tiempos: Obstáculos = ${this.obstacleSpawnTime}ms, Burbujas = ${this.bubbleSpawnTime}ms`);
 		}
 	}
 

@@ -3,6 +3,7 @@ import { Container, Text } from "pixi.js";
 export class UIContainerRight extends Container {
 	private distanceText: Text;
 	private distance: number = 0;
+	public currentScore: number;
 
 	constructor() {
 		super();

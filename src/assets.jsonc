@@ -172,12 +172,21 @@
 				"bubbleknob": "./img/ggj/bubbleknob.png",
 				"knife": "./img/ggj/knife.png",
 		 		"frame": "./img/ggj/frame1.png",
+		 		"bubbleFrame": "./img/ggj/frame.png",
 		 		"play": "./img/ggj/play.png",
-				"kitchen": "./img/ggj/kitchen.png",
+				"kitchen": "./img/ggj/kitchen.jpg",
 				"bubbleParticle": "./img/ggj/Bubbles50px.png",
+				"continue": "./img/ggj/continuebutton.png",
 				"title": "./img/ggj/burbujeandotitle.jpg",
-				"sfxBubble": "/img/ggj/bubble-popping.mp3",
-				"bgMusic": "./img/ggj/wizard.wav"	
+				"sfxBubble": "./sfx/runfall/bubble-popping.mp3",
+				"bgMusic": "./img/ggj/wizard.wav",
+				"intro": "./music/burbujeandoando/intro.mp3",
+				"bouncy": "./music/burbujeandoando/bouncy.mp3",
+				"pinkocean": "./music/burbujeandoando/pinkocean.mp3",
+				"sfxBubblePop": "./sfx/ggj/bubble.wav",
+				"sfxLose": "./sfx/ggj/lose.mp3",
+				"sfxWhoosh": "./sfx/ggj/woosh.wav"
+					
 			}
 		},
 		{
