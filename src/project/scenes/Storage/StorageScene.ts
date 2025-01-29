@@ -173,9 +173,9 @@ export class StorageScene extends PixiScene {
 		const moved = this.storageManager.moveItemBetweenSlots(index, newIndex);
 
 		if (moved) {
-			console.log(`Moved item: ${item?.name} from slot ${index} to slot ${newIndex}`);
+			console.log(`Moved item: ${item?.itemName} from slot ${index} to slot ${newIndex}`);
 		} else {
-			console.log(`Failed to move item. Returning ${item?.name} to original slot.`);
+			console.log(`Failed to move item. Returning ${item?.itemName} to original slot.`);
 			sprite.position.set(index * 80 + 20, 60);
 		}
 
@@ -205,7 +205,7 @@ export class StorageScene extends PixiScene {
 		this.renderSlots();
 
 		if (added) {
-			console.log(`Spawned item: ${newItem.name}`);
+			console.log(`Spawned item: ${newItem.itemName}`);
 		} else {
 			console.log("No space available for new item.");
 		}

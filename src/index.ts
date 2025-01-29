@@ -17,7 +17,7 @@ import { JoystickEmits } from "./utils/Joystick";
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
-import { BurbujeandoMainScene } from "./project/scenes/GlobalGameJam/BurbujeandoMainScene";
+import { Scene3D } from "./project/scenes/3dgame/Scene3D";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -98,7 +98,7 @@ window.addEventListener("contextmenu", (e) => {
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
-	Manager.changeScene(BurbujeandoMainScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(Scene3D, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

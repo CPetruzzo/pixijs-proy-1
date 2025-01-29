@@ -1,10 +1,10 @@
 {
-  "name": "BurbujeandoAndo",
+  "name": "CachoPetruzzo",
   "version": "0.0.1",
   "description": "BunnyBox is a boilerplate/engine for pixijs. Descendant of the great killabunnies engine",
   "pwa": {
-    "name": "BurbujeandoAndo",
-    "short_name": "BurbujeandoAndo",
+    "name": "CachoPetruzzo",
+    "short_name": "CachoPetruzzo",
     "description": "My awesome Progressive Web App!",
     "background_color": "#ee0000"
   },

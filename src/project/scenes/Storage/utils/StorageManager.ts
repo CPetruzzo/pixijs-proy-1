@@ -85,10 +85,10 @@ export class StorageManager {
 	// Método para guardar el inventario en JSON
 	public saveInventoryToJSON(): string {
 		const inventory = this.slots
-			.filter((slot) => slot.item !== null) // Solo los slots con ítems
-			.map((slot) => slot.item); // Extraemos los ítems
+			.filter((slot) => slot.item !== null) // Only include slots with items
+			.map((slot) => slot.item); // Extract items
 
-		return JSON.stringify(inventory);
+		return JSON.stringify(inventory); // Uses the custom `toJSON` method
 	}
 
 	// Método para vaciar todos los slots

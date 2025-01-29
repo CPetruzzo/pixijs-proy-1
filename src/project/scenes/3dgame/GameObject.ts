@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { PhysicsContainer3d } from "./3DPhysicsContainer";
 
 export class GameObject extends PhysicsContainer3d {
@@ -11,7 +12,7 @@ export class Enemy extends GameObject { }
 
 export class GameObjectFactory {
 	public static createPlayer(): Player {
-		return new Player("Player", "firstperson");
+		return new Player("Player", "futurecop");
 	}
 
 	public static createEnemy(): Enemy {

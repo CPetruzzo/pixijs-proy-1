@@ -74,47 +74,47 @@ export abstract class PixiScene extends Container implements IScene {
 	/**
 	 * Called when a popup is opened.
 	 */
-	public onPopupOpen(_popupReference: IScene, _popupParams?: any[]): void {}
+	public onPopupOpen(_popupReference: IScene, _popupParams?: any[]): void { }
 
 	/**
 	 * Called when a popup is closed.
 	 */
-	public onPopupClose(_popupClass: new (...args: any[]) => IScene, _lastWords?: any): void {}
+	public onPopupClose(_popupClass: new (...args: any[]) => IScene, _lastWords?: any): void { }
 
 	/**
 	 * Called when a scene is opened as modal.
 	 */
-	public onSceneOpen(_sceneReference: IScene, _sceneParams?: any[]): void {}
+	public onSceneOpen(_sceneReference: IScene, _sceneParams?: any[]): void { }
 	/**
 	 * Called when a scene as modal is closed.
 	 */
-	public onSceneClose(_sceneClass: new (...args: any[]) => IScene, _lastWords?: any): void {}
+	public onSceneClose(_sceneClass: new (...args: any[]) => IScene, _lastWords?: any): void { }
 
 	/**
 	 * Called after the first resize. After onResize()
 	 */
-	public onStart(): void {}
+	public onStart(): void { }
 
 	/**
 	 * Called when the transition finished. After onStart().
 	 */
-	public onShow(): void {}
+	public onShow(): void { }
 
 	/**
 	 * Called when the transition covered completely this scene and just before destroying it.
 	 * @param	navigatingTo To which scene you are going. WARNING: The target scene has not been created yet AND it can change.
 	 */
-	public onDestroy(_navigatingTo: new (...args: any[]) => IScene): void {}
+	public onDestroy(_navigatingTo: new (...args: any[]) => IScene): void { }
 
 	/**
 	 * When the game becomes the active window
 	 */
-	public onFocus(): void {}
+	public onFocus(): void { }
 
 	/**
 	 * When the game stop being the active window
 	 */
-	public onFocusLost(): void {}
+	public onFocusLost(): void { }
 
 	/**
 	 * When the canvas size changes. For when we need elastic stuff
@@ -122,30 +122,30 @@ export abstract class PixiScene extends Container implements IScene {
 	 * @param	newW	The new Width
 	 * @param	newH	The new Height
 	 */
-	public onResize(_newW: number, _newH: number): void {}
+	public onResize(_newW: number, _newH: number): void { }
 
 	/**
 	 * This is called from the manager when you do a "Manager.pause()"
 	 * Manager won't check this function. Manager will only call pause. Your game must check if it's already paused or not.
 	 */
-	public onPause(): void {}
+	public onPause(): void { }
 
 	/**
 	 * This is called from the manager when you do a "Manager.resume()"
 	 * Manager won't check this function. Manager will only call resume. Your game must check if it's already resumed or not.
 	 */
-	public onResume(): void {}
+	public onResume(): void { }
 
 	/**
 	 * Function called each frame.
 	 * @param	dt Delta Time. The time in miliseconds since the last excecution.
 	 */
-	public update(_dt: number): void {}
+	public update(_dt: number): void { }
 
 	/**
 	 * This is called from the manager when a message from an external site came through
 	 */
-	public onMessage(_event: MessageEvent<any>): void {}
+	public onMessage(_event: MessageEvent<any>): void { }
 
 	public override destroy(): void {
 		// If I have stages in the scene

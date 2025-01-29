@@ -42,7 +42,7 @@ export class PhysicsContainer3d extends Container3D {
 	public jump(): void {
 		if (this.canJump) {
 			this.canJump = false;
-			this.speed.y = 0.15;
+			this.speed.y = 0.02;
 		}
 	}
 }

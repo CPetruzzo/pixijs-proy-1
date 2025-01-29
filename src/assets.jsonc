@@ -171,6 +171,7 @@
 				"bubbleLB": "./img/ggj/bubbleLB.jpg",
 				"bubbleknob": "./img/ggj/bubbleknob.png",
 				"knife": "./img/ggj/knife.png",
+				"oldKnife": "./img/ggj/knife2.png",
 		 		"frame": "./img/ggj/frame1.png",
 		 		"bubbleFrame": "./img/ggj/frame.png",
 		 		"play": "./img/ggj/play.png",
@@ -457,6 +458,8 @@
 			"assets": {
 				"duckModel": "./models/duck/Duck.gltf",
 				"dancingStormtrooper": "./models/dancing-stormtrooper.glb",
+				"house": "./models/house.glb",
+				"futurecop": "./models/futurecop.glb",
 				"gridTexture": "./img/big_placeholder/bg_game.png",
 				"impala": "models/impala/impala.gltf",
 				"road": "models/road/road.gltf",
