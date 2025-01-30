@@ -51,7 +51,7 @@ export class Pixi3dScene extends PixiScene {
 	constructor() {
 		super();
 
-		this.firstperson = GameObjectFactory.createPlayer();
+		this.firstperson = GameObjectFactory.createPlayer("futurecop");
 		this.firstperson.name = "firstperson";
 		this.impala = Model.from(Assets.get("impala"));
 		this.impala.name = "impala";
@@ -124,7 +124,7 @@ export class Pixi3dScene extends PixiScene {
 
 		this.addChild(
 			this.impala,
-			// this.hauntedhouse,
+			this.hauntedhouse,
 			this.firstperson,
 			this.dragon,
 			// this.textContainer,
@@ -571,7 +571,7 @@ export class Pixi3dScene extends PixiScene {
 				}
 			}
 			if (Keyboard.shared.justPressed("NumpadAdd")) {
-				new Tween(this.cameraControl).to({ distance: 0, y: this.cameraControl.target.y }, 500).start();
+				new Tween(this.cameraControl).to({ distance: 7, y: this.cameraControl.target.y }, 500).start();
 			}
 
 			this.impalaBox = this.impala.getBoundingBox();

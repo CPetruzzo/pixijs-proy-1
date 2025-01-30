@@ -459,6 +459,7 @@
 				"duckModel": "./models/duck/Duck.gltf",
 				"dancingStormtrooper": "./models/dancing-stormtrooper.glb",
 				"house": "./models/house.glb",
+				"cublosion": "./models/cublosion.glb",
 				"futurecop": "./models/futurecop.glb",
 				"gridTexture": "./img/big_placeholder/bg_game.png",
 				"impala": "models/impala/impala.gltf",

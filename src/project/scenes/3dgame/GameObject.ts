@@ -11,8 +11,15 @@ export class Player extends GameObject { }
 export class Enemy extends GameObject { }
 
 export class GameObjectFactory {
-	public static createPlayer(): Player {
-		return new Player("Player", "futurecop");
+	public static createPlayer(name?: string): Player {
+		switch (name) {
+			case "futurecop":
+				return new Player("Player", "futurecop");
+			case "hands":
+				return new Player("Player", "firstperson");
+			default:
+				return new Player("Player", "firstperson");
+		}
 	}
 
 	public static createEnemy(): Enemy {
