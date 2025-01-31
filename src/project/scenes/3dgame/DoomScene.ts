@@ -233,32 +233,35 @@ export class DoomScene extends PixiScene {
 			this.bullets.forEach((bullet, bulletIndex) => {
 				if (Math.abs(enemy.position.z - bullet.position.z) < 0.5 && Math.abs(enemy.position.x - bullet.position.x) < 0.5) {
 					// Eliminamos la bala y el enemigo de inmediato (por ahora, antes de la animación)
-					this.removeChild(enemy);
-					this.removeChild(bullet);
-					this.enemies.splice(enemyIndex, 1);
-					this.bullets.splice(bulletIndex, 1);
 
 					// Creamos la animación de la explosión
 					const cublosion = Model.from(Assets.get("cublosion"));
 
 					// Configuración de la animación para que no tenga delay
 					cublosion.animations[0].loop = false;
+					cublosion.animations[0].speed = 2;
 					cublosion.animations[0].play();
-
-					// Ajustar el comportamiento de la animación
-					cublosion.meshes.forEach((mesh) => {
-						const mat = mesh.material as StandardMaterial;
-						mat.exposure = 1.1;
-						mat.roughness = 0.6;
-						mat.metallic = 0;
-					});
-
-					// Posicionamos la animación en la misma posición que el enemigo
 					cublosion.position.set(enemy.position.x, enemy.position.y - 1, enemy.position.z);
 
+					this.removeChild(enemy);
+					this.removeChild(bullet);
+					this.enemies.splice(enemyIndex, 1);
+					this.bullets.splice(bulletIndex, 1);
+
+					// Ajustar el comportamiento de la animación
+					// cublosion.meshes.forEach((mesh) => {
+					// 	const mat = mesh.material as StandardMaterial;
+					// 	mat.exposure = 1.1;
+					// 	mat.roughness = 0.6;
+					// 	mat.metallic = 0;
+					// });
+
+					// Posicionamos la animación en la misma posición que el enemigo
+
 					// Para asegurarnos de que la animación empieza inmediatamente
-					cublosion.animations[0].stop(); // Detenemos cualquier animación que pueda estar en curso
+					// cublosion.animations[0].stop(); // Detenemos cualquier animación que pueda estar en curso
 					cublosion.animations[0].play(); // Reanudamos la animación desde 0, sin retraso
+					console.log("cublosion.animations", cublosion.animations);
 
 					// Añadimos la animación a la escena
 					this.addChild(cublosion);

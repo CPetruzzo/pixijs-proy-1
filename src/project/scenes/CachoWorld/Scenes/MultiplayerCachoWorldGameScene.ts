@@ -8,28 +8,29 @@ import { MAX_MESSAGES } from "../../../../utils/constants";
 
 import { WorldMap } from "../WorldMap";
 import type { ChatMessage } from "../Chat";
-import {
-	// Chat,
-	Routes,
-} from "../Chat";
+import { Routes } from "../Chat";
 import { Room } from "../Classes/Room";
 import { Portal } from "../Classes/Portal";
 import { RoomScene } from "./RoomScene";
 
 export class MultiplayerCachoWorldGameScene extends Room {
+	public static readonly BUNDLES = ["joystick", "cachoworld"];
+
+	private localPlayerId: string;
+
 	// #region VARIABLES
 	private playersInRoom: Record<string, CachoWorldPlayer> = {};
 	private playerIdInRoom: string;
-	private joystick: JoystickMultiplayerCachoWorld;
-	public static readonly BUNDLES = ["joystick", "cachoworld"];
+
 	private worldContainer: Container = new Container();
 	private chatContainer: Container;
-	private chatInput: HTMLInputElement;
 
 	private usernameInput: HTMLInputElement; // Nuevo input para username
+	private chatInput: HTMLInputElement;
 	private username: string = ""; // Almacenar el username localmente
 
-	private localPlayerId: string;
+	private joystick: JoystickMultiplayerCachoWorld;
+
 	private worldMap: WorldMap;
 	private debugGraphics: Graphics;
 	private portal: Portal;

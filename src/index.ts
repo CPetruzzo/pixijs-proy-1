@@ -17,7 +17,7 @@ import { JoystickEmits } from "./utils/Joystick";
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
-import { DoomScene } from "./project/scenes/3dgame/DoomScene";
+import { Multiplayer3DScene } from "./project/scenes/3dgame/Multiplayer3DScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -98,7 +98,7 @@ window.addEventListener("contextmenu", (e) => {
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
-	Manager.changeScene(DoomScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(Multiplayer3DScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

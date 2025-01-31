@@ -121,6 +121,7 @@
 		{
 			"name": "music",
 			"assets": {
+				"battle": "./music/battle.mp3",
 				"music": "./music/musical.mp3",
 				"haunting": "./music/hauntingloli.mp3"
 			}
