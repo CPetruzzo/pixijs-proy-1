@@ -2,10 +2,8 @@ import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Container, Sprite } from "pixi.js";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Manager } from "../../..";
-import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 import { Easing, Tween } from "tweedle.js";
 import { SoundLib } from "../../../engine/sound/SoundLib";
-import { Multiplayer3DScene } from "./Multiplayer3DScene";
 
 export class MuliplayerLobby extends PixiScene {
 	public static readonly BUNDLES = ["bubble", "sfx", "music"];
@@ -48,7 +46,7 @@ export class MuliplayerLobby extends PixiScene {
 				.easing(Easing.Bounce.Out)
 				.start();
 			SoundLib.stopAllMusic();
-			Manager.changeScene(Multiplayer3DScene, { transitionClass: FadeColorTransition });
+			Manager.closeScene(this);
 		});
 
 		this.backgroundContainer.pivot.set(this.backgroundContainer.width * 0.5, this.backgroundContainer.height * 0.5);

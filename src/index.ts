@@ -18,6 +18,7 @@ import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
 import { Multiplayer3DScene } from "./project/scenes/3dgame/Multiplayer3DScene";
+import { CameraOrbitControlAim } from "./project/scenes/3dgame/Camera/CameraOrbitControlAim";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -61,6 +62,9 @@ forceFocus();
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const Manager = new SceneManager(new PixiRenderer(pixiSettings));
 export const cameraControl = new CameraOrbitControl(pixiSettings.view);
+
+// Suponiendo que 'element' es el HTMLElement donde capturas los eventos y 'camera' es tu objeto Camera.
+export const aimControl = new CameraOrbitControlAim(pixiSettings.view, cameraControl.camera);
 
 export const isMobile: boolean = DataManager.getValue(JoystickEmits.MOBILE);
 

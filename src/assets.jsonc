@@ -127,6 +127,12 @@
 			}
 		},
 		{
+			"name": "musicShooter",
+			"assets": {
+				"battle": "./music/battle.mp3"
+			}
+		},
+		{
 			"name": "package-1",
 			"assets": {
 				"package 1 background": "./img/big_placeholder/background-1.jpg",
@@ -474,6 +480,15 @@
 				"running": "models/person/running/running.gltf",
 				"character": "models/character/scene.gltf",
 				"loli": "./models/cheers1.png"
+			}
+		},
+		{
+			"name": "3dshooter",
+			"assets": {
+				"house": "./models/house.glb",
+				"cublosion": "./models/cublosion.glb",
+				"cyberpunk_city": "./models/cyberpunk_city.glb",
+				"futurecop": "./models/futurecop.glb"
 			}
 		},
 		{
