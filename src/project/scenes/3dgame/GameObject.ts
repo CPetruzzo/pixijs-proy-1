@@ -12,6 +12,8 @@ export class Enemy extends GameObject { }
 
 export class City extends GameObject { }
 
+export class Fire extends GameObject { }
+
 export class GameObjectFactory {
 	public static createPlayer(name?: string): Player {
 		switch (name) {
@@ -30,6 +32,10 @@ export class GameObjectFactory {
 
 	public static createCity(): City {
 		return new City("City", "cyberpunk_city");
+	}
+
+	public static createFire(): Fire {
+		return new Fire("Fire", "fire");
 	}
 }
 

@@ -1,10 +1,11 @@
+import { FutureCachopUI } from "./Utils/FutureCachopUI";
 /* eslint-disable @typescript-eslint/restrict-plus-operands */
-import { StandardMaterial } from "pixi3d/pixi7";
+import { Light, LightingEnvironment, LightType, Point3D, StandardMaterial } from "pixi3d/pixi7";
 import { Color, Mesh3D } from "pixi3d/pixi7";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Manager } from "../../../index";
 import { Keyboard } from "../../../engine/input/Keyboard";
-import { EnviromentalLights } from "./Lights/Light";
+import { EnviromentalLights } from "./Lights/EnviromentalLights";
 import { VEHICULE_SPEED } from "../../../utils/constants";
 import { GameObjectFactory } from "./GameObject";
 import type { PhysicsContainer3d } from "./3DPhysicsContainer";
@@ -18,12 +19,16 @@ import { VirtualJoystick } from "./VirtualJoystick";
 import { Tween } from "tweedle.js";
 // import { SoundLib } from "../../../engine/sound/SoundLib";
 import { aimControl } from "../../../index";
+import { Crosshair } from "./Utils/Crosshair";
+import { WorldBuilding } from "./Utils/WorldBuilding";
+import { SoundLib } from "../../../engine/sound/SoundLib";
 
-interface RemoteBullet extends Mesh3D {
+export interface RemoteBullet extends Mesh3D {
 	direction: { x: number; y: number; z: number };
 }
 
 export class Multiplayer3DScene extends PixiScene {
+	// #region  VARIABLES
 	public static readonly BUNDLES = ["3dshooter", "package-1", "musicShooter", "sfx"];
 
 	private localPlayerId: string = Date.now().toString();
@@ -44,46 +49,46 @@ export class Multiplayer3DScene extends PixiScene {
 
 	private isDead: boolean = false;
 	private respawnButton: Container;
-	private localUI: Container;
 	private readonly BULLET_SPEED = 10;
 
 	private readonly DATABASE_NAME: string = "player3d";
 	private readonly BULLETS_DATABASE_NAME: string = "bullets";
 
-	private pointerShotFired: boolean = false;
-	private bottomRightContainer: Container = new Container();
 	private gameOverContainer: Container = new Container();
 	private joystickContainer: Container = new Container();
 
 	// Declaramos una variable para almacenar la función de desuscripción.
 	private playersUnsubscribe: () => void;
 	private joystick: VirtualJoystick;
-	private crosshair: Graphics;
-	private crosshairContainer: Container = new Container();
+	private crosshair: Crosshair;
 	public movementEnabled: boolean = true;
 
+	private ui: FutureCachopUI;
+
+	// Dentro de la clase Multiplayer3DScene (o donde corresponda)
+	private policeLightRed: Light;
+	private policeLightBlue: Light;
+	private isPaused: boolean = false;
+	public worldBuilding: WorldBuilding;
+	// private carFire: Model;
+
+	// #endregion VARIABLES
 	constructor() {
 		super();
 
+		// MUSIC
 		// SoundLib.playMusic("battle", { volume: 0.02, loop: true });
 
-		const ground = this.addChild(Mesh3D.createPlane());
-		ground.y = -0.8;
-		ground.scale.set(200, 15, 200);
+		// CREATE CITY AND GROUND
+		this.worldBuilding = new WorldBuilding(this);
 
+		// CREATE CAMERA
 		this.aimControl = aimControl;
-
-		this.aimControl.distance = 25;
-
-		this.aimControl.angles.x = 25;
+		this.aimControl.distance = 15;
+		this.aimControl.angles.x = 45;
 		this.aimControl.target = { x: 20, y: 1.3, z: 50 };
 
-		const city = GameObjectFactory.createCity() as PhysicsContainer3d & { hp?: number };
-		city.scale.set(54, 54, 54);
-		city.y = -4;
-		// this.addChild(city);
-
-		// Crear el joystick virtual
+		// CREATE JOYSTICK
 		this.joystick = new VirtualJoystick(100); // Radio de 50 (ajustable)
 		this.joystickContainer.addChild(this.joystick);
 
@@ -93,19 +98,8 @@ export class Multiplayer3DScene extends PixiScene {
 
 		this.init();
 		this.createRespawnButton();
-		this.createLocalUI();
 
 		this.enviromentalLights = new EnviromentalLights();
-
-		this.addChild(this.bottomRightContainer);
-		const button = new Graphics();
-		button.beginFill(0xffff00);
-		button.drawCircle(0, 0, 100);
-		button.endFill();
-		this.bottomRightContainer.interactive = true;
-		this.bottomRightContainer.addChild(button);
-		this.bottomRightContainer.eventMode = "static";
-		this.bottomRightContainer.on("pointerdown", this.onPointerTap.bind(this));
 
 		this.addChild(this.gameOverContainer);
 		const gameOverText = new Text("Game Over", new TextStyle({ fill: "red", fontSize: 50 }));
@@ -116,60 +110,43 @@ export class Multiplayer3DScene extends PixiScene {
 
 		this.sortableChildren = true;
 
-		// Escuchar eventos de teclado para detectar Ctrl
-		this.createCrosshair(200);
-		this.crosshairContainer.zIndex = 1000;
-		window.addEventListener("keydown", this.onKeyDown.bind(this));
-		window.addEventListener("keyup", this.onKeyUp.bind(this));
-		this.addChild(this.crosshairContainer);
+		// CROSSHAIR
+		this.crosshair = new Crosshair(200, Manager.width, Manager.height);
+		this.crosshair.zIndex = 1000;
+		this.addChild(this.crosshair);
 		this.exitAimingMode();
-	}
 
-	private createCrosshair(circleRadius: number): void {
-		// Creamos un Graphics que actuará como máscara (overlay)
-		this.crosshair = new Graphics();
+		// En la escena, luego de crear e insertar la UI:
+		this.ui = new FutureCachopUI();
+		this.ui.zIndex = 1001;
+		this.addChild(this.ui);
 
-		const cross = new Graphics();
-		cross.lineStyle(2, 0xff0000, 1);
-		// Línea horizontal
-		cross.moveTo(-10, 0);
-		cross.lineTo(10, 0);
-		// Línea vertical
-		cross.moveTo(0, -10);
-		cross.lineTo(0, 10);
-		this.crosshair.addChild(cross);
-
-		// Para facilitar el posicionamiento, centraremos el gráfico en (0,0)
-		// y luego posicionaremos el contenedor (crosshairContainer) en el centro de la pantalla.
-		this.crosshair.x = 0;
-		this.crosshair.y = 0;
-
-		// Dibuja un rectángulo grande que cubra la pantalla, centrado en (0,0).
-		// Esto se hace usando coordenadas negativas hasta positivas.
-		this.crosshair.beginFill(0x000000, 0.8); // Color negro, opacidad 0.8 (ajustable)
-		this.crosshair.drawRect(-Manager.width / 2, -Manager.height / 2, Manager.width, Manager.height);
-
-		// Comienza a definir la forma a "restar" (el agujero)
-		this.crosshair.beginHole();
-		// Dibuja un círculo en el centro (0,0) con el radio deseado
-		this.crosshair.drawCircle(0, 0, circleRadius);
-		this.crosshair.endHole();
-
-		this.crosshair.endFill();
-
-		// Ahora, aseguramos que el contenedor del crosshair esté centrado en la pantalla.
-		// Por ejemplo, en onResize podrías hacer:
-		this.crosshairContainer.x = Manager.width / 2;
-		this.crosshairContainer.y = Manager.height / 2;
-
-		// Agrega el crosshair al contenedor
-		this.crosshairContainer.addChild(this.crosshair);
+		this.ui.on("aimToggled", (isAiming: boolean) => {
+			console.log("aimToggled:", isAiming);
+			if (isAiming) {
+				this.ui.aimContainer.children[0].alpha = 1;
+				this.ui.bottomRightContainer.children[0].alpha = 1;
+				this.enterAimingMode();
+			} else {
+				this.ui.aimContainer.children[0].alpha = 0.5;
+				this.ui.bottomRightContainer.children[0].alpha = 0.5;
+				this.exitAimingMode();
+			}
+		});
 	}
 
 	public override onResize(_newW: number, _newH: number): void {
-		ScaleHelper.setScaleRelativeToScreen(this.bottomRightContainer, _newW, _newH, 0.15, 0.15, ScaleHelper.FIT);
-		this.bottomRightContainer.x = _newW * 0.85;
-		this.bottomRightContainer.y = _newH * 0.8;
+		ScaleHelper.setScaleRelativeToScreen(this.ui.bottomRightContainer, _newW, _newH, 0.3, 0.3, ScaleHelper.FIT);
+		this.ui.bottomRightContainer.x = _newW * 0.85;
+		this.ui.bottomRightContainer.y = _newH * 0.8;
+
+		ScaleHelper.setScaleRelativeToScreen(this.ui.healthBarContainer, _newW, _newH, 0.15, 0.15, ScaleHelper.FIT);
+		this.ui.healthBarContainer.x = _newW * 0.1;
+		this.ui.healthBarContainer.y = _newH * 0.1;
+
+		ScaleHelper.setScaleRelativeToScreen(this.ui.aimContainer, _newW, _newH, 0.18, 0.18, ScaleHelper.FIT);
+		this.ui.aimContainer.x = _newW * 0.15;
+		this.ui.aimContainer.y = _newH * 0.5;
 
 		ScaleHelper.setScaleRelativeToScreen(this.gameOverContainer, _newW, _newH, 0.5, 0.5, ScaleHelper.FIT);
 		this.gameOverContainer.x = _newW * 0.5;
@@ -179,48 +156,35 @@ export class Multiplayer3DScene extends PixiScene {
 		this.joystickContainer.x = _newW * 0.15;
 		this.joystickContainer.y = _newH * 0.8;
 
-		ScaleHelper.setScaleRelativeToScreen(this.crosshairContainer, _newW, _newH, 1, 1, ScaleHelper.FILL);
-		this.crosshairContainer.x = _newW * 0.5;
-		this.crosshairContainer.y = _newH * 0.5;
+		ScaleHelper.setScaleRelativeToScreen(this.crosshair, _newW, _newH, 1, 1, ScaleHelper.FILL);
+		this.crosshair.x = _newW * 0.5;
+		this.crosshair.y = _newH * 0.5;
 	}
 
 	// Eventos de teclado para controlar el modo mira (Ctrl o Shift)
 	private onKeyDown(e: KeyboardEvent): void {
-		// Verifica si es la tecla Shift (izquierda o derecha) o Control derecho
-		if (e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "ControlRight") {
+		if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
 			this.enterAimingMode();
 		}
 	}
 
 	private onKeyUp(e: KeyboardEvent): void {
-		if (e.code === "ShiftLeft" || e.code === "ShiftRight" || e.code === "ControlRight") {
+		if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
 			this.exitAimingMode();
 		}
 	}
 
-	// Método para entrar en modo mira
-	private enterAimingMode(): void {
+	private enterAimingMode(offsetMagnitude: number = 200): void {
 		this.movementEnabled = false;
 		this.aimControl.aimMode = true;
-		console.log("this.aimControl.aimMode", this.aimControl.aimMode);
-		this.crosshairContainer.visible = true;
+		this.crosshair.visible = true;
 
-		// Calcula la dirección "forward" en función del ángulo horizontal
 		const angleRad = this.aimControl.angles.y * (Math.PI / 180);
 		const forward = {
 			x: Math.sin(angleRad),
 			y: 0,
 			z: Math.cos(angleRad),
 		};
-
-		if (Keyboard.shared.isDown("ArrowLeft")) {
-			this.aimControl.angles.y -= 0.01;
-		}
-		if (Keyboard.shared.isDown("ArrowRight")) {
-			this.aimControl.angles.y += 0.01;
-		}
-
-		const offsetMagnitude = 200; // Ajusta este valor según necesites
 
 		new Tween(this.aimControl.aimOffset).to({ x: forward.x * offsetMagnitude, y: 0, z: forward.z * offsetMagnitude }, 300).start();
 
@@ -229,15 +193,9 @@ export class Multiplayer3DScene extends PixiScene {
 
 	// Método para salir del modo mira
 	private exitAimingMode(): void {
-		if (Keyboard.shared.isDown("ArrowLeft")) {
-			this.aimControl.angles.y += 0.01;
-		}
-		if (Keyboard.shared.isDown("ArrowRight")) {
-			this.aimControl.angles.y -= 0.01;
-		}
 		this.aimControl.aimMode = false;
 		this.movementEnabled = true;
-		this.crosshairContainer.visible = false;
+		this.crosshair.visible = false;
 		this.aimControl.angles.x = 15;
 
 		new Tween(this.aimControl.aimOffset).to({ x: 0, y: 0, z: 0 }, 300).start();
@@ -248,47 +206,6 @@ export class Multiplayer3DScene extends PixiScene {
 		this.setupControls();
 	}
 
-	private onPointerTap(): void {
-		// Cuando se detecta un pointertap, se activa la bandera
-		this.pointerShotFired = true;
-	}
-
-	private createLocalUI(): void {
-		this.localUI = new Container();
-		this.localUI.x = 10;
-		this.localUI.y = 10;
-
-		const bgBar = new Graphics();
-		bgBar.beginFill(0x555555);
-		bgBar.drawRect(0, 0, 100, 20);
-		bgBar.endFill();
-		this.localUI.addChild(bgBar);
-
-		const healthBar = new Graphics();
-		healthBar.name = "healthBar";
-		healthBar.beginFill(0x00ff00);
-		healthBar.drawRect(0, 0, 100, 20);
-		healthBar.endFill();
-		this.localUI.addChild(healthBar);
-
-		this.addChild(this.localUI);
-	}
-
-	private updateLocalUI(): void {
-		if (!this.localUI || !this.player) {
-			return;
-		}
-		const healthBar: Graphics = this.localUI.getChildByName("healthBar");
-		if (healthBar) {
-			const newWidth = Math.max(0, this.player.hp ?? 0);
-			// console.log(`Actualizando barra de vida: ${newWidth} HP`);
-
-			healthBar.clear();
-			healthBar.beginFill(0x00ff00);
-			healthBar.drawRect(0, 0, newWidth, 20);
-			healthBar.endFill();
-		}
-	}
 	private updateRemoteHealthBars(): void {
 		for (const id in this.playersInRoom) {
 			if (id === this.localPlayerId) {
@@ -335,12 +252,31 @@ export class Multiplayer3DScene extends PixiScene {
 		this.playersInRoom[this.localPlayerId] = this.player;
 		this.addChild(this.player);
 		this.isDead = false;
+
+		// Crear la luz roja (sirena)
+		this.policeLightRed = new Light();
+		this.policeLightRed.type = LightType.spot; // Puedes probar con spot o directional según el efecto
+		this.policeLightRed.intensity = 80; // Ajusta según tus necesidades
+		this.policeLightRed.color = new Color(1, 0, 0); // Rojo
+		this.policeLightRed.range = 100; // Ajusta el rango
+		LightingEnvironment.main.lights.push(this.policeLightRed);
+
+		// Crear la luz azul (sirena)
+		this.policeLightBlue = new Light();
+		this.policeLightBlue.type = LightType.spot;
+		this.policeLightBlue.intensity = 80;
+		this.policeLightBlue.color = new Color(0, 0, 1); // Azul
+		this.policeLightBlue.range = 100;
+		LightingEnvironment.main.lights.push(this.policeLightBlue);
 	}
 
 	private setupControls(): void {
 		this.keys = {};
 		window.addEventListener("keydown", (e) => (this.keys[e.code] = true));
 		window.addEventListener("keyup", (e) => (this.keys[e.code] = false));
+
+		window.addEventListener("keydown", this.onKeyDown.bind(this));
+		window.addEventListener("keyup", this.onKeyUp.bind(this));
 	}
 
 	private addPlayerToDatabase(): void {
@@ -405,7 +341,7 @@ export class Multiplayer3DScene extends PixiScene {
 				if (id === this.localPlayerId) {
 					if (this.player) {
 						this.player.hp = data.hp ?? 100;
-						this.updateLocalUI();
+						this.ui.updateLocalUI(this.player);
 					}
 					return;
 				}
@@ -494,51 +430,79 @@ export class Multiplayer3DScene extends PixiScene {
 			});
 	}
 
-	// Se llama en cada frame
+	private pauseOnOff(): void {
+		this.isPaused = !this.isPaused;
+	}
+
 	public override update(delta: number): void {
-		// Si el jugador local está muerto, no se actualizan movimientos ni disparos
-		if (this.isDead) {
-			this.showRespawnButton();
+		if (Keyboard.shared.justPressed("KeyP")) {
+			this.pauseOnOff();
+		}
+
+		if (this.isPaused) {
+			return;
+		} else {
+			if (this.isDead) {
+				this.showRespawnButton();
+				return;
+			}
+
+			for (const torch of this.worldBuilding.torches) {
+				torch.update(this.player.position);
+			}
+
+			this.updateRemoteBullets();
+			this.ui.updateLocalUI(this.player);
+			this.updateRemoteHealthBars();
+
+			this.player.update(delta);
+
+			this.handleCameraMovement(delta);
+			this.player.position.set(this.aimControl.target.x, this.aimControl.target.y, this.aimControl.target.z);
+			this.player.rotationQuaternion.setEulerAngles(0, this.aimControl.angles.y, 0);
+
+			if (Keyboard.shared.justPressed("NumpadSubtract")) {
+				new Tween(this.aimControl).to({ distance: 25 }, 500).start();
+			}
+			if (Keyboard.shared.justPressed("NumpadAdd")) {
+				new Tween(this.aimControl).to({ distance: 10, y: this.aimControl.target.y }, 500).start();
+			}
+
+			this.handlePlayerMovement(delta);
+			this.handleShooting();
+			this.updateBullets();
+
+			// Actualizar la posición y rotación de las luces policiales
+			this.updatePoliceLights();
+
+			if (!this.aimControl.aimMode) {
+				if (Keyboard.shared.isDown("ArrowLeft")) {
+					this.aimControl.angles.y += 0.01;
+				}
+				if (Keyboard.shared.isDown("ArrowRight")) {
+					this.aimControl.angles.y -= 0.01;
+				}
+			} else {
+				return;
+			}
+		}
+	}
+
+	private updatePoliceLights(): void {
+		if (!this.player) {
 			return;
 		}
 
-		if (Keyboard.shared.justPressed("NumpadSubtract")) {
-			new Tween(this.aimControl).to({ distance: 25 }, 500).start();
-		}
-		if (Keyboard.shared.justPressed("NumpadAdd")) {
-			new Tween(this.aimControl).to({ distance: 10, y: this.aimControl.target.y }, 500).start();
-		}
+		const headOffset = { x: 0, y: 1.5, z: 0 };
+		const headPosition = new Point3D(this.player.position.x + headOffset.x, this.player.position.y + headOffset.y, this.player.position.z + headOffset.z);
 
-		// Actualizar las balas remotas (moverlas localmente)
-		this.updateRemoteBullets();
+		this.policeLightRed.position.copyFrom(headPosition);
+		this.policeLightBlue.position.copyFrom(headPosition);
 
-		// Actualizar la UI local (barra de vida)
-		this.updateLocalUI();
-		// Actualizar las barras de vida de los jugadores remotos
-		this.updateRemoteHealthBars();
+		const time = performance.now() / 300;
 
-		this.player.update(delta);
-
-		// Actualiza la cámara y la posición del jugador local
-		this.handleCameraMovement(delta);
-		this.player.position.set(this.aimControl.target.x, this.aimControl.target.y, this.aimControl.target.z);
-		this.player.rotationQuaternion.setEulerAngles(0, this.aimControl.angles.y, 0);
-
-		if (!this.aimControl.aimMode) {
-			if (Keyboard.shared.isDown("ArrowLeft")) {
-				this.aimControl.angles.y += 0.01;
-			}
-			if (Keyboard.shared.isDown("ArrowRight")) {
-				this.aimControl.angles.y -= 0.01;
-			}
-		}
-
-		this.handlePlayerMovement(delta);
-		this.handleShooting();
-		this.updateBullets(); // Actualiza las balas locales
-
-		this.updateLocalUI();
-		this.updateRemoteHealthBars();
+		this.policeLightRed.rotationQuaternion.setEulerAngles(0, time * 90, 0);
+		this.policeLightBlue.rotationQuaternion.setEulerAngles(0, -time * 90, 0);
 	}
 
 	// Mueve la cámara suavemente usando interpolación (lerp)
@@ -618,17 +582,17 @@ export class Multiplayer3DScene extends PixiScene {
 		set(ref(db, `bullets/${bulletId}`), bulletData);
 	}
 
-	// Detecta el disparo del jugador local, crea la bala local y la envía a Firebase
 	private handleShooting(): void {
 		if (this.isDead) {
 			return; // No permite disparar si está muerto
 		}
 
 		// Comprueba si se presionó la barra espaciadora o se detectó un pointertap
-		if (Keyboard.shared.justPressed("Space") || this.pointerShotFired) {
+		if (Keyboard.shared.justPressed("Space") || this.ui.pointerShotFired) {
 			// Resetear la bandera del pointer tap para evitar múltiples disparos
-			this.pointerShotFired = false;
+			this.ui.pointerShotFired = false;
 
+			SoundLib.playSound("beam", { volume: 0.05, loop: false, allowOverlap: true });
 			// Crear la bala
 			const bullet = Mesh3D.createCube();
 			bullet.scale.set(0.2, 0.2, 0.2);
@@ -764,6 +728,7 @@ export class Multiplayer3DScene extends PixiScene {
 		buttonBg.beginFill(0x333333, 0.8);
 		buttonBg.drawRoundedRect(0, 0, 150, 50, 10);
 		buttonBg.endFill();
+		buttonBg.pivot.set(75, 25);
 		this.respawnButton.addChild(buttonBg);
 
 		const style = new TextStyle({
@@ -772,6 +737,7 @@ export class Multiplayer3DScene extends PixiScene {
 			fontFamily: "Arial",
 		});
 		const buttonText = new Text("Respawn", style);
+		buttonText.anchor.set(0.5);
 		this.respawnButton.addChild(buttonText);
 
 		this.respawnButton.interactive = true;
@@ -799,6 +765,8 @@ export class Multiplayer3DScene extends PixiScene {
 		this.bullets.forEach((bullet) => this.removeChild(bullet));
 		this.bullets = [];
 		this.bulletDirections = [];
+		this.removeAllListeners();
+		this.removeChildren();
 		for (const id in this.remoteBullets) {
 			this.removeChild(this.remoteBullets[id]);
 		}
@@ -811,10 +779,12 @@ export class Multiplayer3DScene extends PixiScene {
 		remove(ref(db, `${this.DATABASE_NAME}/${this.localPlayerId}`))
 			.then(() => {
 				console.log(`Jugador ${this.localPlayerId} removido de la base de datos.`);
+				Manager.closeScene(this);
 				Manager.changeScene(MuliplayerLobby, { transitionClass: FadeColorTransition });
 			})
 			.catch((error) => {
 				console.error("Error al remover el jugador de la base de datos:", error);
+				Manager.closeScene(this);
 				Manager.changeScene(MuliplayerLobby, { transitionClass: FadeColorTransition });
 			});
 	}

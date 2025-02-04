@@ -8,7 +8,7 @@ export class EnviromentalLights {
 		// Luz direccional 1
 		this.dirLight = new Light();
 		this.dirLight.type = LightType.directional;
-		this.dirLight.intensity = 5;
+		this.dirLight.intensity = 1;
 		this.dirLight.color = new Color(1, 1, 1);
 		this.dirLight.rotationQuaternion.setEulerAngles(45, -75, 0);
 		LightingEnvironment.main.lights.push(this.dirLight);
@@ -16,7 +16,7 @@ export class EnviromentalLights {
 		// Luz direccional 2
 		this.dirLight3 = new Light();
 		this.dirLight3.type = LightType.directional;
-		this.dirLight3.intensity = 5;
+		this.dirLight3.intensity = 2;
 		this.dirLight3.color = new Color(1, 1, 1);
 		this.dirLight3.rotationQuaternion.setEulerAngles(-80, 0, -45);
 		LightingEnvironment.main.lights.push(this.dirLight3);

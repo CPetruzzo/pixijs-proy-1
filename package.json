@@ -56,6 +56,7 @@
     "workbox-webpack-plugin": "6.5.4"
   },
   "dependencies": {
+    "@dimforge/rapier3d": "0.12.0",
     "@dimforge/rapier2d": "0.12.0",
     "@mapeditor/tiled-api": "^1.10.1",
     "@pixi/filter-glow": "5.2.1",

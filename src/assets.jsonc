@@ -485,8 +485,16 @@
 		{
 			"name": "3dshooter",
 			"assets": {
+				"title": "./img/futurecop/title.png",
+				"aimbutton": "./img/futurecop/aimbutton.png",
+				"shootbutton": "./img/futurecop/shootbutton.png",
+				"beam": "./sfx/beam.wav",
+				"play": "./img/ggj/play.png",
 				"house": "./models/house.glb",
+				"car_fire": "./models/car_on_fire__animation.glb",
+				"fire": "./models/animated_fire.glb",
 				"cublosion": "./models/cublosion.glb",
+				"torchsfx": "./sfx/torchsfx.mp3",
 				"cyberpunk_city": "./models/cyberpunk_city.glb",
 				"futurecop": "./models/futurecop.glb"
 			}

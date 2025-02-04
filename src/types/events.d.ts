@@ -27,5 +27,7 @@ declare namespace GlobalMixins {
 
 		START: any;
 		TIME_ENDED: any;
+
+		aimToggled: any;
 	}
 }

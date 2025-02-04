@@ -3,7 +3,7 @@ import { Color, Mesh3D } from "pixi3d/pixi7";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { cameraControl } from "../../../index"; // Importamos la cámara global
 import { Keyboard } from "../../../engine/input/Keyboard";
-import { EnviromentalLights } from "./Lights/Light";
+import { EnviromentalLights } from "./Lights/EnviromentalLights";
 import { VEHICULE_SPEED } from "../../../utils/constants";
 import { GameObjectFactory } from "./GameObject";
 import type { PhysicsContainer3d } from "./3DPhysicsContainer";
