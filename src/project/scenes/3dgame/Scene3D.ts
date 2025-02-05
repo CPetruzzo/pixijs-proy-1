@@ -599,7 +599,9 @@ export class Scene3D extends PixiScene {
 			}
 
 			this.impalaBox = this.impala.getBoundingBox();
+			console.log("this.impalaBox", this.impalaBox);
 			this.dragonBox = this.dragon.getBoundingBox();
+			console.log("this.dragonBox", this.dragonBox);
 
 			this.impalaBox;
 			const firstpersonBox = this.firstperson.model.getBoundingBox();

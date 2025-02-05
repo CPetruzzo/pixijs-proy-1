@@ -22,6 +22,8 @@ import { aimControl } from "../../../index";
 import { Crosshair } from "./Utils/Crosshair";
 import { WorldBuilding } from "./Utils/WorldBuilding";
 import { SoundLib } from "../../../engine/sound/SoundLib";
+import type { ITransform3D } from "./Utils/CollisionUtils";
+import { getAABB, intersect } from "./Utils/CollisionUtils";
 
 export interface RemoteBullet extends Mesh3D {
 	direction: { x: number; y: number; z: number };
@@ -70,6 +72,7 @@ export class Multiplayer3DScene extends PixiScene {
 	private policeLightBlue: Light;
 	private isPaused: boolean = false;
 	public worldBuilding: WorldBuilding;
+	private playerBox: any;
 	// private carFire: Model;
 
 	// #endregion VARIABLES
@@ -252,6 +255,8 @@ export class Multiplayer3DScene extends PixiScene {
 		this.playersInRoom[this.localPlayerId] = this.player;
 		this.addChild(this.player);
 		this.isDead = false;
+
+		console.log("this.player.model", this.player.model);
 
 		// Crear la luz roja (sirena)
 		this.policeLightRed = new Light();
@@ -451,6 +456,10 @@ export class Multiplayer3DScene extends PixiScene {
 				torch.update(this.player.position);
 			}
 
+			if (this.worldBuilding && this.worldBuilding.trigger) {
+				this.worldBuilding.trigger.update(this.player);
+			}
+
 			this.updateRemoteBullets();
 			this.ui.updateLocalUI(this.player);
 			this.updateRemoteHealthBars();
@@ -462,7 +471,7 @@ export class Multiplayer3DScene extends PixiScene {
 			this.player.rotationQuaternion.setEulerAngles(0, this.aimControl.angles.y, 0);
 
 			if (Keyboard.shared.justPressed("NumpadSubtract")) {
-				new Tween(this.aimControl).to({ distance: 25 }, 500).start();
+				new Tween(this.aimControl).to({ distance: 255 }, 500).start();
 			}
 			if (Keyboard.shared.justPressed("NumpadAdd")) {
 				new Tween(this.aimControl).to({ distance: 10, y: this.aimControl.target.y }, 500).start();
@@ -474,17 +483,6 @@ export class Multiplayer3DScene extends PixiScene {
 
 			// Actualizar la posición y rotación de las luces policiales
 			this.updatePoliceLights();
-
-			if (!this.aimControl.aimMode) {
-				if (Keyboard.shared.isDown("ArrowLeft")) {
-					this.aimControl.angles.y += 0.01;
-				}
-				if (Keyboard.shared.isDown("ArrowRight")) {
-					this.aimControl.angles.y -= 0.01;
-				}
-			} else {
-				return;
-			}
 		}
 	}
 
@@ -516,45 +514,74 @@ export class Multiplayer3DScene extends PixiScene {
 		this.lastCameraPosition = { ...this.aimControl.target };
 	}
 
+	// Método para calcular el AABB del jugador y verificar colisiones con paredes
+	private checkCollisions(): boolean {
+		// Obtén la caja de colisión (AABB) del jugador
+		this.playerBox = this.player.model.getBoundingBox();
+
+		// Recorre cada pared y comprueba la intersección
+		if (this.worldBuilding && this.worldBuilding.walls) {
+			for (const wall of this.worldBuilding.walls) {
+				const wallTransform: ITransform3D = {
+					position: {
+						x: wall.position.x,
+						y: wall.position.y,
+						z: wall.position.z,
+					},
+					scale: {
+						x: wall.scale.x,
+						y: wall.scale.y,
+						z: wall.scale.z,
+					},
+				};
+				const wallBox = getAABB(wallTransform);
+				if (intersect(this.playerBox, wallBox)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	private handlePlayerMovement(_delta?: number, _enabled: boolean = true): void {
 		if (!_enabled) {
 			return;
 		}
+
+		// Guarda la posición destino anterior antes de actualizar
+		const previousTarget = {
+			x: this.aimControl.target.x,
+			y: this.aimControl.target.y,
+			z: this.aimControl.target.z,
+		};
+
 		if (this.joystick.active) {
-			// Fijar los ángulos que no queremos que se modifiquen
+			// Durante el uso del joystick, fijamos los ángulos vertical y lateral
 			this.aimControl.angles.x = 25;
 			this.aimControl.angles.z = 0;
-			// Mantenemos fijo el ángulo de la cámara (para que no gire mientras se usa el joystick)
-			// y usamos la entrada del joystick para mover al jugador en la dirección de la cámara.
+
 			const angleYRad = this.aimControl.angles.y * (Math.PI / 180);
-
-			// Obtenemos el vector del joystick.
-			// Notar que invertimos el eje Y para que "arriba" en el joystick signifique avanzar.
 			const jDir = this.joystick.direction; // Valores en [-1,1]
-			const invY = -jDir.y; // Invertir el eje vertical
+			const invY = -jDir.y; // Invertir el eje Y para que "arriba" signifique avanzar
 
-			// Aplicamos la fórmula de rotación para alinear el vector del joystick con el ángulo de la cámara:
-			// Queremos que si jDir = (0, 1) (apretado hacia arriba) y el ángulo es 0,
-			// el vector resultante sea (0, -1) (avanzar hacia -Z, que suele ser "adelante").
+			// Rotar el vector del joystick según el yaw (ángulo horizontal) de aimControl
 			const effectiveX = -(jDir.x * Math.cos(angleYRad) - invY * Math.sin(angleYRad));
 			const effectiveZ = jDir.x * Math.sin(angleYRad) + invY * Math.cos(angleYRad);
 
-			// Actualizamos el target usando el vector rotado.
+			// Actualiza la posición destino (target) usando el vector rotado
 			this.aimControl.target.x += effectiveX * VEHICULE_SPEED;
 			this.aimControl.target.z += effectiveZ * VEHICULE_SPEED;
 		} else {
-			// Modo teclado: se permite la rotación y el movimiento según el ángulo.
+			// En modo teclado, se permite la rotación y el movimiento
 			if (Keyboard.shared.isDown("ArrowLeft")) {
 				this.aimControl.angles.y += 1;
 			}
 			if (Keyboard.shared.isDown("ArrowRight")) {
 				this.aimControl.angles.y -= 1;
 			}
-
 			const angleYRad = this.aimControl.angles.y * (Math.PI / 180);
 			const moveX = VEHICULE_SPEED * Math.sin(angleYRad);
 			const moveZ = VEHICULE_SPEED * Math.cos(angleYRad);
-
 			if (Keyboard.shared.isDown("KeyA")) {
 				this.aimControl.target.z -= moveX;
 				this.aimControl.target.x += moveZ;
@@ -573,7 +600,16 @@ export class Multiplayer3DScene extends PixiScene {
 			}
 		}
 
-		// Actualiza la posición en Firebase (aplica en ambos modos)
+		// Verifica colisiones con paredes: si hay colisión, revertir el movimiento
+		if (this.checkCollisions()) {
+			// Revertir a la posición anterior
+			this.aimControl.target.x = previousTarget.x;
+			this.aimControl.target.y = previousTarget.y;
+			this.aimControl.target.z = previousTarget.z;
+			console.log("Collision detected with wall. Movement reverted.");
+		}
+
+		// Actualiza la posición en Firebase
 		this.updatePlayerPosition(this.aimControl.target.x, this.aimControl.target.y, this.aimControl.target.z);
 	}
 
