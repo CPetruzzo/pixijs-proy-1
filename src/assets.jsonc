@@ -129,7 +129,7 @@
 		{
 			"name": "musicShooter",
 			"assets": {
-				"battle": "./music/battle.mp3"
+				"futurecopOST": "./music/futurecop.mp3"
 			}
 		},
 		{

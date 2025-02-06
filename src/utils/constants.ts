@@ -64,3 +64,6 @@ export const MAX_MESSAGES: number = 5;
 
 // BLUE WIZARD
 export const AIR_TOLERANCE: number = 5;
+
+// FUTURECOP
+export const FUTURECOP_SPEED = 0.05;

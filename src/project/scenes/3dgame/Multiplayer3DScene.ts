@@ -6,7 +6,7 @@ import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Manager } from "../../../index";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { EnviromentalLights } from "./Lights/EnviromentalLights";
-import { VEHICULE_SPEED } from "../../../utils/constants";
+import { FUTURECOP_SPEED } from "../../../utils/constants";
 import { GameObjectFactory } from "./GameObject";
 import type { PhysicsContainer3d } from "./3DPhysicsContainer";
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
@@ -80,7 +80,7 @@ export class Multiplayer3DScene extends PixiScene {
 		super();
 
 		// MUSIC
-		// SoundLib.playMusic("battle", { volume: 0.02, loop: true });
+		SoundLib.playMusic("futurecopOST", { volume: 0.52, loop: true });
 
 		// CREATE CITY AND GROUND
 		this.worldBuilding = new WorldBuilding(this);
@@ -464,13 +464,13 @@ export class Multiplayer3DScene extends PixiScene {
 
 			this.handleCameraMovement(delta);
 			this.handlePlayerMovement(delta);
-			this.handleWorldBuildingObjects();
+			this.handlePlayerWithWorldBuildingObjects();
 			this.handleShooting();
 			this.updateBullets();
 		}
 	}
 
-	private handleWorldBuildingObjects(): void {
+	private handlePlayerWithWorldBuildingObjects(): void {
 		for (const torch of this.worldBuilding.torches) {
 			torch.update(this.player.position);
 		}
@@ -511,7 +511,7 @@ export class Multiplayer3DScene extends PixiScene {
 			new Tween(this.aimControl).to({ distance: 255 }, 500).start();
 		}
 		if (Keyboard.shared.justPressed("NumpadAdd")) {
-			new Tween(this.aimControl).to({ distance: 10, y: this.aimControl.target.y }, 500).start();
+			new Tween(this.aimControl).to({ distance: 30, y: this.aimControl.target.y }, 500).start();
 		}
 	}
 
@@ -584,8 +584,8 @@ export class Multiplayer3DScene extends PixiScene {
 			const effectiveZ = jDir.x * Math.sin(angleYRad) + invY * Math.cos(angleYRad);
 
 			// Actualiza la posición destino (target) usando el vector rotado
-			this.aimControl.target.x += effectiveX * VEHICULE_SPEED;
-			this.aimControl.target.z += effectiveZ * VEHICULE_SPEED;
+			this.aimControl.target.x += effectiveX * FUTURECOP_SPEED;
+			this.aimControl.target.z += effectiveZ * FUTURECOP_SPEED;
 		} else {
 			// En modo teclado, se permite la rotación y el movimiento
 			if (Keyboard.shared.isDown("ArrowLeft")) {
@@ -595,8 +595,8 @@ export class Multiplayer3DScene extends PixiScene {
 				this.aimControl.angles.y -= 1;
 			}
 			const angleYRad = this.aimControl.angles.y * (Math.PI / 180);
-			const moveX = VEHICULE_SPEED * Math.sin(angleYRad);
-			const moveZ = VEHICULE_SPEED * Math.cos(angleYRad);
+			const moveX = FUTURECOP_SPEED * Math.sin(angleYRad) * _delta;
+			const moveZ = FUTURECOP_SPEED * Math.cos(angleYRad) * _delta;
 			if (Keyboard.shared.isDown("KeyA")) {
 				this.aimControl.target.z -= moveX;
 				this.aimControl.target.x += moveZ;
