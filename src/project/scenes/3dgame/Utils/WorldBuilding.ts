@@ -37,11 +37,6 @@ export class WorldBuilding {
 		leftWall.scale.set(2, 25, 200);
 		leftWall.material = wallMaterial;
 		this.walls.push(leftWall);
-		console.log("leftWall.geometry", leftWall.geometry);
-		console.log("Left wall positions:", leftWall.geometry.positions);
-		leftWall.updateTransform();
-		const box = leftWall.getBoundingBox();
-		console.log("Bounding box:", box);
 
 		// Pared Derecha (X = 101)
 		const rightWall = container.addChild(Mesh3D.createCube());
@@ -72,6 +67,7 @@ export class WorldBuilding {
 		wall2.rotationQuaternion.setEulerAngles(0, -90, 0);
 		wall2.scale.set(2, 25, 90);
 		wall2.material = wallMaterial;
+		this.walls.push(wall2);
 
 		const wall3 = container.addChild(Mesh3D.createCube());
 		wall3.y = 12.5;
@@ -79,6 +75,7 @@ export class WorldBuilding {
 		wall3.rotationQuaternion.setEulerAngles(0, -90, 0);
 		wall3.scale.set(2, 25, 90);
 		wall3.material = wallMaterial;
+		this.walls.push(wall3);
 
 		// Creamos la puerta (Gate) en, por ejemplo, el centro del muro superior
 		this.gate = new Gate(container, { x: 0, y: 12.5, z: 0 }, { x: 19.5, y: 25, z: 2 });

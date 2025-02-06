@@ -439,11 +439,14 @@ export class Multiplayer3DScene extends PixiScene {
 		this.isPaused = !this.isPaused;
 	}
 
-	public override update(delta: number): void {
+	private handlePause(): void {
 		if (Keyboard.shared.justPressed("KeyP")) {
 			this.pauseOnOff();
 		}
+	}
 
+	public override update(delta: number): void {
+		this.handlePause();
 		if (this.isPaused) {
 			return;
 		} else {
@@ -452,37 +455,28 @@ export class Multiplayer3DScene extends PixiScene {
 				return;
 			}
 
-			for (const torch of this.worldBuilding.torches) {
-				torch.update(this.player.position);
-			}
-
-			if (this.worldBuilding && this.worldBuilding.trigger) {
-				this.worldBuilding.trigger.update(this.player);
-			}
+			this.player.update(delta);
+			this.updatePoliceLights();
 
 			this.updateRemoteBullets();
 			this.ui.updateLocalUI(this.player);
 			this.updateRemoteHealthBars();
 
-			this.player.update(delta);
-
 			this.handleCameraMovement(delta);
-			this.player.position.set(this.aimControl.target.x, this.aimControl.target.y, this.aimControl.target.z);
-			this.player.rotationQuaternion.setEulerAngles(0, this.aimControl.angles.y, 0);
-
-			if (Keyboard.shared.justPressed("NumpadSubtract")) {
-				new Tween(this.aimControl).to({ distance: 255 }, 500).start();
-			}
-			if (Keyboard.shared.justPressed("NumpadAdd")) {
-				new Tween(this.aimControl).to({ distance: 10, y: this.aimControl.target.y }, 500).start();
-			}
-
 			this.handlePlayerMovement(delta);
+			this.handleWorldBuildingObjects();
 			this.handleShooting();
 			this.updateBullets();
+		}
+	}
 
-			// Actualizar la posición y rotación de las luces policiales
-			this.updatePoliceLights();
+	private handleWorldBuildingObjects(): void {
+		for (const torch of this.worldBuilding.torches) {
+			torch.update(this.player.position);
+		}
+
+		if (this.worldBuilding && this.worldBuilding.trigger) {
+			this.worldBuilding.trigger.update(this.player);
 		}
 	}
 
@@ -512,12 +506,30 @@ export class Multiplayer3DScene extends PixiScene {
 		this.aimControl.target.y = this.lastCameraPosition.y + (targetY - this.lastCameraPosition.y) * this.cameraLerpSpeed;
 		this.aimControl.target.z = this.lastCameraPosition.z + (targetZ - this.lastCameraPosition.z) * this.cameraLerpSpeed;
 		this.lastCameraPosition = { ...this.aimControl.target };
+
+		if (Keyboard.shared.justPressed("NumpadSubtract")) {
+			new Tween(this.aimControl).to({ distance: 255 }, 500).start();
+		}
+		if (Keyboard.shared.justPressed("NumpadAdd")) {
+			new Tween(this.aimControl).to({ distance: 10, y: this.aimControl.target.y }, 500).start();
+		}
 	}
 
 	// Método para calcular el AABB del jugador y verificar colisiones con paredes
 	private checkCollisions(): boolean {
 		// Obtén la caja de colisión (AABB) del jugador
-		this.playerBox = this.player.model.getBoundingBox();
+		this.playerBox = getAABB({
+			position: {
+				x: this.aimControl.target.x,
+				y: this.aimControl.target.y,
+				z: this.aimControl.target.z,
+			},
+			scale: {
+				x: 2,
+				y: 2,
+				z: 2,
+			},
+		});
 
 		// Recorre cada pared y comprueba la intersección
 		if (this.worldBuilding && this.worldBuilding.walls) {
@@ -544,6 +556,9 @@ export class Multiplayer3DScene extends PixiScene {
 	}
 
 	private handlePlayerMovement(_delta?: number, _enabled: boolean = true): void {
+		this.player.position.set(this.aimControl.target.x, this.aimControl.target.y, this.aimControl.target.z);
+		this.player.rotationQuaternion.setEulerAngles(0, this.aimControl.angles.y, 0);
+
 		if (!_enabled) {
 			return;
 		}
