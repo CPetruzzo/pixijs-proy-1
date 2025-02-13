@@ -17,8 +17,8 @@ import { JoystickEmits } from "./utils/Joystick";
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
-import { Multiplayer3DScene } from "./project/scenes/3dgame/Multiplayer3DScene";
 import { CameraOrbitControlAim } from "./project/scenes/3dgame/Camera/CameraOrbitControlAim";
+import { ConstructionEngineScene } from "./project/scenes/WebEngine/ConstructionEngineScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -102,7 +102,7 @@ window.addEventListener("contextmenu", (e) => {
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
-	Manager.changeScene(Multiplayer3DScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(ConstructionEngineScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {
