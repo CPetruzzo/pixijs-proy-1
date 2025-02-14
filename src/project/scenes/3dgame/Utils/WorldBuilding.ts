@@ -64,25 +64,24 @@ export class WorldBuilding {
 		const wall2 = container.addChild(Mesh3D.createCube());
 		wall2.y = 12.5;
 		wall2.x = 110;
-		wall2.rotationQuaternion.setEulerAngles(0, -90, 0);
-		wall2.scale.set(2, 25, 90);
+		wall2.scale.set(90, 25, 2);
 		wall2.material = wallMaterial;
 		this.walls.push(wall2);
 
 		const wall3 = container.addChild(Mesh3D.createCube());
 		wall3.y = 12.5;
 		wall3.x = -110;
-		wall3.rotationQuaternion.setEulerAngles(0, -90, 0);
-		wall3.scale.set(2, 25, 90);
+		wall3.scale.set(90, 25, 2);
 		wall3.material = wallMaterial;
 		this.walls.push(wall3);
 
 		// Creamos la puerta (Gate) en, por ejemplo, el centro del muro superior
 		this.gate = new Gate(container, { x: 0, y: 12.5, z: 0 }, { x: 19.5, y: 25, z: 2 });
+		this.walls.push(this.gate.mesh);
 
 		// Creamos el trigger, por ejemplo, justo enfrente del muro (dentro del área del jugador)
 		// Ajustá la posición y escala según tu diseño.
-		this.trigger = new Trigger(container, this.gate, { x: 0, y: 0, z: 15 }, { x: 5, y: 1, z: 5 });
+		this.trigger = new Trigger(container, this.gate, { x: 0, y: -0.5, z: -25 }, { x: 3, y: 0.5, z: 3 });
 
 		// Crear torches
 		const torch1 = new Torch(container, 68, 50);

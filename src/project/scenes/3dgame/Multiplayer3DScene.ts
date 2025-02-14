@@ -22,8 +22,8 @@ import { aimControl } from "../../../index";
 import { Crosshair } from "./Utils/Crosshair";
 import { WorldBuilding } from "./Utils/WorldBuilding";
 import { SoundLib } from "../../../engine/sound/SoundLib";
-import type { ITransform3D } from "./Utils/CollisionUtils";
-import { getAABB, intersect } from "./Utils/CollisionUtils";
+import { getAABB, intersect, rotateVectorByQuaternion } from "./Utils/CollisionUtils";
+import { FutureCopPlayer } from "./FutureCopPlayer";
 
 export interface RemoteBullet extends Mesh3D {
 	direction: { x: number; y: number; z: number };
@@ -36,7 +36,7 @@ export class Multiplayer3DScene extends PixiScene {
 	private localPlayerId: string = Date.now().toString();
 	private playersInRoom: Record<string, PhysicsContainer3d & { hp?: number }> = {};
 
-	private player: PhysicsContainer3d & { hp?: number };
+	private player: FutureCopPlayer & { hp?: number };
 	private bullets: Mesh3D[] = [];
 	private keys: Record<string, boolean> = {};
 
@@ -73,6 +73,8 @@ export class Multiplayer3DScene extends PixiScene {
 	private isPaused: boolean = false;
 	public worldBuilding: WorldBuilding;
 	private playerBox: any;
+	private bombs: Mesh3D[] = [];
+	private fixedCam: boolean = true;
 	// private carFire: Model;
 
 	// #endregion VARIABLES
@@ -80,16 +82,16 @@ export class Multiplayer3DScene extends PixiScene {
 		super();
 
 		// MUSIC
-		SoundLib.playMusic("futurecopOST", { volume: 0.52, loop: true });
+		SoundLib.playMusic("futurecopOST", { volume: 0.22, loop: true });
 
 		// CREATE CITY AND GROUND
 		this.worldBuilding = new WorldBuilding(this);
 
 		// CREATE CAMERA
 		this.aimControl = aimControl;
-		this.aimControl.distance = 15;
-		this.aimControl.angles.x = 45;
-		this.aimControl.target = { x: 20, y: 1.3, z: 50 };
+		this.aimControl.distance = 35;
+		this.aimControl.angles.x = 55;
+		this.aimControl.target = { x: 0, y: 1.3, z: -70 };
 
 		// CREATE JOYSTICK
 		this.joystick = new VirtualJoystick(100); // Radio de 50 (ajustable)
@@ -247,7 +249,7 @@ export class Multiplayer3DScene extends PixiScene {
 	}
 
 	private setupPlayer(): void {
-		this.player = GameObjectFactory.createPlayer("futurecop") as PhysicsContainer3d & { hp?: number };
+		this.player = new FutureCopPlayer();
 		this.player.name = this.localPlayerId;
 		this.player.scale.set(4, 4, 4);
 		this.player.y = 150;
@@ -255,8 +257,6 @@ export class Multiplayer3DScene extends PixiScene {
 		this.playersInRoom[this.localPlayerId] = this.player;
 		this.addChild(this.player);
 		this.isDead = false;
-
-		console.log("this.player.model", this.player.model);
 
 		// Crear la luz roja (sirena)
 		this.policeLightRed = new Light();
@@ -455,6 +455,8 @@ export class Multiplayer3DScene extends PixiScene {
 				return;
 			}
 
+			this.handleBombs();
+
 			this.player.update(delta);
 			this.updatePoliceLights();
 
@@ -467,6 +469,29 @@ export class Multiplayer3DScene extends PixiScene {
 			this.handlePlayerWithWorldBuildingObjects();
 			this.handleShooting();
 			this.updateBullets();
+		}
+	}
+
+	private handleBombs(): void {
+		if (Keyboard.shared.justPressed("Enter")) {
+			const bomb = Mesh3D.createSphere();
+			bomb.position.set(this.player.position.x, this.player.position.y, this.player.position.z);
+			this.addChild(bomb);
+			bomb.alpha = 0.7;
+			this.bombs.push(bomb);
+		}
+
+		// console.log("this.bombs", this.bombs.length);
+
+		for (const bomb of this.bombs) {
+			new Tween(bomb)
+				.to({ scale: { x: 15, y: 15, z: 15 } }, 300)
+				.start()
+				.onComplete(() => {
+					this.removeChild(bomb);
+					const bombIndex = this.bombs.indexOf(bomb);
+					this.bombs.splice(bombIndex, 1);
+				});
 		}
 	}
 
@@ -511,30 +536,38 @@ export class Multiplayer3DScene extends PixiScene {
 			new Tween(this.aimControl).to({ distance: 255 }, 500).start();
 		}
 		if (Keyboard.shared.justPressed("NumpadAdd")) {
-			new Tween(this.aimControl).to({ distance: 30, y: this.aimControl.target.y }, 500).start();
+			new Tween(this.aimControl).to({ distance: 25, y: this.aimControl.target.y }, 500).start();
+		}
+		if (Keyboard.shared.justPressed("KeyF")) {
+			this.toggleFixedCam();
 		}
 	}
 
-	// Método para calcular el AABB del jugador y verificar colisiones con paredes
-	private checkCollisions(): boolean {
-		// Obtén la caja de colisión (AABB) del jugador
-		this.playerBox = getAABB({
+	private toggleFixedCam(): void {
+		const camValue = !this.fixedCam;
+		this.fixedCam = camValue;
+		console.log("this.fixedCam", this.fixedCam);
+	}
+
+	private checkCollisions(): { collision: boolean; adjustedY?: number } {
+		// Definir el AABB del jugador usando un tamaño fijo (2,2,2)
+		const playerTransform = {
 			position: {
 				x: this.aimControl.target.x,
 				y: this.aimControl.target.y,
 				z: this.aimControl.target.z,
 			},
-			scale: {
-				x: 2,
-				y: 2,
-				z: 2,
-			},
-		});
+			scale: { x: 2, y: 2, z: 2 },
+			rotationQuaternion: { x: 0, y: 0, z: 0, w: 1 }, // Suponemos sin rotación para el jugador
+		};
+		this.playerBox = getAABB(playerTransform);
 
-		// Recorre cada pared y comprueba la intersección
+		let collision = false;
+		let adjustedY: number | undefined = undefined;
+
 		if (this.worldBuilding && this.worldBuilding.walls) {
 			for (const wall of this.worldBuilding.walls) {
-				const wallTransform: ITransform3D = {
+				const wallTransform = {
 					position: {
 						x: wall.position.x,
 						y: wall.position.y,
@@ -545,49 +578,79 @@ export class Multiplayer3DScene extends PixiScene {
 						y: wall.scale.y,
 						z: wall.scale.z,
 					},
+					rotationQuaternion: {
+						x: wall.rotationQuaternion.x,
+						y: wall.rotationQuaternion.y,
+						z: wall.rotationQuaternion.z,
+						w: wall.rotationQuaternion.w,
+					},
 				};
 				const wallBox = getAABB(wallTransform);
+
 				if (intersect(this.playerBox, wallBox)) {
-					return true;
+					// Si la pared es inclinada (pendiente), asumimos que su dimensión "profunda" (por ejemplo, scale.z) es pequeña.
+					if (wall.scale.z < 2) {
+						// Ajustá este umbral según convenga
+						// Calcular la posición del tope de la pendiente:
+						// En el espacio local, la cara superior se encuentra en y = scale.y / 2.
+						const localTop = { x: 0, y: wall.scale.y, z: 0 };
+						// Rota ese vector usando el rotationQuaternion de la pared.
+						const rotatedTop = rotateVectorByQuaternion(localTop, wallTransform.rotationQuaternion);
+						const worldTop = {
+							x: wall.position.x + rotatedTop.x,
+							y: wall.position.y + rotatedTop.y,
+							z: wall.position.z + rotatedTop.z,
+						};
+						// Para obtener la altura en el plano de la pendiente, usamos la normal del tope.
+						const topNormal = rotateVectorByQuaternion({ x: 0, y: 1, z: 0 }, wallTransform.rotationQuaternion);
+						if (Math.abs(topNormal.y) > 0.001) {
+							const diffX = this.aimControl.target.x - worldTop.x;
+							const diffZ = this.aimControl.target.z - worldTop.z;
+							// Resolver la ecuación del plano: n.x*(X - worldTop.x) + n.y*(Y - worldTop.y) + n.z*(Z - worldTop.z) = 0
+							// Despejando Y:
+							const newY = worldTop.y + (topNormal.x * diffX + topNormal.z * diffZ) / topNormal.y;
+							adjustedY = newY;
+						}
+					} else {
+						collision = true;
+						break;
+					}
 				}
 			}
 		}
-		return false;
+
+		return { collision, adjustedY };
 	}
 
 	private handlePlayerMovement(_delta?: number, _enabled: boolean = true): void {
 		this.player.position.set(this.aimControl.target.x, this.aimControl.target.y, this.aimControl.target.z);
-		this.player.rotationQuaternion.setEulerAngles(0, this.aimControl.angles.y, 0);
-
+		if (this.fixedCam) {
+			this.player.rotationQuaternion.setEulerAngles(0, this.aimControl.angles.y, 0);
+		} else {
+		}
 		if (!_enabled) {
 			return;
 		}
 
-		// Guarda la posición destino anterior antes de actualizar
+		// Guardar la posición destino anterior
 		const previousTarget = {
 			x: this.aimControl.target.x,
 			y: this.aimControl.target.y,
 			z: this.aimControl.target.z,
 		};
 
+		// Actualizar el target según el input (joystick o teclado)
 		if (this.joystick.active) {
-			// Durante el uso del joystick, fijamos los ángulos vertical y lateral
 			this.aimControl.angles.x = 25;
 			this.aimControl.angles.z = 0;
-
 			const angleYRad = this.aimControl.angles.y * (Math.PI / 180);
-			const jDir = this.joystick.direction; // Valores en [-1,1]
-			const invY = -jDir.y; // Invertir el eje Y para que "arriba" signifique avanzar
-
-			// Rotar el vector del joystick según el yaw (ángulo horizontal) de aimControl
+			const jDir = this.joystick.direction;
+			const invY = -jDir.y;
 			const effectiveX = -(jDir.x * Math.cos(angleYRad) - invY * Math.sin(angleYRad));
 			const effectiveZ = jDir.x * Math.sin(angleYRad) + invY * Math.cos(angleYRad);
-
-			// Actualiza la posición destino (target) usando el vector rotado
 			this.aimControl.target.x += effectiveX * FUTURECOP_SPEED;
 			this.aimControl.target.z += effectiveZ * FUTURECOP_SPEED;
 		} else {
-			// En modo teclado, se permite la rotación y el movimiento
 			if (Keyboard.shared.isDown("ArrowLeft")) {
 				this.aimControl.angles.y += 1;
 			}
@@ -608,23 +671,34 @@ export class Multiplayer3DScene extends PixiScene {
 			if (Keyboard.shared.isDown("KeyW")) {
 				this.aimControl.target.z += moveZ;
 				this.aimControl.target.x += moveX;
+				//	if (Keyboard.shared.justPressed("KeyW")) {
+				//		this.player.switchModel("run");
+				//		this.player.animationModel.visible = true;
+				//	}
 			}
 			if (Keyboard.shared.isDown("KeyS")) {
 				this.aimControl.target.z -= moveZ;
 				this.aimControl.target.x -= moveX;
 			}
+			// if (Keyboard.shared.justReleased("KeyW")) {
+			//	this.player.switchModel("idle");
+			// }
 		}
 
-		// Verifica colisiones con paredes: si hay colisión, revertir el movimiento
-		if (this.checkCollisions()) {
-			// Revertir a la posición anterior
+		// Verificar colisiones
+		const collisionData = this.checkCollisions();
+		if (collisionData.collision) {
+			// Revertir el movimiento si hay colisión bloqueante
 			this.aimControl.target.x = previousTarget.x;
 			this.aimControl.target.y = previousTarget.y;
 			this.aimControl.target.z = previousTarget.z;
 			console.log("Collision detected with wall. Movement reverted.");
+		} else if (collisionData.adjustedY !== undefined) {
+			// Si hay una pendiente, ajustar la Y del target
+			this.aimControl.target.y = collisionData.adjustedY;
 		}
 
-		// Actualiza la posición en Firebase
+		// Actualizar la posición en Firebase
 		this.updatePlayerPosition(this.aimControl.target.x, this.aimControl.target.y, this.aimControl.target.z);
 	}
 

@@ -27,7 +27,7 @@ export class Gate {
 		if (this.isOpen) {
 			return;
 		}
-		SoundLib.playSound("gate-heavy", { volume: 0.1 });
+		SoundLib.playSound("gate-heavy", { volume: 0.05 });
 		this.isOpen = true;
 
 		// Por ejemplo, bajar la puerta 20 unidades en Y en 1 segundo.

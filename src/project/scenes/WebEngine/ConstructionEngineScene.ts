@@ -8,6 +8,7 @@ declare global {
 import { Container, Graphics, Sprite, Text } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
+import { pixiRenderer } from "../../..";
 
 // Interfaz para describir cada entidad colocada.
 interface PlacedEntity {
@@ -17,6 +18,10 @@ interface PlacedEntity {
 	y: number;
 	width: number;
 	height: number;
+}
+
+export interface CustomSprite extends Sprite {
+	entityIndex?: number;
 }
 
 export class ConstructionEngineScene extends PixiScene {
@@ -34,13 +39,15 @@ export class ConstructionEngineScene extends PixiScene {
 	private gridSize: number = 50;
 	private currentTool: string | null = null;
 	private preview: Graphics | null = null;
-	public static readonly BUNDLES = ["towerdefense"];
+	public static readonly BUNDLES = ["construction"];
 
 	// Registro de entidades colocadas para persistencia
 	private placedEntities: PlacedEntity[] = [];
 
 	// Handle para la carpeta "savedProyects"
 	private savedProjectsDirHandle: FileSystemDirectoryHandle | null = null;
+	// Dentro de tu clase ConstructionEngineScene
+	private selectedPlayer: Sprite | null = null;
 
 	constructor() {
 		super();
@@ -114,17 +121,22 @@ export class ConstructionEngineScene extends PixiScene {
 	 * Crea la paleta de herramientas: botones para colocar, exportar y cargar.
 	 */
 	private createToolPalette(): void {
-		// Botones para colocar entidades
-		this.createToolButton("Edificio", -200, 0, () => this.setTool("building"));
-		this.createToolButton("Suelo", -100, 0, () => this.setTool("floor"));
-		// Botón para exportar el estado
-		this.createToolButton("Exportar", 0, 0, () => {
+		this.createToolButton("Borrador", -360, 0, () => this.setTool("eraser"));
+		this.createToolButton("Edificio", -240, 0, () => this.setTool("building"));
+		this.createToolButton("Suelo", -120, 0, () => this.setTool("floor"));
+		this.createToolButton("Exportar", 120, 0, () => {
 			this.exportStateToFile().catch(console.error);
 		});
-		// Botón para cargar proyectos guardados
-		this.createToolButton("Cargar", 100, 0, () => {
+		this.createToolButton("Cargar", 240, 0, () => {
 			this.toggleLoadPanel().catch(console.error);
 		});
+		this.createToolButton("Limpiar", 0, 0, () => this.cleanBlackboard());
+		this.createToolButton("Export PNG", 360, 0, () => this.exportToPNG());
+
+		// Botón para crear un player
+		this.createToolButton("Player", -480, 0, () => this.setTool("player"));
+		// Botón para mover/seleccionar al player
+		this.createToolButton("Move Player", -480, 50, () => this.setTool("playerSelect"));
 	}
 
 	/**
@@ -170,10 +182,18 @@ export class ConstructionEngineScene extends PixiScene {
 		this.blackboard.interactive = true;
 
 		this.blackboard.on("pointermove", (event) => {
-			if (this.currentTool) {
-				const localPos = this.blackboard.toLocal(event.data.global);
-				const snapped = this.getSnappedPosition(localPos.x, localPos.y);
+			const localPos = this.blackboard.toLocal(event.data.global);
+			const snapped = this.getSnappedPosition(localPos.x, localPos.y);
+
+			if (this.currentTool === "playerSelect" && this.selectedPlayer) {
+				this.selectedPlayer.x = snapped.x;
+				this.selectedPlayer.y = snapped.y;
+			} else if (this.currentTool) {
 				if (!this.preview) {
+					this.preview = this.createPreview(this.currentTool);
+					this.blackboard.addChild(this.preview);
+				} else {
+					this.preview.clear();
 					this.preview = this.createPreview(this.currentTool);
 					this.blackboard.addChild(this.preview);
 				}
@@ -182,19 +202,53 @@ export class ConstructionEngineScene extends PixiScene {
 		});
 
 		this.blackboard.on("pointerdown", (event) => {
-			if (this.currentTool) {
-				const localPos = this.blackboard.toLocal(event.data.global);
-				const snapped = this.getSnappedPosition(localPos.x, localPos.y);
-				this.placeEntity(this.currentTool, snapped.x, snapped.y);
+			const localPos = this.blackboard.toLocal(event.data.global);
+			const snapped = this.getSnappedPosition(localPos.x, localPos.y);
+
+			if (this.currentTool === "eraser") {
+				this.eraseEntityAt(snapped.x, snapped.y);
+			} else if (this.currentTool === "playerSelect") {
+				this.selectPlayerAt(snapped.x, snapped.y);
 			}
 		});
 
-		this.blackboard.on("pointerout", () => {
-			if (this.preview) {
-				this.blackboard.removeChild(this.preview);
-				this.preview = null;
+		this.blackboard.on("pointerup", (event) => {
+			const localPos = this.blackboard.toLocal(event.data.global);
+			const snapped = this.getSnappedPosition(localPos.x, localPos.y);
+
+			if (this.currentTool === "eraser") {
+				this.eraseEntityAt(snapped.x, snapped.y);
+			} else if (this.currentTool === "player") {
+				this.placeEntity("player", snapped.x, snapped.y);
+			} else if (this.currentTool === "playerSelect") {
+				if (this.selectedPlayer) {
+					const customSprite = this.selectedPlayer as CustomSprite;
+					const index = customSprite.entityIndex;
+					if (index !== undefined) {
+						this.placedEntities[index].x = snapped.x;
+						this.placedEntities[index].y = snapped.y;
+					}
+					// Quitar el tinte de selección y deseleccionar el sprite
+					customSprite.tint = 0xffffff;
+					this.selectedPlayer = null;
+				}
+			} else if (this.currentTool) {
+				this.placeEntity(this.currentTool, snapped.x, snapped.y);
 			}
 		});
+	}
+
+	private eraseEntityAt(x: number, y: number): void {
+		// Recorremos los hijos de la pizarra de atrás hacia adelante para eliminar el Sprite que coincida
+		for (let i = this.blackboard.children.length - 1; i >= 0; i--) {
+			const child = this.blackboard.children[i];
+			// Asegurarnos de borrar solo Sprites (las entidades colocadas)
+			if (child instanceof Sprite && child.x === x && child.y === y) {
+				this.blackboard.removeChild(child);
+			}
+		}
+		// Actualizamos el registro eliminando la entidad que estuviera en esa celda
+		this.placedEntities = this.placedEntities.filter((entity) => entity.x !== x || entity.y !== y);
 	}
 
 	/**
@@ -218,6 +272,15 @@ export class ConstructionEngineScene extends PixiScene {
 			preview.endFill();
 		} else if (tool === "floor") {
 			preview.beginFill(0x0000ff, 0.5);
+			preview.drawRect(-25, -25, 50, 50);
+			preview.endFill();
+		} else if (tool === "eraser") {
+			preview.beginFill(0xff0000, 0.5);
+			preview.drawRect(-25, -25, 50, 50);
+			preview.endFill();
+		} else if (tool === "player") {
+			// Por ejemplo, un recuadro semitransparente para indicar la posición del player
+			preview.beginFill(0xffffff, 0.5);
 			preview.drawRect(-25, -25, 50, 50);
 			preview.endFill();
 		}
@@ -249,10 +312,33 @@ export class ConstructionEngineScene extends PixiScene {
 			sprite.y = y;
 			this.blackboard.addChild(sprite);
 			entity = { type: "floor", texture: "grass", x, y, width: 50, height: 50 };
+		} else if (tool === "player") {
+			const sprite = Sprite.from("player") as CustomSprite;
+			sprite.anchor.set(0.5);
+			sprite.width = 50;
+			sprite.height = 50;
+			sprite.x = x;
+			sprite.y = y;
+			sprite.name = "player";
+			// Asignamos el índice para relacionarlo con placedEntities
+			sprite.entityIndex = this.placedEntities.length;
+			this.blackboard.addChild(sprite);
+			entity = { type: "player", texture: "player", x, y, width: 50, height: 50 };
 		} else {
 			return;
 		}
 		this.placedEntities.push(entity);
+	}
+
+	private selectPlayerAt(x: number, y: number): void {
+		for (const child of this.blackboard.children) {
+			if (child instanceof Sprite && child.x === x && child.y === y && child.name === "player") {
+				this.selectedPlayer = child;
+				// Agregamos un tinte para indicar selección
+				child.tint = 0xffff00;
+				break;
+			}
+		}
 	}
 
 	/**
@@ -305,7 +391,8 @@ export class ConstructionEngineScene extends PixiScene {
 		try {
 			const folderHandle = await this.getOrCreateSavedProjectsFolder();
 			const fileHandle = await folderHandle.getFileHandle(filename, { create: true });
-			const writable = await fileHandle.createWritable();
+			// Hacemos cast a 'any' para acceder a createWritable
+			const writable = await (fileHandle as any).createWritable();
 			await writable.write(this.saveState());
 			await writable.close();
 			console.log("Estado exportado a:", filename);
@@ -320,7 +407,6 @@ export class ConstructionEngineScene extends PixiScene {
 	private async createLoadPanel(): Promise<void> {
 		// Si ya existe, lo removemos
 		if (this.loadPanel) {
-			// Usamos children.includes() en lugar de contains()
 			if (this.toolPaletteContainer.children.includes(this.loadPanel)) {
 				this.toolPaletteContainer.removeChild(this.loadPanel);
 			}
@@ -335,8 +421,8 @@ export class ConstructionEngineScene extends PixiScene {
 		try {
 			const folderHandle = await this.getOrCreateSavedProjectsFolder();
 			let yPos = 0;
-			// Iteramos sobre las entradas del directorio
-			for await (const [name, handle] of folderHandle.entries()) {
+			// Hacemos cast a 'any' para acceder a entries()
+			for await (const [name, handle] of (folderHandle as any).entries()) {
 				if (name.endsWith(".json") && handle.kind === "file") {
 					// Convertir handle a FileSystemFileHandle para poder llamar a getFile()
 					const fileHandle = handle as FileSystemFileHandle;
@@ -353,7 +439,6 @@ export class ConstructionEngineScene extends PixiScene {
 							const file = await fileHandle.getFile();
 							const data = await file.text();
 							this.cleanBlackboard();
-
 							this.loadState(data);
 						} catch (error) {
 							console.error("Error al leer el archivo:", error);
@@ -382,6 +467,31 @@ export class ConstructionEngineScene extends PixiScene {
 			await this.createLoadPanel();
 			this.loadPanelVisible = true;
 		}
+	}
+
+	private exportToPNG(): void {
+		// Accedemos a la instancia de PIXI.Renderer desde pixiRendererInstance
+		const renderer = pixiRenderer.pixiRenderer;
+
+		// Verificamos que el plugin extract esté disponible
+		if (!renderer.plugins || !renderer.plugins.extract) {
+			console.error("El plugin extract no está disponible en el renderer.");
+			return;
+		}
+
+		this.blackboard.removeChild(this.grid);
+
+		// Extraemos el contenido del contenedor 'blackboard' a un canvas
+		const canvas = renderer.plugins.extract.canvas(this.blackboard);
+
+		// Convertimos el canvas a una data URL en formato PNG
+		const dataURL = canvas.toDataURL("image/png");
+
+		// Creamos un enlace y simulamos un clic para descargar la imagen
+		const link = document.createElement("a");
+		link.href = dataURL;
+		link.download = "level.png";
+		link.click();
 	}
 
 	/**

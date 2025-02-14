@@ -6,6 +6,7 @@ export class GameObject extends PhysicsContainer3d {
 		super(asset);
 	}
 }
+
 export class Player extends GameObject { }
 
 export class Enemy extends GameObject { }

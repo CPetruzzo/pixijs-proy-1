@@ -8,11 +8,26 @@ export class PhysicsContainer3d extends Container3D {
 	public gravity: number = 0.00001;
 	public model: Model;
 	public canJump: boolean = true;
+	public animationModel: Model | null | undefined;
+	public asset: string;
+	public animationAsset: string;
 
-	constructor(asset: string) {
+	constructor(asset: string, _animationAsset?: string) {
 		super();
 		this.model = Model.from(Assets.get(asset));
 		this.addChild(this.model);
+
+		this.asset = asset;
+
+		if (_animationAsset) {
+			this.animationAsset = _animationAsset;
+			console.log("this.animationAsset", this.animationAsset);
+			this.animationModel = Model.from(Assets.get(asset));
+			this.addChild(this.model);
+			this.animationModel.visible = false;
+		} else {
+			console.log("no animation asset detected");
+		}
 	}
 
 	public update(deltaSeconds: number): void {

@@ -18,7 +18,8 @@ import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
 import { CameraOrbitControlAim } from "./project/scenes/3dgame/Camera/CameraOrbitControlAim";
-import { ConstructionEngineScene } from "./project/scenes/WebEngine/ConstructionEngineScene";
+import { GameScene } from "./project/scenes/WebEngine/GameScene";
+import { Multiplayer3DScene } from "./project/scenes/3dgame/Multiplayer3DScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -59,8 +60,10 @@ preventKeys(); // prevents scrolling by keyboard keys. (usually required for lat
 forceFocus();
 // registerWorker(); // registers the service worker for pwa
 
+export const pixiRenderer = new PixiRenderer(pixiSettings);
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const Manager = new SceneManager(new PixiRenderer(pixiSettings));
+export const Manager = new SceneManager(pixiRenderer);
+
 export const cameraControl = new CameraOrbitControl(pixiSettings.view);
 
 // Suponiendo que 'element' es el HTMLElement donde capturas los eventos y 'camera' es tu objeto Camera.
@@ -102,7 +105,7 @@ window.addEventListener("contextmenu", (e) => {
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
-	Manager.changeScene(ConstructionEngineScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(Multiplayer3DScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

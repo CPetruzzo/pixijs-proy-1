@@ -12,7 +12,7 @@ export class Torch {
 	private maxVolume: number; // Nuevo: Volumen máximo personalizable
 	public name: string;
 
-	constructor(container: any, x: number, z: number, maxVolume = 0.03, minVolumeDistance = 1, maxVolumeDistance = 50) {
+	constructor(container: any, x: number, z: number, maxVolume = 0.05, minVolumeDistance = 1, maxVolumeDistance = 50) {
 		const torch = container.addChild(Mesh3D.createCylinder());
 		torch.y = 0;
 		torch.x = x;

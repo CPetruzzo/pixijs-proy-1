@@ -468,6 +468,7 @@
 				"house": "./models/house.glb",
 				"cublosion": "./models/cublosion.glb",
 				"futurecop": "./models/futurecop.glb",
+				"futurecoprunforward": "./models/futurecop.glb",
 				"gridTexture": "./img/big_placeholder/bg_game.png",
 				"impala": "models/impala/impala.gltf",
 				"road": "models/road/road.gltf",
@@ -494,12 +495,15 @@
 				"house": "./models/house.glb",
 				"car_fire": "./models/car_on_fire__animation.glb",
 				"fire": "./models/animated_fire.glb",
+				"ocean": "./models/ocean_sky_sphere.glb",
+
 				"cublosion": "./models/cublosion.glb",
 				"torchsfx": "./sfx/torchsfx.mp3",
 				"switch": "./sfx/switch.mp3",
 				"gate-heavy": "./sfx/gate-heavy.mp3",
 				"cyberpunk_city": "./models/cyberpunk_city.glb",
-				"futurecop": "./models/futurecop.glb"
+				"futurecop": "./models/futurecop.glb",
+				"futurecoprunforward": "./models/futurecoprunforward.glb"
 			}
 		},
 		{
@@ -507,6 +511,14 @@
 			"assets": {
 				"dagerBG": "./img/dager/dagerBG.webp",
 				"blackboard": "./img/engine/blackboard2.png"
+			}
+		},
+		{
+			"name": "construction",
+			"assets": {
+				"grass": "./img/construction/floor.jpg",
+				"wood": "./img/construction/wall.png",
+				"player": "./img/player1.png"
 			}
 		},
 		{
