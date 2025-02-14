@@ -15,7 +15,7 @@ interface PlacedEntity {
 	height: number;
 }
 
-export class GameScene extends PixiScene {
+export class ConstructionGameScene extends PixiScene {
 	// Contenedores principales
 	private backgroundContainer: Container;
 	private levelContainer: Container; // Contenedor para el nivel cargado

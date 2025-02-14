@@ -8,7 +8,8 @@ declare global {
 import { Container, Graphics, Sprite, Text } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
-import { pixiRenderer } from "../../..";
+import { Manager, pixiRenderer } from "../../..";
+import { GameScene } from "./GameScene";
 
 // Interfaz para describir cada entidad colocada.
 interface PlacedEntity {
@@ -137,6 +138,9 @@ export class ConstructionEngineScene extends PixiScene {
 		this.createToolButton("Player", -480, 0, () => this.setTool("player"));
 		// Botón para mover/seleccionar al player
 		this.createToolButton("Move Player", -480, 50, () => this.setTool("playerSelect"));
+		this.createToolButton("TestScenario", 480, 0, () => {
+			Manager.changeScene(GameScene);
+		});
 	}
 
 	/**

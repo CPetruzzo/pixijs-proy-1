@@ -517,7 +517,9 @@
 			"name": "construction",
 			"assets": {
 				"grass": "./img/construction/floor.jpg",
+				"blackboard": "./img/engine/blackboard2.png",
 				"wood": "./img/construction/wall.png",
+				"flag": "./img/towerdefense/flag.png",
 				"player": "./img/player1.png"
 			}
 		},
