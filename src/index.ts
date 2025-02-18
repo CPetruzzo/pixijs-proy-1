@@ -18,7 +18,7 @@ import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
 import { CameraOrbitControlAim } from "./project/scenes/3dgame/Camera/CameraOrbitControlAim";
-import { ConstructionEngineScene } from "./project/scenes/ConstructionEngineScene/ConstructionEngineScene";
+import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -104,7 +104,7 @@ window.addEventListener("contextmenu", (e) => {
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
-	Manager.changeScene(ConstructionEngineScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(MenuScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {
