@@ -176,5 +176,24 @@ Continue with the following if you want to test your game:
 And this if you're satisfied enough to make a build:
 # npx tauri build
 
+# ANDROID
 
+INSTALL
+1. npm install @capacitor/core
+2. npm install @capacitor/cli --save-dev
+3. npx cap init
+4. npm install @capacitor/android
+5. npx cap add android
+6. npx cap open android
+
+USAGE
+1. build:release
+2. npx cap sync
+
+PLUGINS
+1. npm install @capacitor/status-bar @hugotomazi/capacitor-navigation-bar @capacitor-community/keep-awake @capacitor/app
+CAUTION: check the peer dependencies
+
+CORDOVA
+2. npx cordova-res android --skip-config --copy
 

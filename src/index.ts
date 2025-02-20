@@ -19,6 +19,11 @@ import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
 import { CameraOrbitControlAim } from "./project/scenes/3dgame/Camera/CameraOrbitControlAim";
 import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
+import { Capacitor } from "@capacitor/core";
+import { StatusBar } from "@capacitor/status-bar";
+import { NavigationBar } from "@hugotomazi/capacitor-navigation-bar";
+import { KeepAwake } from "@capacitor-community/keep-awake";
+import { App } from "@capacitor/app";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -111,6 +116,19 @@ if (ALL_FLAGS.USE_BOX2D) {
 	Box2DHelper.initialize().then(() => initializeCb());
 } else {
 	initializeCb();
+}
+
+if (Capacitor.isNativePlatform()) {
+	StatusBar.hide();
+	NavigationBar.hide();
+	KeepAwake.keepAwake();
+	App.addListener("appStateChange", (e) => {
+		if (e.isActive) {
+			// resumo el juego
+		} else {
+			// pauso el juego
+		}
+	});
 }
 
 export function vibrateMobileDevice(): void {
