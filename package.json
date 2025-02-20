@@ -10,6 +10,8 @@
   },
   "main": "index.js",
   "scripts": {
+    "build:tauri":"tauri build",
+    "start:tauri":"tauri dev",
     "build:release": "rimraf ./dist && webpack --config webpack.config.prod.js",
     "build:debug": "rimraf ./dist && webpack --config webpack.config.dev.js",
     "start": "webpack serve --config webpack.config.dev.js",
@@ -29,6 +31,7 @@
   "author": "ElementalCode (Milton Candelero) @ Killabunnies | This particular template has some stuff added & modified by Facundo Wegher (CachoPetruzzo)",
   "devDependencies": {
     "@killabunnies/eslint-config": "^1.0.5",
+    "@tauri-apps/cli": "^2.2.7",
     "@types/fontfaceobserver": "2.1.0",
     "@types/matter-js": "^0.14.10",
     "@types/sat": "^0.0.31",
@@ -56,8 +59,8 @@
     "workbox-webpack-plugin": "6.5.4"
   },
   "dependencies": {
-    "@dimforge/rapier3d": "0.12.0",
     "@dimforge/rapier2d": "0.12.0",
+    "@dimforge/rapier3d": "0.12.0",
     "@mapeditor/tiled-api": "^1.10.1",
     "@pixi/filter-glow": "5.2.1",
     "@pixi/filter-shockwave": "^5.1.1",

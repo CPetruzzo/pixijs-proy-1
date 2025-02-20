@@ -144,3 +144,37 @@ tweens\
 Documentation\
 examples\
 tutorials
+
+This part does not come with bunnybox (at least not when I - Facundo - did it) and it explains how to make a PC build - .exe file
+## TAURI
+Maybe you find another way but, here is one way you can do it:
+
+1) Go to: https://rustup.rs
+2) Download & Install: rustup‑init.exe (I used default but if you know more, be my guest and do whatever you want)
+3) On VSCode or whatever you editor is, run this on terminal:
+
+# cargo install tauri-cli
+
+# npm install --save-dev @tauri-apps/cli
+
+# npx tauri init
+In this point, when you are asked about a route to where your project is just use: 
+# ../dist
+When asked about frontend command: 
+# npm run start
+And when asked about build command:
+# npm run build:release
+
+After all that be sure to change the identifier in tauri.conf.json:
+from:
+# com.tauri.dev
+to:
+# com.your-game-name.dev
+
+Continue with the following if you want to test your game:
+# npx tauri dev
+And this if you're satisfied enough to make a build:
+# npx tauri build
+
+
+
