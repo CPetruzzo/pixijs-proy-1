@@ -77,23 +77,33 @@ export class MenuScene extends PixiScene {
 			travelDistance: Texture.from("soundBG").width,
 			tweenDuration: 500,
 			onToggleOn: () => {
-				// Lógica para activar la música
 				if (!SoundManager.isMusicOn()) {
 					SoundManager.resumeMusic(Sounds.BG_MUSIC);
 					SoundManager.musicPlaying = true;
 				}
-				SoundManager.playSound(Sounds.START, {}); // Reproduce el sonido de feedback
+				// Eliminamos la reproducción del sonido acá
 			},
 			onToggleOff: () => {
-				// Lógica para desactivar la música
 				if (SoundManager.isMusicOn()) {
 					SoundManager.pauseMusic(Sounds.BG_MUSIC);
 					SoundManager.musicPlaying = false;
 				}
-				SoundManager.playSound(Sounds.CLOSEPOPUP, {}); // Reproduce el sonido de feedback
+				// Eliminamos la reproducción del sonido acá
 			},
-			startingValue: SoundManager.isMusicOn(), // Sincroniza el estado inicial del interruptor con la música
+			startingValue: SoundManager.isMusicOn(),
 		});
+
+		// Reproducir sonido únicamente cuando se haga tap (sin arrastre)
+		this.toggleSwitch.eventMode = "static";
+		this.toggleSwitch.interactive = true;
+		this.toggleSwitch.on("pointertap", () => {
+			if (this.toggleSwitch.value) {
+				SoundManager.playSound(Sounds.START, {});
+			} else {
+				SoundManager.playSound(Sounds.CLOSEPOPUP, {});
+			}
+		});
+
 		this.toggleSwitch.anchor.set(0.5);
 		this.toggleSwitch.scale.set(0.7);
 		this.toggleSwitch.y = -this.backgroundContainer.height * 0.5 + this.toggleSwitch.height * 2.85;
@@ -104,6 +114,7 @@ export class MenuScene extends PixiScene {
 		new Tween(title)
 			.from({ y: -1500 })
 			.to({ y: 0 }, 1200)
+			.delay(800)
 			.start()
 			.easing(Easing.Bounce.Out)
 			.onComplete(() => {

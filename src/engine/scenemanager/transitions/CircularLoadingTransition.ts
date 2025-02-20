@@ -9,7 +9,7 @@ import { CircularGradientProgress } from "../../progressbar/CircularGradientProg
 
 export class CircularLoadingTransition extends TransitionBase {
 	// Propiedades originales
-	private readonly color: number = 0x000000; // color base en caso de usar fade
+	private readonly color: number = 0x171719; // color base en caso de usar fade
 	private readonly fadeInTime: number = 500;
 	private readonly fadeOutTime: number = 500;
 	private readonly fade: Graphics;
@@ -19,17 +19,19 @@ export class CircularLoadingTransition extends TransitionBase {
 	private readonly bundleProgressBars: Record<string, CircularGradientProgress> = {};
 
 	// Nuevas propiedades para el fondo y el logo
-	private readonly backgroundSprite: Sprite;
-	private readonly logoSprite: Sprite;
+	private readonly backgroundSprite: Sprite | undefined;
+	private readonly logoSprite: Sprite | undefined;
 
 	public constructor() {
 		super();
 
 		// 1. Crea el sprite de fondo y agrégalo primero para que quede detrás de todo.
-		this.backgroundSprite = new Sprite(Texture.from("ruta/a/tu/imagen_fondo.jpg"));
-		// Ajusta el anchor para centrarlo (así al escalar se mantiene centrado)
-		this.backgroundSprite.anchor.set(0.5);
-		this.addChild(this.backgroundSprite);
+		this.backgroundSprite = new Sprite(Texture.from("../../../../preloader/background.jpg"));
+		if (this.backgroundSprite) {
+			// Ajusta el anchor para centrarlo (así al escalar se mantiene centrado)
+			this.backgroundSprite.anchor.set(0.5);
+			this.addChild(this.backgroundSprite);
+		}
 
 		// 2. (Opcional) Conserva el fade para efectos de transición. Se dibuja encima del fondo.
 		this.fade = new Graphics();
@@ -55,11 +57,12 @@ export class CircularLoadingTransition extends TransitionBase {
 
 		// 4. Crea el sprite del logo y agrégalo.
 		this.logoSprite = new Sprite(Texture.from("../../../../preloader/cachogames.jpg"));
-		this.logoSprite.anchor.set(0.5);
-		this.addChild(this.logoSprite);
+		if (this.logoSprite) {
+			this.logoSprite.anchor.set(0.5);
+			this.addChild(this.logoSprite);
+		}
 
 		console.log("¡Transition personalizada creada!");
-		this.onResize(ScaleHelper.IDEAL_WIDTH, ScaleHelper.IDEAL_HEIGHT);
 	}
 
 	public override startCovering(): Promise<void> {
@@ -77,14 +80,20 @@ export class CircularLoadingTransition extends TransitionBase {
 	public override startUncovering(): Promise<void> {
 		this.tweens.removeAll();
 
-		new Tween(this.logoSprite, this.tweens)
-			.to({ alpha: 0 }, this.fadeOutTime + 5500)
-			.easing(Easing.Linear.None)
+		if (this.logoSprite) {
+			new Tween(this.logoSprite, this.tweens).to({ alpha: 0 }, this.fadeOutTime).easing(Easing.Linear.None).start();
+		}
+
+		new Tween(this.overallProgress, this.tweens)
+			.to({ alpha: 0 }, this.fadeOutTime / 8)
+			.easing(Easing.Elastic.Out)
 			.start();
 
-		new Tween(this.overallProgress, this.tweens).to({ alpha: 0 }, this.fadeOutTime).easing(Easing.Elastic.Out).start();
-
-		const directingTween = new Tween(this.fade, this.tweens).to({ alpha: 0 }, this.fadeOutTime).easing(Easing.Linear.None).start();
+		const directingTween = new Tween(this.fade, this.tweens)
+			.to({ alpha: 0 }, this.fadeOutTime / 2)
+			.easing(Easing.Elastic.Out)
+			.delay(500)
+			.start();
 
 		return TweenUtils.promisify(directingTween).then();
 	}
@@ -114,10 +123,12 @@ export class CircularLoadingTransition extends TransitionBase {
 
 	public override onResize(w: number, h: number): void {
 		// Actualiza el sprite de fondo para que cubra toda la pantalla.
-		this.backgroundSprite.x = w / 2;
-		this.backgroundSprite.y = h / 2;
-		const scale = Math.max(w / this.backgroundSprite.texture.width, h / this.backgroundSprite.texture.height);
-		this.backgroundSprite.scale.set(scale);
+		if (this.backgroundSprite) {
+			this.backgroundSprite.x = w / 2;
+			this.backgroundSprite.y = h / 2;
+			const scale = Math.max(w / this.backgroundSprite.texture.width, h / this.backgroundSprite.texture.height);
+			this.backgroundSprite.scale.set(scale);
+		}
 
 		// Si sigues usando el fade, dibuja el rectángulo para cubrir toda la pantalla.
 		this.fade.clear();
@@ -130,9 +141,11 @@ export class CircularLoadingTransition extends TransitionBase {
 		this.overallProgress.x = w / 2;
 		this.overallProgress.y = h / 2;
 
-		ScaleHelper.setScaleRelativeToIdeal(this.logoSprite, w * 0.8, h * 0.8, 720, 1600, ScaleHelper.FIT);
-		this.logoSprite.x = w / 2;
-		this.logoSprite.y = h / 2;
+		if (this.logoSprite) {
+			ScaleHelper.setScaleRelativeToIdeal(this.logoSprite, w * 0.8, h * 0.8, 720, 1600, ScaleHelper.FIT);
+			this.logoSprite.x = w / 2;
+			this.logoSprite.y = h / 2;
+		}
 		// Opcionalmente, ajusta la escala del logo si es necesario:
 	}
 }

@@ -1,7 +1,11 @@
 import type { Container } from "pixi.js";
 import type { GameObject } from "../Objects/GameObject";
 import {
-	CoinObject, EnemyObject, PotionObject, ObstacleObject, PowerUpObject,
+	CoinObject,
+	EnemyObject,
+	PotionObject,
+	ObstacleObject,
+	PowerUpObject,
 	// ShieldObject, AlienShipObject, AlienProjectile, ObjectsNames
 } from "../Objects/Objects";
 import type { ScoreManager } from "./ScoreManager";
