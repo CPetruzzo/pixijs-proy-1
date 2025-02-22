@@ -61,7 +61,7 @@ export class DodgeScene extends PixiScene {
 
 		this.background.filters = [];
 
-		this.scoreText = new Text(`Score: 0`, { fontSize: 75, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
+		this.scoreText = new Text(`Score: 0`, { fontSize: 45, fill: 0xffffff, dropShadow: true, fontFamily: "Daydream" });
 		this.scoreText.anchor.set(0.5);
 		this.scoreText.position.set(0, -this.background.height * 0.47);
 		this.backgroundContainer.addChild(this.scoreText);

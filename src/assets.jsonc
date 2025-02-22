@@ -67,6 +67,17 @@
 					}
 				},
 				{
+					"name": "Daydream",
+					"srcs": "./fonts/Daydream.ttf",
+					"data": {
+						"family": "Daydream",
+						"weight": [
+							"normal",
+							"bold"
+						]
+					}
+				},
+				{
 					"name": "BoardFont",
 					"srcs": "./fonts/DK Boarding House I.otf",
 					"data": {
@@ -321,7 +332,14 @@
 				"fireTexture": "./img/Fire.png",
 				"sparksTexture": "./img/Sparks.png",
 				"frame": "./img/Laterales.png",
-				"highscore": "./img/highscore_popup.png",
+				"highscore": "./img/runfall/leaderboardBG.png",
+				"emptyBanner": "./img/runfall/emptyBannerBG.png",
+				"highscore2": "./img/highscore_popup.png",
+				"trophy": "./img/runfall/trophy.png",
+				"buttonBack": "./img/runfall/buttonBack.png",
+				"buttonContinue": "./img/runfall/buttonContinue.png",
+				"trophyBase": "./img/runfall/trophyBase.png",
+				"trophyTop": "./img/runfall/trophyTop.png",
 				"meteorEnemy": "./img/runfall/enemy.png",
 				"comet": "./img/runfall/comet.png",
 				"medkit": "./img/runfall/medkit.png",
@@ -330,6 +348,9 @@
 				"bronze1": "./img/runfall/bronze_1.png",
 				"spacestar": "./img/runfall/spacestar.png",
 				"asteroidFragment": "./img/runfall/asteroidFragment.png",
+				"astroSelect": "./img/runfall/astroSelect.png",
+				"leftArrow": "./img/runfall/leftArrow.png",
+				"rightArrow": "./img/runfall/rightArrow.png",
 				"astro1": "./img/runfall/astro1.png",
 				"astro2": "./img/runfall/astro2.png",
 				"astro3": "./img/runfall/astro3.png",
@@ -346,6 +367,7 @@
 				"config":  "./img/runfall/config.png",
 				"spaceship":  "./img/runfall/starship.png",
 				"shoot":  "./img/runfall/shoot.png",
+				"playerSelectBG":  "./img/runfall/playerSelectBG.jpg",
 				"return": "./img/runfall/return.png"
 			}
 		},

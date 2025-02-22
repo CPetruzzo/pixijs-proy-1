@@ -1,5 +1,4 @@
-import i18next from "i18next";
-import { Sprite, Text, TextStyle, Container, Graphics, Texture } from "pixi.js";
+import { Sprite, Container, Texture } from "pixi.js";
 import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { DodgeScene } from "./DodgeScene";
 import { Manager } from "../../../..";
@@ -10,12 +9,13 @@ import { HighScorePopUp } from "./PopUps/HighScorePopUp";
 import { SoundLib } from "../../../../engine/sound/SoundLib";
 import { SoundManager, Sounds } from "../Managers/SoundManager";
 import { ToggleSwitch } from "../Utils/toggle/ToggleSwitch";
+import { CharacterSelectorScene } from "./CharacterSelectorScene";
 
 export class MenuScene extends PixiScene {
 	public static readonly BUNDLES = ["package-1", "sfx", "music", "fallrungame", "runfallsfx"];
 
-	private backgroundContainer: Container;
-	private bleedingBackgroundContainer: Container;
+	private backgroundContainer: Container = new Container();
+	private bleedingBackgroundContainer: Container = new Container();
 	private toggleSwitch: ToggleSwitch;
 
 	constructor() {
@@ -23,11 +23,7 @@ export class MenuScene extends PixiScene {
 
 		SoundLib.playMusic(Sounds.BG_MUSIC, { volume: 0.03, loop: true });
 
-		this.bleedingBackgroundContainer = new Container();
-		this.backgroundContainer = new Container();
-
-		this.addChild(this.bleedingBackgroundContainer);
-		this.addChild(this.backgroundContainer);
+		this.addChild(this.bleedingBackgroundContainer, this.backgroundContainer);
 
 		const bleedBG = Sprite.from("DODGE-BACKGROUND2");
 		bleedBG.anchor.set(0.5);
@@ -36,40 +32,6 @@ export class MenuScene extends PixiScene {
 		const background = Sprite.from("DODGE-BACKGROUND");
 		background.position.set(-background.width * 0.5, -background.height * 0.5);
 		this.backgroundContainer.addChild(background);
-
-		const buttonText = new Text(i18next.t<string>("Start Game"), new TextStyle({ fill: "#ffffff", fontFamily: "Darling Coffee" }));
-		buttonText.anchor.set(0.5);
-		buttonText.scale.set(2);
-
-		const buttonBackgroundLine = new Graphics();
-		buttonBackgroundLine.beginFill(0xffffff);
-		buttonBackgroundLine.drawRoundedRect(-buttonText.width / 2 - 10, -buttonText.height / 2 - 10, buttonText.width + 20, buttonText.height + 20, 15);
-		buttonBackgroundLine.endFill();
-		buttonBackgroundLine.scale.set(2.1);
-
-		const buttonBackground = new Graphics();
-		buttonBackground.beginFill(0x252525);
-		buttonBackground.drawRoundedRect(-buttonText.width / 2 - 10, -buttonText.height / 2 - 5, buttonText.width + 20, buttonText.height + 10, 10);
-		buttonBackground.endFill();
-		buttonBackground.scale.set(2);
-		buttonBackground.alpha = 0.8;
-
-		const title = Sprite.from("runfall");
-		title.anchor.set(0.5);
-		title.scale.set(0.75);
-		title.x = 15;
-		this.backgroundContainer.addChild(title);
-
-		const playButton = Sprite.from("playbutton");
-		const playY = background.height * 0.3 + playButton.height * 0.5;
-		playButton.anchor.set(0.5);
-		playButton.y = 1500;
-		this.backgroundContainer.addChild(playButton);
-		playButton.eventMode = "static";
-		playButton.on("pointerdown", () => {
-			SoundLib.playSound(Sounds.START, { volume: 0.2 });
-			Manager.changeScene(DodgeScene, { transitionClass: FadeColorTransition, transitionParams: [] });
-		});
 
 		this.toggleSwitch = new ToggleSwitch({
 			knobTexture: "soundKnob",
@@ -81,19 +43,18 @@ export class MenuScene extends PixiScene {
 					SoundManager.resumeMusic(Sounds.BG_MUSIC);
 					SoundManager.musicPlaying = true;
 				}
-				// Eliminamos la reproducción del sonido acá
 			},
 			onToggleOff: () => {
 				if (SoundManager.isMusicOn()) {
 					SoundManager.pauseMusic(Sounds.BG_MUSIC);
 					SoundManager.musicPlaying = false;
 				}
-				// Eliminamos la reproducción del sonido acá
 			},
 			startingValue: SoundManager.isMusicOn(),
 		});
 
-		// Reproducir sonido únicamente cuando se haga tap (sin arrastre)
+		this.titleAnimation(background);
+
 		this.toggleSwitch.eventMode = "static";
 		this.toggleSwitch.interactive = true;
 		this.toggleSwitch.on("pointertap", () => {
@@ -110,6 +71,25 @@ export class MenuScene extends PixiScene {
 		this.toggleSwitch.x = -this.backgroundContainer.width * 0.5 + this.toggleSwitch.width * 0.5;
 
 		this.backgroundContainer.addChild(this.toggleSwitch);
+	}
+
+	private titleAnimation(background: Sprite): void {
+		const title = Sprite.from("runfall");
+		title.anchor.set(0.5);
+		title.scale.set(0.75);
+		title.x = 15;
+		this.backgroundContainer.addChild(title);
+
+		const playButton = Sprite.from("playbutton");
+		const playY = background.height * 0.3 + playButton.height * 0.5;
+		playButton.anchor.set(0.5);
+		playButton.y = 1500;
+		this.backgroundContainer.addChild(playButton);
+		playButton.eventMode = "static";
+		playButton.on("pointerdown", () => {
+			SoundLib.playSound(Sounds.START, { volume: 0.2 });
+			Manager.changeScene(DodgeScene, { transitionClass: FadeColorTransition, transitionParams: [] });
+		});
 
 		new Tween(title)
 			.from({ y: -1500 })
@@ -131,16 +111,70 @@ export class MenuScene extends PixiScene {
 					});
 			});
 
-		const leaderboard = Sprite.from("enemy");
-		leaderboard.x = background.width * 0.5 - leaderboard.width * 0.5;
-		leaderboard.y = -background.height * 0.5 + leaderboard.height * 0.5;
+		const leaderboardBase = Sprite.from("trophyBase");
+		leaderboardBase.scale.set(0.3);
+		leaderboardBase.x = background.width * 0.5 - leaderboardBase.width * 0.5;
+		leaderboardBase.y = background.height * 0.5 - leaderboardBase.height + 50;
+		leaderboardBase.anchor.set(0.5);
+		leaderboardBase.eventMode = "static";
+		leaderboardBase.on("pointertap", () => {
+			this.openHighScorePopup();
+		});
+		this.backgroundContainer.addChild(leaderboardBase);
+
+		const leaderboard = Sprite.from("trophyTop");
+		leaderboard.scale.set(0.4);
+		leaderboard.x = background.width * 0.5 - leaderboardBase.width * 0.5;
+		leaderboard.y = background.height * 0.5 - leaderboard.height - 200;
 		leaderboard.anchor.set(0.5);
-		new Tween(leaderboard).from({ angle: -5 }).to({ angle: 5 }, 500).start().yoyo(true).repeat(Infinity);
+		new Tween(leaderboard)
+			.from({
+				angle: 25,
+				y: leaderboard.y,
+			})
+			.to(
+				{
+					angle: 20,
+					y: leaderboard.y + 20,
+				},
+				2000
+			)
+			.start()
+			.easing(Easing.Sinusoidal.InOut)
+			.yoyo(true)
+			.repeat(Infinity);
 		leaderboard.eventMode = "static";
 		leaderboard.on("pointertap", () => {
 			this.openHighScorePopup();
 		});
 		this.backgroundContainer.addChild(leaderboard);
+
+		const playerSelect = Sprite.from("astroSelect");
+		playerSelect.eventMode = "static";
+		playerSelect.anchor.set(0.5);
+		playerSelect.scale.set(0.5);
+		playerSelect.position.set(playerSelect.width * 0.55, background.height - playerSelect.height * 0.7);
+
+		new Tween(playerSelect)
+			.from({
+				angle: 5,
+				y: playerSelect.y,
+			})
+			.to(
+				{
+					angle: 0,
+					y: playerSelect.y + 20,
+				},
+				2000
+			)
+			.start()
+			.easing(Easing.Sinusoidal.InOut)
+			.yoyo(true)
+			.repeat(Infinity);
+		background.addChild(playerSelect);
+		playerSelect.on("pointertap", () => {
+			Manager.changeScene(CharacterSelectorScene, { transitionClass: FadeColorTransition, transitionParams: [] });
+		});
 	}
 
 	private async openHighScorePopup(): Promise<void> {

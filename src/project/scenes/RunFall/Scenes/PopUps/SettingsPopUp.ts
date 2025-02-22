@@ -9,7 +9,7 @@ import type { Button } from "@pixi/ui";
 import { SoundManager, Sounds } from "../../Managers/SoundManager";
 import { DodgeScene } from "../DodgeScene";
 import { MenuScene } from "../MenuScene";
-import { Text, Texture } from "pixi.js";
+import { Texture } from "pixi.js";
 import { FadeColorTransition } from "../../../../../engine/scenemanager/transitions/FadeColorTransition";
 import { ToggleSwitch } from "../../Utils/toggle/ToggleSwitch";
 
@@ -18,7 +18,7 @@ export class SettingsPopUp extends PixiScene {
 	private fadeAndBlocker: Graphics;
 	public background: Sprite;
 	public buttons: Button[];
-	private menuButton: Graphics;
+	private menuButton: Sprite;
 	// Level data
 	public readonly level: any;
 	public levelNumber: number;
@@ -27,7 +27,7 @@ export class SettingsPopUp extends PixiScene {
 	public closing: boolean = false;
 	public restart: boolean = false;
 	public pauseScene: boolean = false;
-	private closePopUpButton: Graphics;
+	private closePopUpButton: Sprite;
 	private goToMenu: boolean = false;
 	private toggleSwitch: ToggleSwitch;
 	private closePopUpBoolean: boolean = false;
@@ -46,7 +46,7 @@ export class SettingsPopUp extends PixiScene {
 		this.fadeAndBlocker.scale.set(10);
 
 		// Create background sprite
-		this.background = Sprite.from("highscore");
+		this.background = Sprite.from("emptyBanner");
 		this.background.anchor.set(0.5);
 		this.addChild(this.background);
 
@@ -73,7 +73,7 @@ export class SettingsPopUp extends PixiScene {
 			},
 			startingValue: SoundManager.isMusicOn(), // Sincroniza el estado inicial del interruptor con la música
 		});
-		this.toggleSwitch.anchor.set(0.5, 1.25);
+		this.toggleSwitch.anchor.set(0.5);
 		// this.toggleSwitch.scale.set(0.8);
 	}
 
@@ -93,41 +93,23 @@ export class SettingsPopUp extends PixiScene {
 		this.background.addChild(this.toggleSwitch);
 
 		// Mostrar el botón de reinicio
-		this.closePopUpButton = new Graphics();
-		this.closePopUpButton.beginFill(0x808080);
-		this.closePopUpButton.drawRoundedRect(0, 0, 350, 150, 50);
-		this.closePopUpButton.endFill();
-		this.closePopUpButton.pivot.set(this.closePopUpButton.width * 0.5, this.closePopUpButton.height * 0.5);
+		this.closePopUpButton = Sprite.from("buttonContinue");
+		this.closePopUpButton.anchor.set(0.5);
+		this.closePopUpButton.scale.set(0.45);
 		this.closePopUpButton.eventMode = "static";
-		this.closePopUpButton.position.set(this.background.width * 0.5, this.background.height + 350); // Posiciona el botón según sea necesario
+		this.closePopUpButton.position.set(this.background.width * 0.5 + this.closePopUpButton.width / 2, this.background.height + 350); // Posiciona el botón según sea necesario
 		this.closePopUpButton.on("pointertap", this.handleResetClick, this); // Agrega un manejador de eventos al hacer clic en el botón
 		this.background.addChild(this.closePopUpButton); // Agrega el botón al background
 
-		const closepopup = new Text("Continue", { fontSize: 70, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
-		closepopup.y = this.closePopUpButton.height * 0.5;
-		closepopup.x = this.closePopUpButton.width * 0.5;
-		closepopup.anchor.set(0.5);
-		// tryagain.anchor.set(0.5);
-		this.closePopUpButton.addChild(closepopup);
-
-		this.menuButton = new Graphics();
-		this.menuButton.beginFill(0x808080);
-		this.menuButton.drawRoundedRect(0, -275, 350, 150, 50);
-		this.menuButton.endFill();
-		this.menuButton.pivot.set(this.menuButton.width * 0.5, this.menuButton.height * 0.5);
+		this.menuButton = Sprite.from("buttonBack");
+		this.menuButton.anchor.set(0.5);
+		this.menuButton.scale.set(0.4);
 		this.menuButton.eventMode = "static";
-		this.menuButton.position.set(this.background.width * 0.5, this.background.height + 350); // Posiciona el botón según sea necesario
+		this.menuButton.position.set(this.background.width * 0.5 - this.menuButton.width / 2, this.background.height + 350); // Posiciona el botón según sea necesario
 		this.menuButton.on("pointertap", () => {
 			this.handleResetClickAndLeave();
 		});
 		this.background.addChild(this.menuButton); // Agrega el botón al background
-
-		const returnButton = new Text("To Menu", { fontSize: 70, fill: 0xffffff, dropShadow: true, fontFamily: "Darling Coffee" });
-		returnButton.y = this.closePopUpButton.height * 0.5 - 275;
-		returnButton.x = this.closePopUpButton.width * 0.5;
-		returnButton.anchor.set(0.5);
-		// returnButton.anchor.set(0.5);
-		this.menuButton.addChild(returnButton);
 	}
 
 	public override onStart(): void {
@@ -140,8 +122,10 @@ export class SettingsPopUp extends PixiScene {
 		// Fade and scale animations
 		const fadeScale = new Tween(this.fadeAndBlocker).to({ scale: { x: 35, y: 15 } });
 		const fadeAnimation = new Tween(this.fadeAndBlocker).to({ alpha: 1 }, 500);
-		const elasticAnimation = new Tween(this.background).to({ scale: { x: 7, y: 7 } }, 1000).easing(Easing.Elastic.Out);
-
+		const elasticAnimation = new Tween(this.background)
+			.from({ scale: { x: 7, y: 7 }, y: 15000 })
+			.to({ scale: { x: 7, y: 7 }, y: 0 }, 500)
+			.easing(Easing.Exponential.Out);
 		// Play sound when animation starts
 		elasticAnimation.onStart(() => {
 			SoundManager.playSound(Sounds.OPENPOUP, {});
@@ -171,8 +155,10 @@ export class SettingsPopUp extends PixiScene {
 
 			// Fade out and scale down animations
 			const fadeAnimation = new Tween(this.fadeAndBlocker).to({ alpha: 0 }, 500);
-			const elasticAnimation = new Tween(this.background).to({ scale: { x: 0, y: 0 } }, 1000).easing(Easing.Elastic.In);
-
+			const elasticAnimation = new Tween(this.background)
+				.from({ scale: { x: 7, y: 7 }, y: 0 })
+				.to({ scale: { x: 7, y: 7 }, y: 15000 }, 500)
+				.easing(Easing.Exponential.In);
 			// On animation complete, handle the closure
 			fadeAnimation.onComplete(() => {
 				Keyboard.shared.pressed.off("Escape", this.closePopup.bind(this));

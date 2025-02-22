@@ -21,6 +21,15 @@
 }
 
 @font-face {
+    font-family: 'Daydream';
+    src: url('Daydream.ttf');
+    src: url('Daydream.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
     font-family: 'Crossroads';
     src: url('CrossroadsPersonalUseRegular-owql0.ttf');
     src: url('CrossroadsPersonalUseRegular-owql0.ttf') format('truetype');
