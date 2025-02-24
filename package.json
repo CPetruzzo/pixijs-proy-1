@@ -10,6 +10,8 @@
   },
   "main": "index.js",
   "scripts": {
+    "android:sync":"npx cap sync",
+    "android:open": "npx cap open android",
     "build:tauri": "tauri build",
     "start:tauri": "tauri dev",
     "build:release": "rimraf ./dist && webpack --config webpack.config.prod.js",

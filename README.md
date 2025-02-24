@@ -197,3 +197,10 @@ CAUTION: check the peer dependencies
 CORDOVA
 2. npx cordova-res android --skip-config --copy
 
+# NODE
+winget install Schniz.fnm
+fnm env --use-on-cd | Out-String | Invoke-Expression
+echo 'fnm env --use-on-cd | Out-String | Invoke-Expression' >> $PROFILE
+fnm install 22.12.0
+fnm use 22.12.0
+node -v

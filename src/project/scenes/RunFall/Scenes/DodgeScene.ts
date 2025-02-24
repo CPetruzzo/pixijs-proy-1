@@ -16,6 +16,7 @@ import { ObjectsNames } from "../Objects/Objects";
 import { PLAYER_SCALE_RUNFALL, REMOVE_OBJECT_TIME } from "../../../../utils/constants";
 import { SettingsPopUp } from "./PopUps/SettingsPopUp";
 import { Tween } from "tweedle.js";
+import { RunFallNameInputPopUp } from "./PopUps/RunFallNameInputPopUp";
 
 export class DodgeScene extends PixiScene {
 	// #region VARIABLES
@@ -159,6 +160,35 @@ export class DodgeScene extends PixiScene {
 		this.objects.splice(objIndex, 1);
 	}
 
+	private isGameOver(): boolean {
+		if (CollisionManager.gameOver && !this.isPopupOpen) {
+			this.openNameInputPopup();
+			this.isPopupOpen = true; // Asegura que solo se abra una vez
+			return true;
+		}
+		return false;
+	}
+
+	public async openNameInputPopup(): Promise<void> {
+		this.isPopupOpen = true;
+		this.isPaused = true;
+
+		try {
+			const popupInstance = await Manager.openPopup(RunFallNameInputPopUp);
+			if (popupInstance instanceof RunFallNameInputPopUp) {
+				popupInstance.showButtons();
+			}
+			if (popupInstance instanceof RunFallNameInputPopUp) {
+				popupInstance.on("HIGHSCORE_NAME_READY", () => {
+					console.log("cerrate loco");
+					this.openGameOverPopup();
+				});
+			}
+		} catch (error) {
+			console.error("Error opening settings popup:", error);
+		}
+	}
+
 	private async openGameOverPopup(): Promise<void> {
 		CollisionManager.gameOver = false;
 		try {
@@ -195,13 +225,11 @@ export class DodgeScene extends PixiScene {
 	}
 
 	public override update(dt: number): void {
-		if (CollisionManager.gameOver) {
-			this.openGameOverPopup();
+		if (this.isGameOver()) {
 			this.isPaused = true;
 			this.uiButton.visible = false;
 			return;
 		}
-
 		if (this.isPaused) {
 			return;
 		}

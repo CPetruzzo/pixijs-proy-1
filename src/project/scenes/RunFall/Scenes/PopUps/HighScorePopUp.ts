@@ -11,6 +11,7 @@ import { SoundLib } from "../../../../../engine/sound/SoundLib";
 import { DodgeScene } from "../DodgeScene";
 import { Text } from "pixi.js";
 import { Sounds } from "../../Managers/SoundManager";
+import { RunFallNameInputPopUp } from "./RunFallNameInputPopUp";
 
 interface HighscoreEntry {
 	playerName: string;
@@ -67,7 +68,7 @@ export class HighScorePopUp extends PixiScene {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/require-await
-	private async showNameInputDialog(): Promise<string> {
+	public async showNameInputDialog(): Promise<string> {
 		const playerName = prompt("Enter your name:");
 		return playerName || "Player"; // Si no se ingresa un nombre, se usa "Player" por defecto
 	}
@@ -107,10 +108,12 @@ export class HighScorePopUp extends PixiScene {
 	}
 
 	public async showHighscores(playerScore: number): Promise<void> {
-		const playerName = await this.showNameInputDialog();
+		const playerName = RunFallNameInputPopUp.playerName || "Jugador Anónimo"; // Nombre del jugador
+		console.log(`Player Name: ${playerName}`);
 
 		// Guardar el puntaje del jugador actual
-		highscores.push({ playerName, score: playerScore });
+		// eslint-disable-next-line @typescript-eslint/await-thenable
+		await highscores.push({ playerName, score: playerScore });
 
 		highscores.sort((a, b) => b.score - a.score);
 		localStorage.setItem(localStorageKey, JSON.stringify(highscores));
