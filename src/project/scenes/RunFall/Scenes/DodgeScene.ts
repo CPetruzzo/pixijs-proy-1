@@ -17,6 +17,8 @@ import { PLAYER_SCALE_RUNFALL, REMOVE_OBJECT_TIME } from "../../../../utils/cons
 import { SettingsPopUp } from "./PopUps/SettingsPopUp";
 import { Tween } from "tweedle.js";
 import { RunFallNameInputPopUp } from "./PopUps/RunFallNameInputPopUp";
+import type { Achievement, AchievementState } from "../Managers/AchievementsManager";
+import { AchievementsManager } from "../Managers/AchievementsManager";
 
 export class DodgeScene extends PixiScene {
 	// #region VARIABLES
@@ -37,6 +39,7 @@ export class DodgeScene extends PixiScene {
 	private playerController: PlayerController;
 	private scoreManager: ScoreManager;
 	private spawnManager: SpawnManager;
+	private achievementsManager: AchievementsManager;
 	// booleans
 	public isPaused: boolean = false;
 
@@ -105,6 +108,13 @@ export class DodgeScene extends PixiScene {
 
 		this.playerController = new PlayerController(this.player);
 		this.spawnManager = new SpawnManager(this.scoreManager);
+
+		this.achievementsManager = AchievementsManager.getInstance();
+
+		this.achievementsManager.on("achievementUnlocked", (achievement: Achievement) => {
+			// Aquí muestra el logro desbloqueado en pantalla
+			console.log(`¡Felicidades! Desbloqueaste: ${achievement.title}`);
+		});
 	}
 
 	private createEventContainer(x: number, y: number, width: number, height: number): Graphics {
@@ -248,6 +258,18 @@ export class DodgeScene extends PixiScene {
 
 		this.playerController.mouseMovements(this.background);
 		this.playerController.onKeyDown(this.background);
+
+		// Actualizamos logros (construí un estado a partir de los datos actuales)
+		const currentState: AchievementState = {
+			score: this.scoreManager.getScore(),
+			lives: this.healthBar.getCurrentHealth(),
+			coinsCollected: this.player.achievementsState.coinsCollected,
+			enemyCollisions: this.player.achievementsState.enemyCollisions,
+			obstacleCollisions: this.player.achievementsState.obstacleCollisions,
+			potionsCollected: this.player.achievementsState.potionsCollected,
+		};
+
+		this.achievementsManager.update(currentState);
 	}
 
 	public override onResize(newW: number, newH: number): void {

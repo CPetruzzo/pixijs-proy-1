@@ -6,6 +6,7 @@ import { PLAYER_SCALE_RUNFALL, PLAYER_SPEED, SPEEDUP_TIME, STUN_TIME } from "../
 import type { ScoreManager } from "../Managers/ScoreManager";
 import type { HealthBar } from "./HealthBar";
 import { EffectManager } from "../Managers/EffectManager";
+import type { AchievementState } from "../Managers/AchievementsManager";
 
 export class Player extends StateMachineAnimator {
 	public canMove: boolean = true;
@@ -15,12 +16,23 @@ export class Player extends StateMachineAnimator {
 	public effectManager: EffectManager;
 	private isShielded: boolean = false;
 	private shieldDuration: number = 5000; // Duración de la inmunidad en milisegundos
+	public achievementsState: AchievementState;
 	constructor(public scoreManager: ScoreManager, public healthBar: HealthBar, public background: Sprite) {
 		super();
 		this.scoreManager = scoreManager;
 		this.healthBar = healthBar;
 		this.effectManager = new EffectManager(this, background);
 		console.log("isShielded", this.isShielded);
+
+		// Inicializamos achievementsState con valores por defecto
+		this.achievementsState = {
+			score: 0, // Podrías actualizar este valor según el puntaje real
+			lives: healthBar.getCurrentHealth(), // O el número máximo de vidas
+			coinsCollected: 0,
+			enemyCollisions: 0,
+			obstacleCollisions: 0,
+			potionsCollected: 0,
+		};
 
 		this.speed = PLAYER_SPEED;
 

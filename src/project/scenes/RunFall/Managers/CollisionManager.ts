@@ -26,6 +26,7 @@ export class CollisionManager {
 				player.scoreManager.decreaseScore(ENEMY_COUNTER_POINTS);
 				player.takeDamage();
 				player.effectManager.causeBlur(BLUR_TIME);
+				player.achievementsState.enemyCollisions++;
 				SoundLib.playSound(Sounds.ENEMY, SOUNDPARAMS1);
 				if (player.healthBar.getCurrentHealth() <= 0) {
 					this.gameOver = true;
@@ -35,11 +36,13 @@ export class CollisionManager {
 			case ObjectsNames.POTION:
 				player.scoreManager.increaseScore(POTION_POINTS);
 				player.heal(); // Curar
+				player.achievementsState.potionsCollected++;
 				SoundLib.playSound(Sounds.POTION, SOUNDPARAMS1);
 				break;
 
 			case ObjectsNames.COIN:
 				player.collectCoin(COIN_POINTS);
+				player.achievementsState.coinsCollected++;
 				SoundLib.playSound(Sounds.COIN, SOUNDPARAMS2);
 				break;
 
@@ -51,6 +54,7 @@ export class CollisionManager {
 			case ObjectsNames.OBSTACLE:
 				player.collideWithObstacle();
 				player.takeDamage();
+				player.achievementsState.obstacleCollisions++;
 				if (player.healthBar.getCurrentHealth() <= 0) {
 					this.gameOver = true;
 				}

@@ -42,7 +42,7 @@ export class EnemyObject extends GameObject {
 
 	public override handleEvent(_something: any): void {
 		if (_something instanceof Player) {
-			console.log("El enemigo ha colisionado con el jugador.");
+			// console.log("El enemigo ha colisionado con el jugador.");
 		}
 	}
 }
@@ -74,7 +74,7 @@ export class PotionObject extends GameObject {
 
 	public handleEvent(_something: any): void {
 		if (_something instanceof Player) {
-			console.log("Una poción ha sido tomada por el jugador.");
+			// console.log("Una poción ha sido tomada por el jugador.");
 		}
 	}
 }
@@ -99,7 +99,7 @@ export class CoinObject extends GameObject {
 
 	public handleEvent(_something: any): void {
 		if (_something instanceof Player) {
-			console.log("El jugador recogió una moneda.");
+			// console.log("El jugador recogió una moneda.");
 		}
 	}
 }
@@ -127,7 +127,7 @@ export class PowerUpObject extends GameObject {
 
 	public handleEvent(_something: any): void {
 		if (_something instanceof Player) {
-			console.log("El jugador obtuvo un power-up.");
+			// console.log("El jugador obtuvo un power-up.");
 		}
 	}
 }
@@ -175,7 +175,7 @@ export class ObstacleObject extends GameObject {
 
 	public handleEvent(_something: any): void {
 		if (_something instanceof Player) {
-			console.log("El jugador chocó con un obstáculo.");
+			// console.log("El jugador chocó con un obstáculo.");
 		}
 	}
 }
@@ -206,7 +206,7 @@ export class AlienProjectile extends GameObject {
 
 	public handleEvent(_something: any): void {
 		if (_something instanceof Player) {
-			console.log("El jugador ha sido impactado por un proyectil de la nave alienígena.");
+			// console.log("El jugador ha sido impactado por un proyectil de la nave alienígena.");
 			// Lógica de daño al jugador
 			this.parent?.removeChild(this); // Remover proyectil tras impacto
 		}
@@ -291,7 +291,7 @@ export class AlienShipObject extends GameObject {
 
 	public handleEvent(_something: any): void {
 		if (_something instanceof Player) {
-			console.log("La nave alienígena ha colisionado con el jugador.");
+			// console.log("La nave alienígena ha colisionado con el jugador.");
 			this.shipDead = true;
 		}
 	}
@@ -325,7 +325,7 @@ export class ShieldObject extends GameObject {
 	public handleEvent(_something: any): void {
 		if (_something instanceof Player) {
 			// Aplica el escudo de inmunidad al jugador
-			console.log("El jugador adquirió el escudo de inmunidad.");
+			// console.log("El jugador adquirió el escudo de inmunidad.");
 			_something.applyShield(); // Método en Player que activa inmunidad
 		}
 	}

@@ -10,6 +10,7 @@ import { SoundLib } from "../../../../engine/sound/SoundLib";
 import { SoundManager, Sounds } from "../Managers/SoundManager";
 import { ToggleSwitch } from "../Utils/toggle/ToggleSwitch";
 import { CharacterSelectorScene } from "./CharacterSelectorScene";
+import { AchievementsScene } from "./AchievementsScene";
 
 export class MenuScene extends PixiScene {
 	public static readonly BUNDLES = ["package-1", "sfx", "music", "fallrungame", "runfallsfx"];
@@ -174,6 +175,33 @@ export class MenuScene extends PixiScene {
 		background.addChild(playerSelect);
 		playerSelect.on("pointertap", () => {
 			Manager.changeScene(CharacterSelectorScene, { transitionClass: FadeColorTransition, transitionParams: [] });
+		});
+
+		const achievements = Sprite.from("achievementIcon");
+		achievements.eventMode = "static";
+		achievements.anchor.set(0.5);
+		achievements.scale.set(0.2);
+		achievements.position.set(background.width - achievements.width * 0.55, achievements.height * 0.7);
+
+		new Tween(achievements)
+			.from({
+				angle: 5,
+				y: achievements.y,
+			})
+			.to(
+				{
+					angle: 0,
+					y: achievements.y + 20,
+				},
+				2000
+			)
+			.start()
+			.easing(Easing.Sinusoidal.InOut)
+			.yoyo(true)
+			.repeat(Infinity);
+		background.addChild(achievements);
+		achievements.on("pointertap", () => {
+			Manager.changeScene(AchievementsScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});
 	}
 

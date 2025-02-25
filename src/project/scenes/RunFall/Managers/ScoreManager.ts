@@ -14,7 +14,7 @@ export class ScoreManager {
 	public increaseScore(amount: number): void {
 		this.score += amount;
 		this.updateScoreText();
-		console.log(this.score);
+		// console.log(this.score);
 	}
 
 	public decreaseScore(amount: number): void {
