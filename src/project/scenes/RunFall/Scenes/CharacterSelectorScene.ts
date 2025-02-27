@@ -5,6 +5,7 @@ import { FadeColorTransition } from "../../../../engine/scenemanager/transitions
 import { Tween, Easing } from "tweedle.js";
 import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
 import { MenuScene } from "./MenuScene";
+import { AdMob, BannerAdSize, BannerAdPosition } from "@capacitor-community/admob";
 
 export class CharacterSelectorScene extends PixiScene {
 	private backgroundContainer: Container;
@@ -154,6 +155,25 @@ export class CharacterSelectorScene extends PixiScene {
 			Manager.changeScene(MenuScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});
 		this.backgroundContainer.addChild(this.backButton);
+
+		this.showBannerAd();
+	}
+
+	// eslint-disable-next-line @typescript-eslint/require-await
+	private async showBannerAd(): Promise<void> {
+		setTimeout(async () => {
+			try {
+				await AdMob.showBanner({
+					adId: "ca-app-pub-3940256099942544/2247696110", // Test ad unit
+					adSize: BannerAdSize.BANNER,
+					position: BannerAdPosition.BOTTOM_CENTER,
+					isTesting: true,
+				});
+				console.log("Banner mostrado correctamente.");
+			} catch (error) {
+				console.error("Error mostrando AdMob Banner:", error);
+			}
+		}, 2000); // Retardo de 2 segundos
 	}
 
 	/**

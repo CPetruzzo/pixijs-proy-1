@@ -28,6 +28,7 @@
     "baseUrl": "./",
   },
   "include": [
+    "src/*.ts",
     "src/**/*.ts"
 , "src/project/scenes/Multiplayer/Backend/server.js"  ]
 }

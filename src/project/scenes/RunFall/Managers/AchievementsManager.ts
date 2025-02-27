@@ -128,9 +128,9 @@ export class AchievementsManager extends EventEmitter {
 			{
 				id: "i_have_my_meds_1",
 				title: "I Have My Meds I",
-				description: "Recoge 10 potions.",
+				description: "Recoge 1 potions.",
 				unlocked: false,
-				checkCondition: (state: AchievementState) => state.potionsCollected >= 10,
+				checkCondition: (state: AchievementState) => state.potionsCollected >= 1,
 			},
 			{
 				id: "i_have_my_meds_2",

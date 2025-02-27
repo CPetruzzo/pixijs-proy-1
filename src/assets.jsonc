@@ -343,6 +343,7 @@
 				"meteorEnemy": "./img/runfall/enemy.png",
 				"comet": "./img/runfall/comet.png",
 				"achievement1": "./img/runfall/achievementCard1.png",
+				"achievement2": "./img/runfall/achievementCard2.png",
 				"achievementIcon": "./img/runfall/achievementIcon.png",
 				"medkit": "./img/runfall/medkit.png",
 				"capsule": "./img/runfall/capsule.png",

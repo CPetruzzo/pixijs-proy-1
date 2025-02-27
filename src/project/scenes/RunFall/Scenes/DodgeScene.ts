@@ -112,9 +112,74 @@ export class DodgeScene extends PixiScene {
 		this.achievementsManager = AchievementsManager.getInstance();
 
 		this.achievementsManager.on("achievementUnlocked", (achievement: Achievement) => {
-			// Aquí muestra el logro desbloqueado en pantalla
-			console.log(`¡Felicidades! Desbloqueaste: ${achievement.title}`);
+			// Muestra la notificación en pantalla
+			this.showAchievementNotification(achievement);
 		});
+	}
+
+	private showAchievementNotification(achievement: Achievement): void {
+		// Crea un contenedor para la notificación
+		const notificationContainer = new Container();
+
+		// Define el tamaño de la tarjeta
+		const notifWidth = this.background.width * 0.8;
+		const notifHeight = 200;
+
+		// Fondo de la notificación con color semi-transparente
+		const bg = new Graphics();
+		bg.beginFill(0x000000, 0.7);
+		bg.drawRoundedRect(0, 0, notifWidth, notifHeight, 15);
+		bg.endFill();
+		notificationContainer.addChild(bg);
+
+		// Creamos el placeholder para la imagen del achievement
+		const icon = Sprite.from("bronze1"); // Reemplaza "achievement_placeholder" por la key de la imagen según el achievement
+		icon.anchor.set(0, 0.5);
+		const iconSize = notifHeight * 0.7; // Tamaño relativo a la tarjeta
+		icon.width = iconSize;
+		icon.height = iconSize;
+		const iconMargin = 20;
+		icon.position.set(iconMargin, notifHeight * 0.5);
+		notificationContainer.addChild(icon);
+
+		// Texto de la notificación. Ajustamos la posición para que se ubique en el área restante.
+		const message = `¡Lograste el achievement:\n"${achievement.title}"!`;
+		const notifText = new Text(message, {
+			fontSize: 24,
+			fill: 0xffffff,
+			fontFamily: "Daydream",
+			align: "center",
+			wordWrap: true,
+			// El ancho disponible es el ancho total menos el espacio ocupado por el icono y márgenes
+			wordWrapWidth: notifWidth - (iconMargin + iconSize + iconMargin),
+		});
+		// Calculamos la posición X del texto para centrarlo en el área disponible a la derecha del icono
+		const textAreaX = iconMargin + iconSize + (notifWidth - (iconMargin + iconSize + iconMargin)) * 0.5;
+		notifText.anchor.set(0.5);
+		notifText.position.set(textAreaX, notifHeight * 0.5);
+		notificationContainer.addChild(notifText);
+
+		// Posiciónalo en la parte superior central (ajusta según convenga)
+		notificationContainer.position.set(-this.background.width * 0.5 + (this.background.width - notifWidth) * 0.5, -this.background.height * 0.5 + 350);
+
+		// Inicialmente invisible
+		notificationContainer.alpha = 0;
+		// Agrega la notificación al contenedor de fondo para que se escale junto con el juego
+		this.backgroundContainer.addChild(notificationContainer);
+
+		// Aplica el tween: fade in, pausa y fade out
+		new Tween(notificationContainer)
+			.to({ alpha: 1 }, 500)
+			.start()
+			.onComplete(() => {
+				new Tween(notificationContainer)
+					.delay(2000) // espera 2 segundos
+					.to({ alpha: 0 }, 500)
+					.start()
+					.onComplete(() => {
+						notificationContainer.parent?.removeChild(notificationContainer);
+					});
+			});
 	}
 
 	private createEventContainer(x: number, y: number, width: number, height: number): Graphics {

@@ -53,13 +53,13 @@ class AchievementCard extends Container {
 
 		// Si el logro está bloqueado, la card se muestra en alpha 0.5 con un texto superpuesto
 		if (!this.achievement.unlocked) {
-			this.alpha = 0.5;
+			this.background.texture = Texture.from("achievement2");
 			this.overlayText = new Text("Locked", { fontSize: 20, wordWrap: true, wordWrapWidth: this.cardWidth * 0.5, fill: 0xff0000, fontFamily: "Daydream" });
 			this.overlayText.anchor.set(0.5);
 			this.overlayText.position.set(this.cardWidth * 1.5, this.cardHeight + 280);
 			this.background.addChild(this.overlayText);
 		} else {
-			this.alpha = 1;
+			this.background.texture = Texture.from("achievement1");
 		}
 	}
 

@@ -24,6 +24,9 @@ import { StatusBar } from "@capacitor/status-bar";
 import { NavigationBar } from "@hugotomazi/capacitor-navigation-bar";
 import { KeepAwake } from "@capacitor-community/keep-awake";
 import { App } from "@capacitor/app";
+import { AdMob } from "@capacitor-community/admob";
+import { SoundLib } from "./engine/sound/SoundLib";
+import { Sounds } from "./project/scenes/RunFall/Managers/SoundManager";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -124,11 +127,15 @@ if (Capacitor.isNativePlatform()) {
 	KeepAwake.keepAwake();
 	App.addListener("appStateChange", (e) => {
 		if (e.isActive) {
+			SoundLib.resumeMusic(Sounds.BG_MUSIC);
 			// resumo el juego
 		} else {
+			SoundLib.pauseMusic(Sounds.BG_MUSIC);
 			// pauso el juego
 		}
 	});
+
+	AdMob.initialize(); // Inicializa AdMob cuando arranca la app
 }
 
 export function vibrateMobileDevice(): void {

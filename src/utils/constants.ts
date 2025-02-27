@@ -67,3 +67,6 @@ export const AIR_TOLERANCE: number = 5;
 
 // FUTURECOP
 export const FUTURECOP_SPEED = 0.05;
+
+// eslint-disable-next-line no-var
+export declare var admob: any;
