@@ -46,7 +46,10 @@ export class DodgeScene extends PixiScene {
 	private uiButton: Sprite;
 	private isPopupOpen: boolean = false;
 
+	// Propiedad para almacenar las monedas acumuladas de partidas anteriores
+	private cumulativeCoinsInitial: number = 0;
 	// #endregion VARIABLES
+
 	constructor() {
 		super();
 
@@ -90,31 +93,32 @@ export class DodgeScene extends PixiScene {
 		this.leftEventContainer = this.createEventContainer(-this.background.width * 0.3, 0, this.background.width * 0.3, this.background.height);
 		this.background.addChild(this.bottomEventContainer, this.leftEventContainer, this.rightEventContainer);
 
-		// Create and position the main button to trigger the popup
+		// Botón principal para abrir el popup
 		this.uiButton = Sprite.from("config");
-		// this.uiButton.scale.set(0.7);
 		this.uiButton.anchor.set(0.5);
 		this.uiButton.eventMode = "static";
 		this.uiButton.on("pointerdown", () => {
 			if (!this.isPopupOpen) {
 				this.isPopupOpen = true;
-
 				this.openSettingsPopup();
 			}
 		});
 		this.uiButton.position.set(-this.background.width * 0.5 + this.uiButton.width * 0.5, -this.background.height * 0.5 + this.uiButton.height * 0.5);
 		this.backgroundContainer.addChild(this.uiButton);
-		// #endregion UI
 
 		this.playerController = new PlayerController(this.player);
 		this.spawnManager = new SpawnManager(this.scoreManager);
 
 		this.achievementsManager = AchievementsManager.getInstance();
-
 		this.achievementsManager.on("achievementUnlocked", (achievement: Achievement) => {
 			// Muestra la notificación en pantalla
 			this.showAchievementNotification(achievement);
 		});
+
+		// Inicializamos la cantidad acumulada a partir de localStorage
+		this.cumulativeCoinsInitial = Number(localStorage.getItem("cumulativeCoins")) || 0;
+		this.player.achievementsState.cumulativeCoinsCollected = this.cumulativeCoinsInitial;
+		console.log("this.player.achievementsState.cumulativeCoinsCollected", this.player.achievementsState.cumulativeCoinsCollected);
 	}
 
 	private showAchievementNotification(achievement: Achievement): void {
@@ -122,7 +126,7 @@ export class DodgeScene extends PixiScene {
 		const notificationContainer = new Container();
 
 		// Define el tamaño de la tarjeta
-		const notifWidth = this.background.width * 0.8;
+		const notifWidth = 750;
 		const notifHeight = 200;
 
 		// Fondo de la notificación con color semi-transparente
@@ -132,17 +136,18 @@ export class DodgeScene extends PixiScene {
 		bg.endFill();
 		notificationContainer.addChild(bg);
 
+		SoundLib.playSound("sound2", { volume: 0.1 });
 		// Creamos el placeholder para la imagen del achievement
-		const icon = Sprite.from("bronze1"); // Reemplaza "achievement_placeholder" por la key de la imagen según el achievement
+		const icon = Sprite.from("bronze1");
 		icon.anchor.set(0, 0.5);
-		const iconSize = notifHeight * 0.7; // Tamaño relativo a la tarjeta
+		const iconSize = notifHeight * 0.7;
 		icon.width = iconSize;
 		icon.height = iconSize;
 		const iconMargin = 20;
 		icon.position.set(iconMargin, notifHeight * 0.5);
 		notificationContainer.addChild(icon);
 
-		// Texto de la notificación. Ajustamos la posición para que se ubique en el área restante.
+		// Texto de la notificación
 		const message = `¡Lograste el achievement:\n"${achievement.title}"!`;
 		const notifText = new Text(message, {
 			fontSize: 24,
@@ -150,30 +155,23 @@ export class DodgeScene extends PixiScene {
 			fontFamily: "Daydream",
 			align: "center",
 			wordWrap: true,
-			// El ancho disponible es el ancho total menos el espacio ocupado por el icono y márgenes
 			wordWrapWidth: notifWidth - (iconMargin + iconSize + iconMargin),
 		});
-		// Calculamos la posición X del texto para centrarlo en el área disponible a la derecha del icono
 		const textAreaX = iconMargin + iconSize + (notifWidth - (iconMargin + iconSize + iconMargin)) * 0.5;
 		notifText.anchor.set(0.5);
 		notifText.position.set(textAreaX, notifHeight * 0.5);
 		notificationContainer.addChild(notifText);
 
-		// Posiciónalo en la parte superior central (ajusta según convenga)
-		notificationContainer.position.set(-this.background.width * 0.5 + (this.background.width - notifWidth) * 0.5, -this.background.height * 0.5 + 350);
-
-		// Inicialmente invisible
+		notificationContainer.position.set(-notifWidth * 0.5, -700);
 		notificationContainer.alpha = 0;
-		// Agrega la notificación al contenedor de fondo para que se escale junto con el juego
 		this.backgroundContainer.addChild(notificationContainer);
 
-		// Aplica el tween: fade in, pausa y fade out
 		new Tween(notificationContainer)
 			.to({ alpha: 1 }, 500)
 			.start()
 			.onComplete(() => {
 				new Tween(notificationContainer)
-					.delay(2000) // espera 2 segundos
+					.delay(2000)
 					.to({ alpha: 0 }, 500)
 					.start()
 					.onComplete(() => {
@@ -238,7 +236,10 @@ export class DodgeScene extends PixiScene {
 	private isGameOver(): boolean {
 		if (CollisionManager.gameOver && !this.isPopupOpen) {
 			this.openNameInputPopup();
-			this.isPopupOpen = true; // Asegura que solo se abra una vez
+			this.isPopupOpen = true;
+			// Actualizamos las monedas acumuladas en localStorage al terminar la partida
+			const finalCumulative = this.cumulativeCoinsInitial + this.player.achievementsState.coinsCollected;
+			localStorage.setItem("cumulativeCoins", finalCumulative.toString());
 			return true;
 		}
 		return false;
@@ -252,10 +253,7 @@ export class DodgeScene extends PixiScene {
 			const popupInstance = await Manager.openPopup(RunFallNameInputPopUp);
 			if (popupInstance instanceof RunFallNameInputPopUp) {
 				popupInstance.showButtons();
-			}
-			if (popupInstance instanceof RunFallNameInputPopUp) {
 				popupInstance.on("HIGHSCORE_NAME_READY", () => {
-					console.log("cerrate loco");
 					this.openGameOverPopup();
 				});
 			}
@@ -286,10 +284,7 @@ export class DodgeScene extends PixiScene {
 			const popupInstance = await Manager.openPopup(SettingsPopUp);
 			if (popupInstance instanceof SettingsPopUp) {
 				popupInstance.showButtons();
-			}
-			if (popupInstance instanceof SettingsPopUp) {
 				popupInstance.on("RESUME_PAUSE", () => {
-					console.log("cerrate loco");
 					this.isPaused = false;
 					this.isPopupOpen = false;
 				});
@@ -305,41 +300,35 @@ export class DodgeScene extends PixiScene {
 			this.uiButton.visible = false;
 			return;
 		}
-		if (this.isPaused) {
-			return;
-		}
-
-		if (this.isPopupOpen) {
+		if (this.isPaused || this.isPopupOpen) {
 			return;
 		}
 
 		this.player.update(dt);
-
 		this.spawnManager.update(dt, this.objects, this.background);
-
 		this.checkCollisions(dt);
-
 		this.scoreText.text = `Score: ${this.scoreManager.getScore()}`;
-
 		this.playerController.mouseMovements(this.background);
 		this.playerController.onKeyDown(this.background);
 
-		// Actualizamos logros (construí un estado a partir de los datos actuales)
+		// Construir el estado para evaluar logros
 		const currentState: AchievementState = {
 			score: this.scoreManager.getScore(),
 			lives: this.healthBar.getCurrentHealth(),
 			coinsCollected: this.player.achievementsState.coinsCollected,
+			// Suma de monedas recogidas en la partida actual más las acumuladas de sesiones anteriores
+			cumulativeCoinsCollected: this.cumulativeCoinsInitial + this.player.achievementsState.coinsCollected,
 			enemyCollisions: this.player.achievementsState.enemyCollisions,
 			obstacleCollisions: this.player.achievementsState.obstacleCollisions,
 			potionsCollected: this.player.achievementsState.potionsCollected,
 		};
 
+		// Actualiza logros
 		this.achievementsManager.update(currentState);
 	}
 
 	public override onResize(newW: number, newH: number): void {
 		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, newW * 0.7, newH * 0.7, 720, 1600, ScaleHelper.FIT);
-
 		ScaleHelper.setScaleRelativeToIdeal(this.bleedingBackgroundContainer, newW * 3, newH * 2, 720, 1600, ScaleHelper.FILL);
 		this.x = newW * 0.5;
 		this.y = newH * 0.5;

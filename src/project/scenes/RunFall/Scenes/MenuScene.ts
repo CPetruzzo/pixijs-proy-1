@@ -150,11 +150,17 @@ export class MenuScene extends PixiScene {
 		});
 		this.backgroundContainer.addChild(leaderboard);
 
+		const playerSelectIcon = Sprite.from("iconBG");
+		playerSelectIcon.anchor.set(0.5);
+		playerSelectIcon.scale.set(0.35);
+		playerSelectIcon.position.set(playerSelectIcon.width * 0.55, background.height - playerSelectIcon.height * 0.6);
+		background.addChild(playerSelectIcon);
+
 		const playerSelect = Sprite.from("astroSelect");
 		playerSelect.eventMode = "static";
 		playerSelect.anchor.set(0.5);
 		playerSelect.scale.set(0.5);
-		playerSelect.position.set(playerSelect.width * 0.55, background.height - playerSelect.height * 0.7);
+		playerSelect.position.set(playerSelect.width * 0.65, background.height - playerSelect.height * 0.75);
 
 		new Tween(playerSelect)
 			.from({

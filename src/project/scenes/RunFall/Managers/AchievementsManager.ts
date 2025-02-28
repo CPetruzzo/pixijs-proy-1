@@ -1,4 +1,3 @@
-// AchievementsManager.ts
 import { EventEmitter } from "events";
 
 /**
@@ -7,10 +6,11 @@ import { EventEmitter } from "events";
 export interface AchievementState {
 	score: number;
 	lives: number;
-	coinsCollected: number; // Monedas recogidas
-	enemyCollisions: number; // Choques contra enemigos
-	obstacleCollisions: number; // Choques contra obstáculos
-	potionsCollected: number; // Potions recogidas (I Have My Meds)
+	coinsCollected: number; // Monedas recogidas en la partida actual
+	cumulativeCoinsCollected: number; // Monedas acumuladas a lo largo de todas las partidas
+	enemyCollisions: number; // Choques contra enemigos en la partida actual
+	obstacleCollisions: number; // Choques contra obstáculos en la partida actual
+	potionsCollected: number; // Potions recogidas en la partida actual
 }
 
 /**
@@ -38,6 +38,7 @@ export class AchievementsManager extends EventEmitter {
 	private constructor() {
 		super();
 		this.initializeAchievements();
+		this.loadAchievements();
 	}
 
 	/**
@@ -55,104 +56,132 @@ export class AchievementsManager extends EventEmitter {
 	 */
 	private initializeAchievements(): void {
 		this.achievements = [
-			// Logros de monedas: Bounty Hunter (10, 50, 100)
+			// Logros por partida (usando coinsCollected)
 			{
 				id: "bounty_hunter_1",
 				title: "Bounty Hunter I",
-				description: "Recoge 10 monedas.",
+				description: "Recoge 10 monedas en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.coinsCollected >= 10,
 			},
 			{
 				id: "bounty_hunter_2",
 				title: "Bounty Hunter II",
-				description: "Recoge 50 monedas.",
+				description: "Recoge 50 monedas en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.coinsCollected >= 50,
 			},
+			// Logro acumulativo (usando cumulativeCoinsCollected)
 			{
-				id: "bounty_hunter_3",
-				title: "Bounty Hunter III",
-				description: "Recoge 100 monedas.",
+				id: "bounty_hunter_cumulative",
+				title: "Bounty Hunter Cumulative",
+				description: "Recoge 100 monedas en total a lo largo de todas las partidas.",
 				unlocked: false,
-				checkCondition: (state: AchievementState) => state.coinsCollected >= 100,
+				checkCondition: (state: AchievementState) => state.cumulativeCoinsCollected >= 100,
 			},
-
-			// Logros de colisiones con enemigos: Meteor Crasher (10, 20, 50)
+			// Logros de colisiones contra enemigos (por partida)
 			{
 				id: "meteor_crasher_1",
-				title: "Meteor Crasher I",
-				description: "Choca contra enemigos 10 veces.",
+				title: "My First Hit",
+				description: "Choca contra enemigos 1 vez en esta partida.",
 				unlocked: false,
-				checkCondition: (state: AchievementState) => state.enemyCollisions >= 10,
+				checkCondition: (state: AchievementState) => state.enemyCollisions >= 1,
 			},
 			{
 				id: "meteor_crasher_2",
-				title: "Meteor Crasher II",
-				description: "Choca contra enemigos 20 veces.",
+				title: "Ok... twice now!",
+				description: "Choca contra enemigos 2 veces en esta partida.",
 				unlocked: false,
-				checkCondition: (state: AchievementState) => state.enemyCollisions >= 20,
+				checkCondition: (state: AchievementState) => state.enemyCollisions >= 2,
 			},
 			{
 				id: "meteor_crasher_3",
-				title: "Meteor Crasher III",
-				description: "Choca contra enemigos 50 veces.",
+				title: "Meteor Party!",
+				description: "Choca contra enemigos 3 veces en esta partida.",
 				unlocked: false,
-				checkCondition: (state: AchievementState) => state.enemyCollisions >= 50,
+				checkCondition: (state: AchievementState) => state.enemyCollisions >= 3,
 			},
-
-			// Logros de colisiones con obstáculos: Stumble Champion (10, 20, 50)
+			// Logros de colisiones con obstáculos (por partida)
 			{
 				id: "stumble_champion_1",
 				title: "Stumble Champion I",
-				description: "Choca contra obstáculos 10 veces.",
+				description: "Choca contra obstáculos 10 veces en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.obstacleCollisions >= 10,
 			},
 			{
 				id: "stumble_champion_2",
 				title: "Stumble Champion II",
-				description: "Choca contra obstáculos 20 veces.",
+				description: "Choca contra obstáculos 20 veces en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.obstacleCollisions >= 20,
 			},
 			{
 				id: "stumble_champion_3",
 				title: "Stumble Champion III",
-				description: "Choca contra obstáculos 50 veces.",
+				description: "Choca contra obstáculos 50 veces en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.obstacleCollisions >= 50,
 			},
-
-			// Logros de recoger potions: I Have My Meds (10, 20, 50)
+			// Logros de potions (por partida)
 			{
 				id: "i_have_my_meds_1",
-				title: "I Have My Meds I",
-				description: "Recoge 1 potions.",
+				title: "I can handle this",
+				description: "Recoge 1 potion en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.potionsCollected >= 1,
 			},
 			{
 				id: "i_have_my_meds_2",
-				title: "I Have My Meds II",
-				description: "Recoge 20 potions.",
+				title: "I Have My Meds I",
+				description: "Recoge 2 potions en esta partida.",
 				unlocked: false,
-				checkCondition: (state: AchievementState) => state.potionsCollected >= 20,
+				checkCondition: (state: AchievementState) => state.potionsCollected >= 2,
 			},
 			{
 				id: "i_have_my_meds_3",
-				title: "I Have My Meds III",
-				description: "Recoge 50 potions.",
+				title: "I Have My Meds II",
+				description: "Recoge 5 potions en esta partida.",
 				unlocked: false,
-				checkCondition: (state: AchievementState) => state.potionsCollected >= 50,
+				checkCondition: (state: AchievementState) => state.potionsCollected >= 5,
 			},
 		];
 	}
 
 	/**
+	 * Carga el estado de los logros guardados en localStorage.
+	 */
+	private loadAchievements(): void {
+		const stored = localStorage.getItem("achievements");
+		if (stored) {
+			try {
+				const storedData = JSON.parse(stored);
+				this.achievements.forEach((achievement) => {
+					if (storedData[achievement.id]) {
+						achievement.unlocked = true;
+					}
+				});
+			} catch (e) {
+				console.error("Error al cargar achievements:", e);
+			}
+		}
+	}
+
+	/**
+	 * Guarda el estado actual de los logros en localStorage.
+	 */
+	private saveAchievements(): void {
+		const data: { [key: string]: boolean } = {};
+		this.achievements.forEach((achievement) => {
+			data[achievement.id] = achievement.unlocked;
+		});
+		localStorage.setItem("achievements", JSON.stringify(data));
+	}
+
+	/**
 	 * Se debe llamar a este método periódicamente (por ejemplo, en el loop de actualización)
 	 * pasando el estado actual del juego. Evaluará cada logro y, si se cumple la condición,
-	 * lo marcará como desbloqueado y emitirá el evento correspondiente.
+	 * lo marcará como desbloqueado, emitirá el evento correspondiente y guardará el estado.
 	 *
 	 * @param state Estado actual del juego.
 	 */
@@ -162,6 +191,7 @@ export class AchievementsManager extends EventEmitter {
 				achievement.unlocked = true;
 				this.emit("achievementUnlocked", achievement);
 				console.log(`Logro desbloqueado: ${achievement.title}`);
+				this.saveAchievements();
 			}
 		});
 	}

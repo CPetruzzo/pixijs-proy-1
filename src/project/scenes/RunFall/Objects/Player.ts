@@ -28,6 +28,7 @@ export class Player extends StateMachineAnimator {
 		this.achievementsState = {
 			score: 0, // Podrías actualizar este valor según el puntaje real
 			lives: healthBar.getCurrentHealth(), // O el número máximo de vidas
+			cumulativeCoinsCollected: 0,
 			coinsCollected: 0,
 			enemyCollisions: 0,
 			obstacleCollisions: 0,
