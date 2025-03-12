@@ -18,7 +18,6 @@ import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
 import { CameraOrbitControlAim } from "./project/scenes/3dgame/Camera/CameraOrbitControlAim";
-import { MenuScene } from "./project/scenes/RunFall/Scenes/MenuScene";
 import { Capacitor } from "@capacitor/core";
 import { StatusBar } from "@capacitor/status-bar";
 import { NavigationBar } from "@hugotomazi/capacitor-navigation-bar";
@@ -27,6 +26,7 @@ import { App } from "@capacitor/app";
 import { AdMob } from "@capacitor-community/admob";
 import { SoundLib } from "./engine/sound/SoundLib";
 import { Sounds } from "./project/scenes/RunFall/Managers/SoundManager";
+import { BubbleShooterGame } from "./project/scenes/SnowSurfer/Ballshooter";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -112,7 +112,7 @@ window.addEventListener("contextmenu", (e) => {
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
-	Manager.changeScene(MenuScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(BubbleShooterGame, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {
