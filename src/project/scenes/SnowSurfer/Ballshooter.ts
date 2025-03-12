@@ -21,6 +21,7 @@ interface WaveBall {
 	sprite: Sprite;
 	rowIndex: number;
 	colIndex: number;
+	originalX: number;
 }
 
 export class BubbleShooterGame extends PixiScene {
@@ -70,7 +71,7 @@ export class BubbleShooterGame extends PixiScene {
 	private turnAdvanced: boolean = false;
 	private numWaveBalls: number = 10; // cantidad de pelotitas por fila
 	private waveMargin: number = 5; // margen izquierdo y derecho (unidades físicas)
-	private waveAdvanceAmount: number = 2; // cuánto se mueve la oleada hacia abajo cada turno (unidades físicas)
+	public waveAdvanceAmount: number = 2; // cuánto se mueve la oleada hacia abajo cada turno (unidades físicas)
 	// ------------------------------
 
 	// Mecanismo de oleadas
@@ -244,7 +245,7 @@ export class BubbleShooterGame extends PixiScene {
 			lastVelX: undefined,
 		});
 
-		const impulseMagnitude = 1000;
+		const impulseMagnitude = 200;
 		rb.applyImpulse(new Point(nx * impulseMagnitude, ny * impulseMagnitude), true);
 	}
 
@@ -383,47 +384,69 @@ export class BubbleShooterGame extends PixiScene {
 	 * rowIndex = waveRowCount (se va incrementando)
 	 */
 	private spawnWaveRow(): void {
-		// La nueva fila siempre es la 0 (la de arriba)
+		// El índice de fila para la nueva fila es el total actual de filas generadas
 		const rowIndex = 0;
-		const totalWidth = BubbleShooterGame.BOARD_WIDTH * 2;
-		const availableWidth = totalWidth - 2 * this.waveMargin;
 
-		// En filas pares (0, 2, 4, ...), se usan todas; en filas impares, se usan numWaveBalls - 1
+		// Calculamos si la fila es par o impar para decidir cuántas pelotas poner
 		const isOdd = this.currentWaveRows % 2 === 1;
+		console.log("isOdd", isOdd);
 		const count = isOdd ? this.numWaveBalls - 1 : this.numWaveBalls;
-		// Espaciado horizontal según la cantidad de pelotitas de la fila
+		console.log("count", count);
+
+		const totalWidth = BubbleShooterGame.BOARD_WIDTH * 2;
+		const availableWidthNormal = totalWidth - 2 * this.waveMargin;
+		const availableWidth = isOdd ? availableWidthNormal - 8 : availableWidthNormal;
+
+		// Si la fila es impar, desplazamos medio spacing
 		const spacing = availableWidth / (count - 1);
+		const offsetX = isOdd ? spacing * 0.5 : 0;
 
-		// Para lograr la intercalación: si la fila es impar, se desplaza horizontalmente medio spacing;
-		// como la fila nueva es 0, en este caso no se aplica offset.
-		const offsetX = rowIndex % 2 === 1 ? spacing * 0.5 : 0;
-		// La posición Y de la fila 0 es topRowY
-		const rowY = this.topRowY + rowIndex * this.rowSpacing;
-
-		const colors = [0xff0000, 0x00ff00, 0x0000ff]; // rojo, verde, azul
+		// Posición vertical de la fila (salvo que la fila 0 quieras anclarla en topRowY exactamente)
+		let rowY = this.topRowY + rowIndex * this.rowSpacing;
+		if (rowIndex === 0) {
+			rowY = this.topRowY;
+		} else {
+			rowY = this.topRowY + rowIndex * this.rowSpacing;
+		}
+		const colors = [0xff0000, 0x00ff00, 0x0000ff];
 		for (let i = 0; i < count; i++) {
 			const colIndex = i;
+			// Posición X calculada
 			const x = this.waveMargin + offsetX + i * spacing;
+
+			// Creamos cuerpo fijo en Rapier
 			const rbDesc = RigidBodyDesc.fixed().setTranslation(x, rowY);
 			const body = this.world.createRigidBody(rbDesc);
 			const collider = ColliderDesc.ball(3.8).setRestitution(0.8);
 			this.world.createCollider(collider, body);
 
-			// Usar un sprite base blanco para que el tint se note bien
+			// Sprite
 			const ballSprite = Sprite.from("basquetball");
 			ballSprite.anchor.set(0.5);
 			ballSprite.scale.set(0.1);
-			// Asigna un color aleatorio
+
+			// Color aleatorio
 			const color = colors[Math.floor(Math.random() * colors.length)];
 			ballSprite.tint = color;
 
+			// Posicionar sprite
 			ballSprite.x = x * BubbleShooterGame.METER_TO_PIXEL;
 			ballSprite.y = rowY * BubbleShooterGame.METER_TO_PIXEL;
 
 			this.waveContainer.addChild(ballSprite);
-			this.waveBalls.push({ body, sprite: ballSprite, rowIndex, colIndex });
+
+			// Guardamos la info de la pelota
+			this.waveBalls.push({
+				body,
+				sprite: ballSprite,
+				rowIndex,
+				colIndex,
+				// Guardamos la X original para no recalcularla
+				originalX: x,
+			} as WaveBall);
 		}
-		// Incrementamos el total de filas en pantalla
+
+		// Incrementamos el total de filas
 		this.currentWaveRows++;
 	}
 
@@ -431,24 +454,19 @@ export class BubbleShooterGame extends PixiScene {
 	 * Avanza todas las filas hacia abajo y genera una nueva fila en la parte superior.
 	 */
 	private advanceWave(): void {
-		const totalWidth = BubbleShooterGame.BOARD_WIDTH * 2;
-		const availableWidth = totalWidth - 2 * this.waveMargin;
-		const spacing = availableWidth / (this.numWaveBalls - 1);
-
-		// Para cada pelotita existente, incrementamos su índice de fila
 		for (const waveBall of this.waveBalls) {
-			// Incrementar el rowIndex siempre, de modo que todas se muevan hacia abajo
+			// Incrementamos el rowIndex para bajar la fila
 			waveBall.rowIndex++;
-			// Calculamos la posición Y en función del índice de fila
+			// Calculamos la nueva posición Y
 			const newY = this.topRowY + waveBall.rowIndex * this.rowSpacing;
-			// Si la fila es impar, aplicamos un offset de media separación
-			const offsetX = waveBall.rowIndex % 2 === 1 ? spacing * 0.5 : 0;
-			const newX = this.waveMargin + offsetX + waveBall.colIndex * spacing;
-			waveBall.body.setTranslation({ x: newX, y: newY }, true);
-			waveBall.sprite.x = newX * BubbleShooterGame.METER_TO_PIXEL;
+			// Mantenemos la X original
+			const oldX = waveBall.body.translation().x;
+			// Actualizamos solo la Y
+			waveBall.body.setTranslation({ x: oldX, y: newY }, true);
+			waveBall.sprite.x = oldX * BubbleShooterGame.METER_TO_PIXEL;
 			waveBall.sprite.y = newY * BubbleShooterGame.METER_TO_PIXEL;
 		}
-		// Generamos una nueva fila en la parte superior con rowIndex = 0
+		// Ahora creamos una nueva fila arriba
 		this.spawnWaveRow();
 	}
 

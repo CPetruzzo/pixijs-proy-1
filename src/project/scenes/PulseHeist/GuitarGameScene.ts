@@ -4,9 +4,9 @@ import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Container, Graphics } from "pixi.js";
 
 export class GuitarGameScene extends PixiScene {
-	private strings: Graphics[];  // Las cuerdas de la guitarra
-	private frets: Graphics[];    // Los trastes de la guitarra
-	private synth: Tone.Synth;    // Sintetizador para las notas
+	private strings: Graphics[]; // Las cuerdas de la guitarra
+	private frets: Graphics[]; // Los trastes de la guitarra
+	private synth: Tone.Synth; // Sintetizador para las notas
 	private gameContainer: Container;
 
 	constructor() {
@@ -23,9 +23,9 @@ export class GuitarGameScene extends PixiScene {
 	private createGuitar(): void {
 		const stringHeight = 14;
 		const stringSpacing = 50; // Aumentamos el espacio entre cuerdas
-		const fretWidth = 50;     // Ancho de los trastes
+		const fretWidth = 50; // Ancho de los trastes
 		const numberOfStrings = 6; // Número de cuerdas en la guitarra
-		const numberOfFrets = 12;  // Número de trastes
+		const numberOfFrets = 12; // Número de trastes
 
 		// Crear cuerdas (líneas)
 		for (let i = 0; i < numberOfStrings; i++) {
@@ -52,8 +52,8 @@ export class GuitarGameScene extends PixiScene {
 			for (let j = 1; j <= numberOfFrets; j++) {
 				const fretArea = new Graphics();
 				// Agregar borde visible para depuración
-				fretArea.beginFill(0xFFFFFF, 0);  // Hacemos que el área sea invisible
-				fretArea.lineStyle(2, 0xFF0000, 1);  // Rojo para ver las áreas
+				fretArea.beginFill(0xffffff, 0); // Hacemos que el área sea invisible
+				fretArea.lineStyle(2, 0xff0000, 1); // Rojo para ver las áreas
 				fretArea.drawRect(j * fretWidth - 5, i * stringSpacing - 10, fretWidth + 10, stringSpacing + 20);
 				fretArea.eventMode = "static";
 				fretArea.on("pointerdown", () => this.playNote(i, j));
@@ -73,7 +73,7 @@ export class GuitarGameScene extends PixiScene {
 		];
 
 		const note = notes[stringIndex][fretIndex - 1]; // Fret 1 corresponde al primer índice
-		console.log("Playing note:", note);  // Verifica qué nota está siendo seleccionada
+		console.log("Playing note:", note); // Verifica qué nota está siendo seleccionada
 		if (note) {
 			this.synth.triggerAttackRelease(note, "8n");
 		}
@@ -82,14 +82,15 @@ export class GuitarGameScene extends PixiScene {
 	private setupInput(): void {
 		// Necesitamos hacer una llamada de usuario para desbloquear el audio en algunos navegadores
 		window.addEventListener("click", () => {
-			Tone.start().then(() => {
-				console.log("Audio unlocked");
-			}).catch(err => {
-				console.error("Error unlocking audio", err);
-			});
+			Tone.start()
+				.then(() => {
+					console.log("Audio unlocked");
+				})
+				.catch((err) => {
+					console.error("Error unlocking audio", err);
+				});
 		});
 	}
-
 
 	public override onResize(_newW: number, _newH: number): void {
 		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, _newW, _newH, 500, 500, ScaleHelper.FIT); // Ajustamos la escala
