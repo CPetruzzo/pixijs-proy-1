@@ -542,6 +542,18 @@
 			}
 		},
 		{
+			"name": "jubilpostor",
+			"assets": {
+				"cameraman": "./img/jubilpostor/cameraman.png",
+				"street": "./img/jubilpostor/street.png",
+				"protester1": "./img/jubilpostor/protester1.png",
+				"protester2": "./img/jubilpostor/protester2.png",
+				"protester3": "./img/jubilpostor/protester3.png",
+				"protester4": "./img/jubilpostor/protester4.png",
+				"impostor": "./img/jubilpostor/impostor.png"
+			}
+		},
+		{
 			"name": "construction",
 			"assets": {
 				"grass": "./img/construction/floor.jpg",
