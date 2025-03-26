@@ -201,7 +201,7 @@ export class AStarScene extends PixiScene {
 	}
 
 	public override onResize(_newW: number, _newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, _newW, _newH, 1920, 720, ScaleHelper.FILL);
+		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, _newW, _newH, 720, 720, ScaleHelper.FIT);
 		this.gameContainer.x = _newW * 0.5;
 		this.gameContainer.y = _newH * 0.5;
 		const containerBounds = this.gameContainer.getLocalBounds();
