@@ -40,8 +40,16 @@ export class Player extends StateMachineAnimator {
 		this.anchor.set(0.5, 0);
 		this.eventMode = "none";
 
-		this.addState("idle", [Texture.from("astro1"), Texture.from("astro5")], 0.2, true);
-		this.addState("move", [Texture.from("astro1"), Texture.from("astro3"), Texture.from("astro5")], 0.3, true);
+		this.addState("idle", [Texture.from("walk1"), Texture.from("walk1")], 0.2, true);
+		this.addState("move", [Texture.from("walk1"), Texture.from("walk2"), Texture.from("walk3"), Texture.from("walk4")], 0.3, true);
+		this.addState(
+			"defeat",
+			[Texture.from("defeat0"), Texture.from("defeat1"), Texture.from("defeat2"), Texture.from("defeat3"), Texture.from("defeat4"), Texture.from("defeat5")],
+			0.4,
+			false
+		);
+		this.addState("cheers", [Texture.from("cheers")], 0.3, true);
+		this.addState("block", [Texture.from("block1"), Texture.from("block2")], 0.3, true);
 
 		this.playState("idle");
 

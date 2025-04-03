@@ -82,7 +82,7 @@ export class DodgeScene extends PixiScene {
 		this.player = new Player(this.scoreManager, this.healthBar, this.background);
 		this.player.scale.set(PLAYER_SCALE_RUNFALL);
 		this.player.x = this.background.width * 0.5;
-		this.player.y = this.background.height - this.player.height * 1.5;
+		this.player.y = this.background.height - 103.5 * 3;
 		this.background.addChild(this.player);
 
 		this.background.eventMode = "static";
@@ -193,7 +193,7 @@ export class DodgeScene extends PixiScene {
 		this.objects.forEach((obj) => {
 			obj.update(dt);
 
-			if (obj.y >= this.background.height - obj.height * 0.5 - this.player.height * 0.5) {
+			if (obj.y >= this.background.height - obj.height * 0.5 - 103.5) {
 				if (obj.name === ObjectsNames.OBSTACLE) {
 					if (obj.isOnGround) {
 						if (CollisionManager.checkCollision(this.player, obj)) {

@@ -48,11 +48,13 @@ export class CollisionManager {
 
 			case ObjectsNames.POWER_UP:
 				player.activatePowerUp();
+				player.playState("cheers");
 				SoundLib.playSound(Sounds.POWERUP, SOUNDPARAMS1);
 				break;
 
 			case ObjectsNames.OBSTACLE:
 				player.collideWithObstacle();
+				player.playState("defeat");
 				player.takeDamage();
 				player.achievementsState.obstacleCollisions++;
 				if (player.healthBar.getCurrentHealth() <= 0) {
