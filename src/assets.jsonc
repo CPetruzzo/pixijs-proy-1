@@ -362,6 +362,24 @@
 				"astro3": "./img/runfall/astro3.png",
 				"astro4": "./img/runfall/astro4.png",
 				"astro5": "./img/runfall/astro5.png",
+
+				"defeat0": "./img/runfall/defeat0.png",
+				"defeat1": "./img/runfall/defeat1.png",
+				"defeat2": "./img/runfall/defeat2.png",
+				"defeat3": "./img/runfall/defeat3.png",
+				"defeat4": "./img/runfall/defeat4.png",
+				"defeat5": "./img/runfall/defeat5.png",
+
+				"walk1": "./img/runfall/walk1.png",
+				"walk2": "./img/runfall/walk2.png",
+				"walk3": "./img/runfall/walk3.png",
+				"walk4": "./img/runfall/walk4.png",
+
+				"block1": "./img/runfall/block1.png",
+				"block2": "./img/runfall/block2.png",
+
+				"cheers": "./img/runfall/cheers.png",
+
 				"medkit1": "./img/runfall/medkitspace1.png",
 				"golditem1": "./img/runfall/coolgolditem.png",
 				"golditem2":  "./img/runfall/goldmoon.png",
@@ -545,12 +563,22 @@
 			"name": "jubilpostor",
 			"assets": {
 				"cameraman": "./img/jubilpostor/cameraman.png",
+				"policetruck": "./img/jubilpostor/policetruck.png",
+				"policeman": "./img/jubilpostor/policeman.png",
 				"street": "./img/jubilpostor/street.png",
+				"flag": "./img/jubilpostor/flag.png",
+				"flag2": "./img/jubilpostor/flag2.png",
+				"win": "./img/jubilpostor/jubiladowin.png",
+				"lose": "./img/jubilpostor/policelose.png",
+				"cachonews": "./img/jubilpostor/cachonews.png",
 				"protester1": "./img/jubilpostor/protester1.png",
 				"protester2": "./img/jubilpostor/protester2.png",
 				"protester3": "./img/jubilpostor/protester3.png",
 				"protester4": "./img/jubilpostor/protester4.png",
-				"impostor": "./img/jubilpostor/impostor.png"
+				"impostor": "./img/jubilpostor/impostor.png",
+				"intro": "./sfx/jubilpostor/intro.mp3",
+				"police_siren": "./sfx/jubilpostor/policesiren.mp3",
+				"marcha": "./sfx/jubilpostor/marcha.wav"
 			}
 		},
 		{
