@@ -126,7 +126,8 @@
 				"sound8": "./sfx/runfall/going-to-the-next-level.mp3",
 				"sound9": "./sfx/runfall/enchanted-spell-casting.mp3",
 				"sound10": "./sfx/runfall/charming-twinkle-sound-for-fantasy-and-magic.mp3",
-				"sound11": "./sfx/runfall/camera-shutter.mp3"
+				"sound11": "./sfx/runfall/camera-shutter.mp3",
+				"switch": "./sfx/runfall/switch.mp3"
 			}
 		},
 		{
@@ -370,6 +371,10 @@
 				"defeat4": "./img/runfall/defeat4.png",
 				"defeat5": "./img/runfall/defeat5.png",
 
+				"idle1": "./img/runfall/idle1.png",
+				"idle2": "./img/runfall/idle2.png",
+				"idle3": "./img/runfall/idle3.png",
+
 				"walk1": "./img/runfall/walk1.png",
 				"walk2": "./img/runfall/walk2.png",
 				"walk3": "./img/runfall/walk3.png",
@@ -388,7 +393,8 @@
 				"soundOff":  "./img/runfall/soundOff.png",
 				"soundBG":  "./img/runfall/fondoknob.png",
 				"soundKnob":  "./img/runfall/soundknob.png",
-				"config":  "./img/runfall/config.png",
+				"config":  "./img/runfall/gameconfig.png",
+				"gameconfig":  "./img/runfall/config.png",
 				"spaceship":  "./img/runfall/starship.png",
 				"shoot":  "./img/runfall/shoot.png",
 				"playerSelectBG":  "./img/runfall/playerSelectBG.jpg",

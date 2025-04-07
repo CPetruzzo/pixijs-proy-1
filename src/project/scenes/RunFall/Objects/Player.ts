@@ -1,4 +1,4 @@
-import type { Sprite } from "pixi.js";
+import { Sprite } from "pixi.js";
 import { Graphics, Texture } from "pixi.js";
 import { StateMachineAnimator } from "../../../../engine/animation/StateMachineAnimation";
 import { Timer } from "../../../../engine/tweens/Timer";
@@ -7,6 +7,7 @@ import type { ScoreManager } from "../Managers/ScoreManager";
 import type { HealthBar } from "./HealthBar";
 import { EffectManager } from "../Managers/EffectManager";
 import type { AchievementState } from "../Managers/AchievementsManager";
+import { Easing, Tween } from "tweedle.js";
 
 export class Player extends StateMachineAnimator {
 	public canMove: boolean = true;
@@ -17,6 +18,9 @@ export class Player extends StateMachineAnimator {
 	private isShielded: boolean = false;
 	private shieldDuration: number = 5000; // Duración de la inmunidad en milisegundos
 	public achievementsState: AchievementState;
+
+	private trailIntervalId: number | null = null;
+
 	constructor(public scoreManager: ScoreManager, public healthBar: HealthBar, public background: Sprite) {
 		super();
 		this.scoreManager = scoreManager;
@@ -40,8 +44,8 @@ export class Player extends StateMachineAnimator {
 		this.anchor.set(0.5, 0);
 		this.eventMode = "none";
 
-		this.addState("idle", [Texture.from("walk1"), Texture.from("walk1")], 0.2, true);
-		this.addState("move", [Texture.from("walk1"), Texture.from("walk2"), Texture.from("walk3"), Texture.from("walk4")], 0.3, true);
+		this.addState("idle", [Texture.from("idle2"), Texture.from("idle3")], 0.25, true);
+		this.addState("move", [Texture.from("walk2"), Texture.from("walk3"), Texture.from("walk4"), Texture.from("walk1")], 0.3, true);
 		this.addState(
 			"defeat",
 			[Texture.from("defeat0"), Texture.from("defeat1"), Texture.from("defeat2"), Texture.from("defeat3"), Texture.from("defeat4"), Texture.from("defeat5")],
@@ -106,13 +110,36 @@ export class Player extends StateMachineAnimator {
 		this.scoreManager.activatePowerUp();
 		this.effectManager.speedingPowerUp(SPEEDUP_TIME);
 
-		new Timer()
-			.to(5500)
-			.start()
-			.onComplete(() => {
-				this.speed = PLAYER_SPEED;
-				this.filters = [];
-			});
+		if (this.trailIntervalId !== null) {
+			clearInterval(this.trailIntervalId);
+		}
+
+		this.trailIntervalId = window.setInterval(() => {
+			const after = new Sprite(this.texture);
+			after.anchor.set(this.anchor.x, this.anchor.y);
+			after.position.set(this.x, this.y);
+			after.scale.set(this.scale.x, this.scale.y);
+			after.alpha = 0.5;
+			this.parent.addChild(after);
+
+			new Tween(after)
+				.to({ alpha: 0 }, 400)
+				.easing(Easing.Linear.None)
+				.onComplete(() => {
+					after.parent?.removeChild(after);
+				})
+				.start();
+		}, 100);
+
+		window.setTimeout(() => {
+			if (this.trailIntervalId !== null) {
+				clearInterval(this.trailIntervalId);
+				this.trailIntervalId = null;
+			}
+
+			this.speed = PLAYER_SPEED;
+			this.filters = [];
+		}, SPEEDUP_TIME);
 	}
 
 	public collideWithObstacle(): void {

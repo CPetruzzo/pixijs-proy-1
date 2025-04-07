@@ -70,19 +70,19 @@ export class DodgeScene extends PixiScene {
 
 		this.scoreText = new Text(`Score: 0`, { fontSize: 45, fill: 0xffffff, dropShadow: true, fontFamily: "Daydream" });
 		this.scoreText.anchor.set(0.5);
-		this.scoreText.position.set(0, -this.background.height * 0.47);
+		this.scoreText.position.set(0, -this.background.height * 0.5 + 150);
 		this.backgroundContainer.addChild(this.scoreText);
 
 		this.scoreManager = new ScoreManager(this.scoreText);
 
 		this.healthBar = new HealthBar(3, 350, 30);
-		this.healthBar.position.set(-this.healthBar.width * 0.5, -this.background.height * 0.5 + 150);
+		this.healthBar.position.set(-this.healthBar.width * 0.5, -this.background.height * 0.5 + 220);
 		this.backgroundContainer.addChild(this.healthBar);
 
 		this.player = new Player(this.scoreManager, this.healthBar, this.background);
 		this.player.scale.set(PLAYER_SCALE_RUNFALL);
 		this.player.x = this.background.width * 0.5;
-		this.player.y = this.background.height - 103.5 * 3;
+		this.player.y = this.background.height - 102.5 * 3;
 		this.background.addChild(this.player);
 
 		this.background.eventMode = "static";
@@ -95,6 +95,7 @@ export class DodgeScene extends PixiScene {
 
 		// Botón principal para abrir el popup
 		this.uiButton = Sprite.from("config");
+		this.uiButton.scale.set(0.85);
 		this.uiButton.anchor.set(0.5);
 		this.uiButton.eventMode = "static";
 		this.uiButton.on("pointerdown", () => {
@@ -265,7 +266,7 @@ export class DodgeScene extends PixiScene {
 	private async openGameOverPopup(): Promise<void> {
 		CollisionManager.gameOver = false;
 		try {
-			const popupInstance = await Manager.openPopup(HighScorePopUp, [this.scoreManager.getScore()]);
+			const popupInstance = await Manager.openPopup(HighScorePopUp, [this.scoreManager.getScore(), false]);
 			if (popupInstance instanceof HighScorePopUp) {
 				popupInstance.showHighscores(this.scoreManager.getScore());
 			} else {
