@@ -22,8 +22,24 @@ export class CharacterSelectorScene extends PixiScene {
 	// Espaciado horizontal (en píxeles) para el slider
 	private readonly spacing: number = 250;
 
+	private static _instance: CharacterSelectorScene | null = null;
+	private static pendingUnlocks: number[] = [];
+
 	constructor() {
 		super();
+
+		// ─────────────────────────────────────────────────────
+		// ▶️ 1) Load persisted unlocks
+		// ─────────────────────────────────────────────────────
+		let unlockedChars: number[] = [];
+		try {
+			const raw = localStorage.getItem("unlockedCharacters");
+			if (raw) {
+				unlockedChars = JSON.parse(raw);
+			}
+		} catch {
+			unlockedChars = [];
+		}
 
 		// Fondo para la ambientación
 		const bleedBG = Sprite.from("playerSelectBG");
@@ -71,7 +87,7 @@ export class CharacterSelectorScene extends PixiScene {
 
 		// Carga de sprites de personajes (placeholders)
 		// Solo el primero se mostrará desbloqueado; los demás aparecerán bloqueados
-		const characterTextures = ["astro1", "astro2", "astro3"];
+		const characterTextures = ["idle1", "newidle1", "alienidle1"];
 		characterTextures.forEach((texture, index) => {
 			// Creamos un contenedor para el personaje
 			const charContainer = new Container();
@@ -156,7 +172,44 @@ export class CharacterSelectorScene extends PixiScene {
 		});
 		this.backgroundContainer.addChild(this.backButton);
 
+		// 👉 register yourself as the one true instance:
+		CharacterSelectorScene._instance = this;
+		// flush any pending
+		CharacterSelectorScene.pendingUnlocks.forEach((i) => this.unlockCharacter(i));
+		CharacterSelectorScene.pendingUnlocks = [];
+
 		this.showBannerAd();
+
+		// ─────────────────────────────────────────────────────────────────
+		// 🛠️  DEBUG BUTTONS
+		// ─────────────────────────────────────────────────────────────────
+		const debugStyle = new TextStyle({ fontFamily: "Daydream", fontSize: 18, fill: "#00ff00" });
+
+		// Unlock button
+		const btnUnlock = new Text("🔓 Unlock", debugStyle);
+		btnUnlock.position.set(-this.width * 0.41, -this.height * 0.45 + 50);
+		btnUnlock.interactive = true;
+		btnUnlock.alpha = 0.2;
+
+		btnUnlock.eventMode = "static";
+		btnUnlock.on("pointertap", () => {
+			CharacterSelectorScene.unlock(this.selectedIndex);
+		});
+		this.backgroundContainer.addChild(btnUnlock);
+
+		// Lock button
+		const btnLock = new Text("🔒 Lock", debugStyle);
+		btnLock.position.set(-this.width * 0.41, -this.height * 0.45 + 80);
+		btnLock.interactive = true;
+		btnLock.eventMode = "static";
+		btnLock.alpha = 0.2;
+
+		btnLock.on("pointertap", () => {
+			CharacterSelectorScene.lock(this.selectedIndex);
+		});
+		this.backgroundContainer.addChild(btnLock);
+
+		// ─────────────────────────────────────────────────────────────────
 	}
 
 	// eslint-disable-next-line @typescript-eslint/require-await
@@ -185,7 +238,24 @@ export class CharacterSelectorScene extends PixiScene {
 		const current = this.characters[this.selectedIndex];
 		if ((current as any).unlocked) {
 			// Valores de ejemplo; actualizá con los datos reales
-			this.bannerText.text = "Speed: 200\n\n\nHealth: 3\n";
+			switch (this.selectedIndex) {
+				case 0:
+					this.bannerText.text = "Speed: 200\n\n\nHealth: 3\n";
+					break;
+				case 1:
+					this.bannerText.text = "Speed: 200\n\n\nHealth: 5\n";
+
+					break;
+				case 2:
+					this.bannerText.text = "Speed: 500\n\n\nHealth: 3\n\n\nRevive: 1\n";
+
+					break;
+
+				default:
+					this.bannerText.text = "No description available yet";
+
+					break;
+			}
 		} else {
 			this.bannerText.text = "No description available yet";
 		}
@@ -282,10 +352,132 @@ export class CharacterSelectorScene extends PixiScene {
 		this.updateBanner();
 	}
 
+	/** Smoothly moves the slider so `selectedIndex = index` */
+	private selectCharacter(index: number): void {
+		const n = this.characters.length;
+		this.selectedIndex = index;
+
+		this.characters.forEach((char, i) => {
+			// relative position to the new center
+			const offset = (i - index + n) % n;
+			let targetX: number,
+				targetScale = 1.0,
+				targetAlpha = 1;
+
+			if (offset === 0) {
+				targetX = 0;
+				targetScale = (char as any).unlocked ? 1.5 : 1.0;
+			} else if (offset === 1) {
+				targetX = this.spacing;
+			} else if (offset === n - 1) {
+				targetX = -this.spacing;
+			} else {
+				targetX = this.spacing * 2;
+				targetAlpha = 0;
+			}
+
+			// animate into place (optional—you can also just set x/alpha/scale instantly)
+			new Tween(char)
+				.to({ x: targetX, alpha: targetAlpha, scale: { x: targetScale, y: targetScale } }, 300)
+				.easing(Easing.Cubic.Out)
+				.start();
+		});
+
+		this.updateZIndices();
+		this.updateBanner();
+	}
+
 	public override onResize(newW: number, newH: number): void {
 		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, newW * 0.7, newH * 0.7, 720, 1600, ScaleHelper.FIT);
 		ScaleHelper.setScaleRelativeToIdeal(this.bleedingBackgroundContainer, newW * 3, newH * 2, 720, 1600, ScaleHelper.FILL);
 		this.x = newW * 0.5;
 		this.y = newH * 0.5;
+	}
+
+	/** Persist current unlocks array */
+	private saveUnlocks(): void {
+		const unlocked = this.characters.map((c, i) => ((c as any).unlocked ? i : -1)).filter((i) => i >= 0);
+		localStorage.setItem("unlockedCharacters", JSON.stringify(unlocked));
+	}
+
+	/** Unlock one slot, animate, update banner, and persist */
+	public unlockCharacter(index: number): void {
+		const charContainer = this.characters[index];
+		if (!charContainer) {
+			return;
+		}
+
+		(charContainer as any).unlocked = true;
+		// clear tint
+		charContainer.children.filter((c) => c instanceof Sprite).forEach((s: Sprite) => (s.tint = 0xffffff));
+		// remove “Blocked” texts
+		charContainer.children.filter((c) => c instanceof Text && c.text.trim().toLowerCase() === "blocked").forEach((l) => charContainer.removeChild(l));
+
+		// animate & banner if centered
+		if (this.selectedIndex === index) {
+			new Tween(charContainer)
+				.to({ scale: { x: 1.5, y: 1.5 } }, 300)
+				.easing(Easing.Cubic.Out)
+				.start();
+			this.updateBanner();
+		}
+
+		this.selectCharacter(index);
+		this.saveUnlocks();
+	}
+
+	/** Mirror: lock one slot and persist */
+	public lockCharacter(index: number): void {
+		const charContainer = this.characters[index];
+		if (!charContainer) {
+			return;
+		}
+
+		(charContainer as any).unlocked = false;
+
+		// re‑apply tint
+		charContainer.children.filter((c) => c instanceof Sprite).forEach((s: Sprite) => (s.tint = 0x000000));
+
+		// re‑add “Blocked”
+		const hasLock = charContainer.children.some((c) => c instanceof Text && c.text.trim().toLowerCase() === "blocked");
+		if (!hasLock) {
+			const lockText = new Text(
+				"Blocked",
+				new TextStyle({
+					fontFamily: "Daydream",
+					fill: "#ffffff",
+					fontSize: 24,
+				})
+			);
+			lockText.anchor.set(0.5);
+			lockText.position.set(0, 0);
+			charContainer.addChild(lockText);
+		}
+
+		if (this.selectedIndex === index) {
+			new Tween(charContainer)
+				.to({ scale: { x: 1.0, y: 1.0 } }, 300)
+				.easing(Easing.Cubic.Out)
+				.start();
+			this.updateBanner();
+		}
+
+		this.saveUnlocks();
+	}
+
+	/** Static helpers */
+	public static unlock(index: number): void {
+		if (CharacterSelectorScene._instance) {
+			CharacterSelectorScene._instance.unlockCharacter(index);
+		} else {
+			CharacterSelectorScene.pendingUnlocks.push(index);
+		}
+	}
+	public static lock(index: number): void {
+		if (CharacterSelectorScene._instance) {
+			CharacterSelectorScene._instance.lockCharacter(index);
+		} else {
+			CharacterSelectorScene.pendingUnlocks.push(index);
+		}
 	}
 }

@@ -371,6 +371,15 @@
 				"defeat4": "./img/runfall/defeat4.png",
 				"defeat5": "./img/runfall/defeat5.png",
 
+				"newidle1": "./img/runfall/newidle1.png",
+				"newwalk1": "./img/runfall/newwalk1.png",
+				"newwalk2": "./img/runfall/newwalk2.png",
+
+				"alienidle1": "./img/runfall/alienidle1.png",
+				"alienwalk1": "./img/runfall/alienwalk1.png",
+				"alienwalk2": "./img/runfall/alienwalk2.png",
+				"aliencheers1": "./img/runfall/aliencheers1.png",
+
 				"idle1": "./img/runfall/idle1.png",
 				"idle2": "./img/runfall/idle2.png",
 				"idle3": "./img/runfall/idle3.png",

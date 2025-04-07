@@ -9,6 +9,7 @@ import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
 import { Manager } from "../../../..";
 import { MenuScene } from "./MenuScene";
 import { FadeColorTransition } from "../../../../engine/scenemanager/transitions/FadeColorTransition";
+import { CharacterSelectorScene } from "./CharacterSelectorScene";
 
 /**
  * Clase que representa una "card" individual para un logro.
@@ -173,6 +174,19 @@ export class AchievementsScene extends PixiScene {
 					child.unlock();
 					break;
 				}
+			}
+
+			// 2) check the “meteor_crasher” trio
+			const meteorIds = ["meteor_crasher_1", "meteor_crasher_2", "meteor_crasher_3"];
+			const allMeteor = this.achievementsManager
+				.getAchievements()
+				.filter((a) => meteorIds.includes(a.id))
+				.every((a) => a.unlocked);
+
+			if (allMeteor) {
+				console.log("allMeteor", allMeteor);
+				// unlock character #1
+				CharacterSelectorScene.unlock(1);
 			}
 		});
 
