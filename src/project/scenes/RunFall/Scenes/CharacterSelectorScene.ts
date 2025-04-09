@@ -25,6 +25,8 @@ export class CharacterSelectorScene extends PixiScene {
 	private static _instance: CharacterSelectorScene | null = null;
 	private static pendingUnlocks: number[] = [];
 
+	private actionButton!: Text;
+
 	constructor() {
 		super();
 
@@ -32,6 +34,7 @@ export class CharacterSelectorScene extends PixiScene {
 		// ▶️ 1) Load persisted unlocks
 		// ─────────────────────────────────────────────────────
 		let unlockedChars: number[] = [];
+		console.log("unlockedChars", unlockedChars);
 		try {
 			const raw = localStorage.getItem("unlockedCharacters");
 			if (raw) {
@@ -138,6 +141,9 @@ export class CharacterSelectorScene extends PixiScene {
 		this.updateZIndices();
 		// Ahora que los personajes están creados, actualizamos el banner
 		this.updateBanner();
+		this.unlockCharacter(0);
+		this.unlockCharacter(1);
+		this.unlockCharacter(2);
 
 		// Botón de navegación izquierda
 		const leftButton = Sprite.from("leftArrow");
@@ -195,7 +201,7 @@ export class CharacterSelectorScene extends PixiScene {
 		btnUnlock.on("pointertap", () => {
 			CharacterSelectorScene.unlock(this.selectedIndex);
 		});
-		this.backgroundContainer.addChild(btnUnlock);
+		// this.backgroundContainer.addChild(btnUnlock);
 
 		// Lock button
 		const btnLock = new Text("🔒 Lock", debugStyle);
@@ -207,9 +213,84 @@ export class CharacterSelectorScene extends PixiScene {
 		btnLock.on("pointertap", () => {
 			CharacterSelectorScene.lock(this.selectedIndex);
 		});
-		this.backgroundContainer.addChild(btnLock);
+		// this.backgroundContainer.addChild(btnLock);
 
 		// ─────────────────────────────────────────────────────────────────
+
+		// ───────────────────────────────────────────────────────────
+		//  Add the Select/Equipped button
+		// ───────────────────────────────────────────────────────────
+		const btnStyle = new TextStyle({
+			fontFamily: "Daydream",
+			fontSize: 28,
+			fill: "#ffffff",
+			stroke: "#000000",
+			strokeThickness: 4,
+		});
+		this.actionButton = new Text("", btnStyle);
+		this.actionButton.anchor.set(0.5);
+		// position at bottom center, adjust as needed:
+		this.actionButton.position.set(0, background.height * 0.5 - 560);
+		this.actionButton.eventMode = "static";
+		this.backgroundContainer.addChild(this.actionButton);
+
+		// initial update
+		this.updateActionButton();
+
+		// whenever you change selection:
+		// wrap your selectNext/selectPrevious to also update button:
+		const origNext = this.selectNext.bind(this);
+		this.selectNext = () => {
+			origNext();
+			this.updateActionButton();
+		};
+		const origPrev = this.selectPrevious.bind(this);
+		this.selectPrevious = () => {
+			origPrev();
+			this.updateActionButton();
+		};
+
+		// also after unlockCharacter:
+		const origUnlock = this.unlockCharacter.bind(this);
+		this.unlockCharacter = (idx: number) => {
+			origUnlock(idx);
+			this.updateActionButton();
+		};
+	}
+
+	/** Shows/hides & configures the action button */
+	private updateActionButton(): void {
+		const idx = this.selectedIndex;
+		const container = this.characters[idx] as any;
+		if (!container.unlocked) {
+			// locked: hide
+			this.actionButton.visible = false;
+		} else {
+			this.actionButton.visible = true;
+			if (/* equipped? */ idx === this.getEquippedIndex()) {
+				this.actionButton.text = "Equipped";
+				this.actionButton.interactive = false;
+				this.actionButton.alpha = 0.6;
+			} else {
+				this.actionButton.text = "Select";
+				this.actionButton.interactive = true;
+				this.actionButton.alpha = 1.0;
+				this.actionButton.once("pointertap", () => {
+					// equip it
+					this.selectCharacter(idx);
+					// persist equipped
+					localStorage.setItem("equippedCharacter", idx.toString());
+					this.updateActionButton();
+				});
+			}
+		}
+	}
+
+	/** Read the currently equipped from storage (default 0) */
+	private getEquippedIndex(): number {
+		const raw = localStorage.getItem("equippedCharacter");
+		const i = raw !== null ? parseInt(raw, 10) : NaN;
+		return isNaN(i) || i < 0 || i >= this.characters.length ? 0 : i;
 	}
 
 	// eslint-disable-next-line @typescript-eslint/require-await

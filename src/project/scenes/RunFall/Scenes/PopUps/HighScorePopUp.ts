@@ -236,18 +236,18 @@ export class HighScorePopUp extends PixiScene {
 	// Carga y muestra los puntajes globales (Firebase)
 	private async loadGlobalHighscores(): Promise<void> {
 		this.scoreListContainer.removeChildren();
+		this.addResetButton(this.isMenu);
 		await this.updateHighscoresInFirebase();
 		globalHighscores = await this.fetchHighscoresFromFirebase();
 		this.displayScores(globalHighscores);
-		this.addResetButton(this.isMenu);
 	}
 
 	// Carga y muestra los puntajes locales (del dispositivo)
 	private loadLocalHighscores(): void {
 		this.scoreListContainer.removeChildren();
+		this.addResetButton(this.isMenu);
 		localHighscores.sort((a, b) => b.score - a.score);
 		this.displayScores(localHighscores);
-		this.addResetButton(this.isMenu);
 	}
 
 	// Muestra los puntajes en el contenedor

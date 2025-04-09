@@ -24,61 +24,65 @@ export class HealthBar extends Container {
 
 		this.barWidth = width;
 		this.barHeight = height;
-		// Para un semicírculo perfecto en los extremos:
 		this.cornerRadius = height / 2;
 
-		// 1) Fondo (gris oscuro)
+		this.healthGlow = new GlowFilter({ color: 0x273257 });
+
+		// Background
 		this.bg = new Graphics();
-		this.bg.beginFill(0x273257);
-		this.bg.drawRoundedRect(0, 0, this.barWidth, this.barHeight, this.cornerRadius);
-		this.bg.endFill();
+		this.drawBackground();
 		this.addChild(this.bg);
 
-		// 2) Barra de vida (rosa), inicialmente llena
+		// Foreground
 		this.fg = new Graphics();
-		this.fg.beginFill(0xc53570);
-		this.fg.drawRoundedRect(0, 0, this.barWidth, this.barHeight, this.cornerRadius);
-		this.fg.endFill();
+		this.drawForeground((this.barWidth * this.currentHealth) / this.maxHealth);
 		this.addChild(this.fg);
 
-		// Crear el efecto de brillo
-		this.healthGlow = new GlowFilter({ color: 0x273257 });
 		this.filters = [this.glow];
 	}
 
-	/** Animación suave al cambiar la vida */
+	/** Redraws the background shape */
+	private drawBackground(): void {
+		this.bg.clear();
+		this.bg.beginFill(0x273257);
+		this.bg.drawRoundedRect(0, 0, this.barWidth, this.barHeight, this.cornerRadius);
+		this.bg.endFill();
+	}
+
+	/** Redraws the foreground at given width */
+	private drawForeground(width: number): void {
+		this.fg.clear();
+		this.fg.beginFill(0xc53570);
+		this.fg.drawRoundedRect(0, 0, width, this.barHeight, this.cornerRadius);
+		this.fg.endFill();
+	}
+
+	/** Smoothly tween the FG to targetWidth */
 	private animateToWidth(targetWidth: number): void {
-		// Objeto auxiliar para tween
 		const proxy = { w: this.fg.width };
 		new Tween(proxy)
 			.to({ w: targetWidth }, 500)
 			.easing(Easing.Quadratic.Out)
-			.onUpdate(() => {
-				// Redibuja la FG con la anchura intermedia
-				this.fg.clear();
-				this.fg.beginFill(0xc53570);
-				this.fg.drawRoundedRect(0, 0, proxy.w, this.barHeight, this.cornerRadius);
-				this.fg.endFill();
-			})
+			.onUpdate(() => this.drawForeground(proxy.w))
 			.start();
 		this.filters = [this.healthGlow];
 	}
 
-	/** Ajusta inmediatamente el estado interno y lanza la animación */
+	/** Clamp and animate to new health */
 	public updateHealth(health: number): void {
 		this.currentHealth = Math.max(0, Math.min(this.maxHealth, health));
 		const newWidth = (this.barWidth * this.currentHealth) / this.maxHealth;
 		this.animateToWidth(newWidth);
 	}
 
-	/** Incrementa vida en 1 */
+	/** Increment health by 1 */
 	public increaseHealth(): void {
 		if (this.currentHealth < this.maxHealth) {
 			this.updateHealth(this.currentHealth + 1);
 		}
 	}
 
-	/** Decrementa vida en 1 */
+	/** Decrement health by 1 */
 	public decreaseHealth(): void {
 		if (this.currentHealth > 0) {
 			this.updateHealth(this.currentHealth - 1);
@@ -88,8 +92,26 @@ export class HealthBar extends Container {
 		}
 	}
 
-	/** Devuelve la vida actual */
+	/** Returns current health */
 	public getCurrentHealth(): number {
 		return this.currentHealth;
+	}
+
+	/** 🚀 Set a new maximum health and redraw */
+	public setMaxHealth(n: number): void {
+		this.maxHealth = Math.max(1, n);
+		// clamp currentHealth
+		if (this.currentHealth > this.maxHealth) {
+			this.currentHealth = this.maxHealth;
+		}
+		// redraw background & foreground immediately
+		this.drawBackground();
+		const fgWidth = (this.barWidth * this.currentHealth) / this.maxHealth;
+		this.drawForeground(fgWidth);
+	}
+
+	/** 🚀 Set current health (clamped) and animate */
+	public setCurrentHealth(n: number): void {
+		this.updateHealth(n);
 	}
 }

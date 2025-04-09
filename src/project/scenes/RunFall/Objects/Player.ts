@@ -9,13 +9,21 @@ import { EffectManager } from "../Managers/EffectManager";
 import type { AchievementState } from "../Managers/AchievementsManager";
 import { Easing, Tween } from "tweedle.js";
 
+interface CharacterConfig {
+	idleFrames: string[]; // asset keys for idle
+	walkFrames: string[]; // asset keys for moving
+	cheersFrames: string[]; // asset keys for moving
+	speed: number;
+	maxHealth: number;
+}
+
 export class Player extends StateMachineAnimator {
 	public canMove: boolean = true;
 	public movingLeft: boolean = false;
 	public speed: number;
 	public aux: Graphics;
 	public effectManager: EffectManager;
-	private isShielded: boolean = false;
+	public isShielded: boolean = false;
 	private shieldDuration: number = 5000; // Duración de la inmunidad en milisegundos
 	public achievementsState: AchievementState;
 
@@ -26,9 +34,56 @@ export class Player extends StateMachineAnimator {
 		this.scoreManager = scoreManager;
 		this.healthBar = healthBar;
 		this.effectManager = new EffectManager(this, background);
-		console.log("isShielded", this.isShielded);
 
-		// Inicializamos achievementsState con valores por defecto
+		// 1) Read which character is equipped
+		let chosenIndex = 0;
+		try {
+			const raw = localStorage.getItem("equippedCharacter");
+			if (raw !== null) {
+				chosenIndex = parseInt(raw, 10);
+			}
+		} catch {
+			chosenIndex = 0;
+		}
+
+		// 2) Define your per-character configs (just asset keys here)
+		const configs: CharacterConfig[] = [
+			{
+				idleFrames: ["idle2", "idle3"],
+				walkFrames: ["walk1", "walk2", "walk3", "walk4"],
+				cheersFrames: ["cheers"],
+				speed: 0.5,
+				maxHealth: 3,
+			},
+			{
+				idleFrames: ["newidle1", "newidle2"],
+				walkFrames: ["newwalk1", "newidle1", "newwalk2", "newidle1"],
+				cheersFrames: ["newcheers1"],
+				speed: 0.1,
+				maxHealth: 5,
+			},
+			{
+				idleFrames: ["alienidle1", "alienidle2"],
+				walkFrames: ["alienwalk1", "alienidle1", "alienwalk2", "alienidle1"],
+				cheersFrames: ["aliencheers1"],
+				speed: 0.5,
+				maxHealth: 4,
+			},
+		];
+
+		// clamp
+		if (chosenIndex < 0 || chosenIndex >= configs.length) {
+			chosenIndex = 0;
+		}
+		const cfg = configs[chosenIndex];
+
+		// 3) Apply speed & health
+		this.speed = cfg.speed;
+
+		// assume your HealthBar has these methods:
+		this.healthBar.setMaxHealth(cfg.maxHealth);
+		this.healthBar.setCurrentHealth(cfg.maxHealth);
+
 		this.achievementsState = {
 			score: 0, // Podrías actualizar este valor según el puntaje real
 			lives: healthBar.getCurrentHealth(), // O el número máximo de vidas
@@ -40,19 +95,35 @@ export class Player extends StateMachineAnimator {
 		};
 
 		this.speed = PLAYER_SPEED;
-
+		// 5) Set up animation states using asset keys
 		this.anchor.set(0.5, 0);
 		this.eventMode = "none";
 
-		this.addState("idle", [Texture.from("idle2"), Texture.from("idle3")], 0.25, true);
-		this.addState("move", [Texture.from("walk2"), Texture.from("walk3"), Texture.from("walk4"), Texture.from("walk1")], 0.3, true);
+		this.addState(
+			"idle",
+			cfg.idleFrames.map((key) => Texture.from(key)),
+			0.15,
+			true
+		);
+		this.addState(
+			"move",
+			cfg.walkFrames.map((key) => Texture.from(key)),
+			0.3,
+			true
+		);
 		this.addState(
 			"defeat",
-			[Texture.from("defeat0"), Texture.from("defeat1"), Texture.from("defeat2"), Texture.from("defeat3"), Texture.from("defeat4"), Texture.from("defeat5")],
+			["defeat0", "defeat1", "defeat2", "defeat3", "defeat4", "defeat5"].map((k) => Texture.from(k)),
 			0.4,
 			false
 		);
-		this.addState("cheers", [Texture.from("cheers")], 0.3, true);
+
+		this.addState(
+			"cheers",
+			cfg.cheersFrames.map((k) => Texture.from(k)),
+			0.3,
+			true
+		);
 		this.addState("block", [Texture.from("block1"), Texture.from("block2")], 0.3, true);
 
 		this.playState("idle");
