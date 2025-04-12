@@ -68,23 +68,31 @@ export class ToggleCheck extends Toggle {
 
 		this.locked = options.locked ? true : false;
 
-		this.check.scale.x = this.check.scale.y = this.value ? 1 : 0;
+		this.check.scale.x = this.check.scale.y = this.value ? 1.5 : 0;
 	}
 
 	private onPointerClickCallback(): void {
 		this.value = !this.value;
 	}
 
+	// private switchState(): void {
+	//	this.tween?.stop();
+	//	if (this.value) {
+	//		this.tween = new Tween(this.check.scale).to({ x: 1, y: 1 }, 250).easing(Easing.Elastic.Out);
+	//	} else {
+	//		this.tween = new Tween(this.check.scale).to({ x: 0, y: 0 }, 150).easing(Easing.Cubic.Out);
+	//	}
+	//	this.tween.start();
+	// }
 	private switchState(): void {
 		this.tween?.stop();
 		if (this.value) {
-			this.tween = new Tween(this.check.scale).to({ x: 1, y: 1 }, 250).easing(Easing.Elastic.Out);
+			this.tween = new Tween(this.check).to({ alpha: 1 }, 250).easing(Easing.Elastic.Out);
 		} else {
-			this.tween = new Tween(this.check.scale).to({ x: 0, y: 0 }, 150).easing(Easing.Cubic.Out);
+			this.tween = new Tween(this.check).to({ alpha: 0.4 }, 250).easing(Easing.Cubic.Out);
 		}
 		this.tween.start();
 	}
-
 	private fireCallbacks(): void {
 		if (this.onToggle) {
 			this.onToggle(this.value);

@@ -56,7 +56,7 @@ export class Player extends StateMachineAnimator {
 				maxHealth: 3,
 			},
 			{
-				idleFrames: ["newidle1", "newidle2"],
+				idleFrames: ["newidle1"],
 				walkFrames: ["newwalk1", "newidle1", "newwalk2", "newidle1"],
 				cheersFrames: ["newcheers1"],
 				speed: 0.1,

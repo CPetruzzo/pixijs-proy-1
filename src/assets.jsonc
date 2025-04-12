@@ -308,6 +308,17 @@
 			}
 		},
 		{
+			"name": "skystar",
+			"assets": {
+				"skyBGM": "./music/skystar/sky.mp3",
+				"grass": "./img/daynight/grass.png",
+				"starsky": "./img/daynight/starsky.png",
+				"bluesky": "./img/daynight/bluesky.png",
+				"mountainalpha": "./img/daynight/mountainalpha.png",
+				"mountain": "./img/daynight/mountain.png"
+			}
+		},
+		{
 			"name": "fallrungame",
 			"assets": {
 				"package 1 background": "./img/image.jpg",
@@ -397,10 +408,17 @@
 
 				"cheers": "./img/runfall/cheers.png",
 
+				"buttonBG": "./img/runfall/buttonBG.png",
+				"astroIcon": "./img/runfall/astroIcon.png",
+				"leaderboardIcon": "./img/runfall/leaderboardIcon.png",
+				"missionIcon": "./img/runfall/missionIcon.png",
+				"shopIcon": "./img/runfall/shopIcon.png",
+
 				"medkit1": "./img/runfall/medkitspace1.png",
 				"golditem1": "./img/runfall/coolgolditem.png",
 				"golditem2":  "./img/runfall/goldmoon.png",
 				"golditem3":  "./img/runfall/goldstar.png",
+				"soundIcon":  "./img/runfall/soundIcon.png",
 				"soundOn":  "./img/runfall/soundOn.png",
 				"soundOff":  "./img/runfall/soundOff.png",
 				"soundBG":  "./img/runfall/fondoknob.png",
