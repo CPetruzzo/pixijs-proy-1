@@ -311,11 +311,47 @@
 			"name": "skystar",
 			"assets": {
 				"skyBGM": "./music/skystar/sky.mp3",
+				"mountainFrontLayer": "./img/daynight/mountainFrontLayer.png",
 				"grass": "./img/daynight/grass.png",
+				"house": "./img/daynight/house.png",
 				"starsky": "./img/daynight/starsky.png",
 				"bluesky": "./img/daynight/bluesky.png",
 				"mountainalpha": "./img/daynight/mountainalpha.png",
 				"mountain": "./img/daynight/mountain.png"
+			}
+		},
+		{
+			"name": "abandonedhouse",
+			"assets": {
+				"AH_walk1": "./img/abandonedhouse/AH_walk1.png",
+				"AH_walk2": "./img/abandonedhouse/AH_walk2.png",
+				"AH_idle": "./img/abandonedhouse/AH_idle.png",
+				"AH_enemy": "./img/abandonedhouse/AH_enemy.png",
+				"batteryIndicator": "./img/abandonedhouse/batteryIndicator.png",
+				"battery0": "./img/abandonedhouse/battery0.png",
+				"battery1": "./img/abandonedhouse/battery1.png",
+				"battery2": "./img/abandonedhouse/battery2.png",
+				"battery3": "./img/abandonedhouse/battery3.png",
+				"AH_bag": "./img/abandonedhouse/AH_bag.png",
+				"AH_config": "./img/abandonedhouse/AH_config.png",
+				"cellFrame": "./img/abandonedhouse/cellFrame.png",
+				
+				"switch": "./sfx/switch.mp3",
+				"abandonedhouse": "./music/abandonedhouse.mp3",
+				"houseBG": "./img/abandonedhouse/houseBG.png"
+			}
+		},
+		{
+			"name": "slots",
+			"assets": {
+				"casinoBGM": "./sfx/slots/casinoBGM.mp3",
+				"leverSFX": "./sfx/slots/leverSFX.mp3",
+				"winSFX": "./sfx/slots/winSFX.mp3",
+
+				"casinoBG": "./img/slots/casinoBG.png",
+				"frame": "./img/slots/slot_frame.png",
+				"reels": "./img/slots/slot_reels.png",
+				"lever": "./img/slots/slot_lever.png"
 			}
 		},
 		{

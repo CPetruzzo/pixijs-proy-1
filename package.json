@@ -1,7 +1,7 @@
 {
   "name": "CachoPetruzzo",
   "version": "0.0.1",
-  "description": "BunnyBox is a boilerplate/engine for pixijs. Descendant of the great killabunnies engine",
+  "description": "BunnyBox is a boilerplate/engine for pixijs this engine has been enhanced by Facundo Wegher since 2023. Descendant of the great killabunnies engine",
   "pwa": {
     "name": "CachoPetruzzo",
     "short_name": "CachoPetruzzo",
@@ -34,6 +34,8 @@
   "devDependencies": {
     "@capacitor/cli": "^6.2.0",
     "@killabunnies/eslint-config": "^1.0.5",
+    "@pixi/storybook-renderer": "^1.0.0",
+    "@pixi/storybook-webpack5": "^1.0.0",
     "@tauri-apps/cli": "^2.2.7",
     "@types/fontfaceobserver": "2.1.0",
     "@types/matter-js": "^0.14.10",
@@ -62,7 +64,6 @@
     "workbox-webpack-plugin": "6.5.4"
   },
   "dependencies": {
-    "@admob-plus/capacitor": "^1.24.0",
     "@capacitor-community/admob": "^5.3.1",
     "@capacitor-community/keep-awake": "^4.0.0",
     "@capacitor/android": "5.7.8",

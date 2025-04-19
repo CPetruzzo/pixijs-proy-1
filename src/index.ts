@@ -26,8 +26,7 @@ import { App } from "@capacitor/app";
 import { AdMob } from "@capacitor-community/admob";
 import { SoundLib } from "./engine/sound/SoundLib";
 import { Sounds } from "./project/scenes/RunFall/Managers/SoundManager";
-import { DayAndNight } from "./project/scenes/DayAndNight/DayAndNight";
-
+import { AbandonedShelterScene } from "./project/scenes/AbandonedShelter/AbandonedShelterScene";
 settings.RENDER_OPTIONS.hello = false;
 
 DEFAULTS.safetyCheckFunction = (obj: any) => !obj?.destroyed;
@@ -112,7 +111,7 @@ window.addEventListener("contextmenu", (e) => {
 
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));
-	Manager.changeScene(DayAndNight, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(AbandonedShelterScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

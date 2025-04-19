@@ -34,10 +34,9 @@ export class MenuScene extends PixiScene {
 		background.position.set(-background.width * 0.5, -background.height * 0.5);
 		this.backgroundContainer.addChild(background);
 
-		// 2. Instancia ToggleCheck con sus opciones
 		this.toggleCheck = new ToggleCheck({
-			buttonTexture: "buttonBG", // textura del botón (fondo)
-			checkTexture: "soundIcon", // textura del “check” (la perilla)
+			buttonTexture: "buttonBG",
+			checkTexture: "soundIcon",
 			startingValue: SoundManager.isMusicOn(),
 			onToggleOn: () => {
 				if (!SoundManager.isMusicOn()) {
@@ -51,19 +50,16 @@ export class MenuScene extends PixiScene {
 					SoundManager.musicPlaying = false;
 				}
 			},
-			// opcional: bloqueado inicialmente?
+
 			locked: false,
-			// opcional: ancla personalizada
+
 			anchorX: 0.5,
 			anchorY: 0.5,
 		});
 
-		// 3. Ajusta interactividad igual que antes
 		this.toggleCheck.eventMode = "static";
 		this.toggleCheck.interactive = true;
 		this.toggleCheck.on("pointertap", () => {
-			// el callback onToggleOn/off ya hace la lógica de sonido,
-			// pero aquí puedes reproducir un fx adicional:
 			if (this.toggleCheck.value) {
 				SoundManager.playSound(Sounds.START, { volume: 0.2 });
 			} else {
@@ -71,7 +67,6 @@ export class MenuScene extends PixiScene {
 			}
 		});
 
-		// 4. Posición, escala y ancla
 		this.toggleCheck.anchor.set(0.5);
 		this.toggleCheck.scale.set(0.25);
 		this.toggleCheck.y = -this.backgroundContainer.height * 0.5 + this.toggleCheck.height * 0.5;

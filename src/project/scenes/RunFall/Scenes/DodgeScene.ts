@@ -46,7 +46,6 @@ export class DodgeScene extends PixiScene {
 	private uiButton: Sprite;
 	private isPopupOpen: boolean = false;
 
-	// Propiedad para almacenar las monedas acumuladas de partidas anteriores
 	private cumulativeCoinsInitial: number = 0;
 	// #endregion VARIABLES
 
@@ -93,7 +92,6 @@ export class DodgeScene extends PixiScene {
 		this.leftEventContainer = this.createEventContainer(-this.background.width * 0.3, 0, this.background.width * 0.3, this.background.height);
 		this.background.addChild(this.bottomEventContainer, this.leftEventContainer, this.rightEventContainer);
 
-		// Botón principal para abrir el popup
 		this.uiButton = Sprite.from("config");
 		this.uiButton.scale.set(0.85);
 		this.uiButton.anchor.set(0.5);
@@ -112,25 +110,20 @@ export class DodgeScene extends PixiScene {
 
 		this.achievementsManager = AchievementsManager.getInstance();
 		this.achievementsManager.on("achievementUnlocked", (achievement: Achievement) => {
-			// Muestra la notificación en pantalla
 			this.showAchievementNotification(achievement);
 		});
 
-		// Inicializamos la cantidad acumulada a partir de localStorage
 		this.cumulativeCoinsInitial = Number(localStorage.getItem("cumulativeCoins")) || 0;
 		this.player.achievementsState.cumulativeCoinsCollected = this.cumulativeCoinsInitial;
 		console.log("this.player.achievementsState.cumulativeCoinsCollected", this.player.achievementsState.cumulativeCoinsCollected);
 	}
 
 	private showAchievementNotification(achievement: Achievement): void {
-		// Crea un contenedor para la notificación
 		const notificationContainer = new Container();
 
-		// Define el tamaño de la tarjeta
 		const notifWidth = 750;
 		const notifHeight = 200;
 
-		// Fondo de la notificación con color semi-transparente
 		const bg = new Graphics();
 		bg.beginFill(0x000000, 0.7);
 		bg.drawRoundedRect(0, 0, notifWidth, notifHeight, 15);
@@ -138,7 +131,7 @@ export class DodgeScene extends PixiScene {
 		notificationContainer.addChild(bg);
 
 		SoundLib.playSound("sound2", { volume: 0.1 });
-		// Creamos el placeholder para la imagen del achievement
+
 		const icon = Sprite.from("bronze1");
 		icon.anchor.set(0, 0.5);
 		const iconSize = notifHeight * 0.7;
@@ -238,7 +231,7 @@ export class DodgeScene extends PixiScene {
 		if (CollisionManager.gameOver && !this.isPopupOpen) {
 			this.openNameInputPopup();
 			this.isPopupOpen = true;
-			// Actualizamos las monedas acumuladas en localStorage al terminar la partida
+
 			const finalCumulative = this.cumulativeCoinsInitial + this.player.achievementsState.coinsCollected;
 			localStorage.setItem("cumulativeCoins", finalCumulative.toString());
 			return true;
@@ -312,19 +305,17 @@ export class DodgeScene extends PixiScene {
 		this.playerController.mouseMovements(this.background);
 		this.playerController.onKeyDown(this.background);
 
-		// Construir el estado para evaluar logros
 		const currentState: AchievementState = {
 			score: this.scoreManager.getScore(),
 			lives: this.healthBar.getCurrentHealth(),
 			coinsCollected: this.player.achievementsState.coinsCollected,
-			// Suma de monedas recogidas en la partida actual más las acumuladas de sesiones anteriores
+
 			cumulativeCoinsCollected: this.cumulativeCoinsInitial + this.player.achievementsState.coinsCollected,
 			enemyCollisions: this.player.achievementsState.enemyCollisions,
 			obstacleCollisions: this.player.achievementsState.obstacleCollisions,
 			potionsCollected: this.player.achievementsState.potionsCollected,
 		};
 
-		// Actualiza logros
 		this.achievementsManager.update(currentState);
 	}
 

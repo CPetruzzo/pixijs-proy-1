@@ -25,7 +25,8 @@
         "engine",
         "game",
         "background",
-        "changes fit screen and background"
+        "changes fit screen and background",
+        "newgames"
     ],
     "conventionalCommits.autoCommit": false,
     "conventionalCommits.emojiFormat": "emoji",

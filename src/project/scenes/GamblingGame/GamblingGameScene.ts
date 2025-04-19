@@ -1,8 +1,10 @@
-import { Container, Graphics, Text } from "pixi.js";
+import { Container, Graphics, Sprite, Text, TextStyle } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 // Importamos tweens de Tweedle.js
 import { Tween, Easing } from "tweedle.js";
+import { SoundLib } from "../../../engine/sound/SoundLib";
+import { GlowFilter } from "@pixi/filter-glow";
 
 interface ReelAnimation {
 	reel: Container;
@@ -37,96 +39,146 @@ export class SlotScene extends PixiScene {
 	private readonly totalRotation: number = 2 * Math.PI;
 
 	// Palanca (lever)
-	private lever: Graphics;
+	private lever: Sprite;
+	public static readonly BUNDLES = ["slots"];
+	private frame: Sprite;
+	private casinoBG: Sprite;
 
 	constructor() {
 		super();
-		// Creamos y agregamos el contenedor principal del juego.
+
+		SoundLib.playMusic("casinoBGM", { volume: 0.3, loop: true });
+
+		this.casinoBG = Sprite.from("casinoBG");
+		this.casinoBG.anchor.set(0.5);
+		this.casinoBG.scale.set(0.8);
+		this.addChild(this.casinoBG);
+
 		this.gameContainer = new Container();
 		this.addChild(this.gameContainer);
 
-		// Agregamos el placeholder gráfico para el marco de la tragamonedas.
 		this.createSlotMachineFrame();
+
+		this.createLights();
 
 		this.createReels();
 		this.createLever();
 		this.createSpinButton();
 		this.createMoneyUI();
 		this.createResultUI();
-
-		// Centramos el gameContainer.
-		this.gameContainer.pivot.set(this.gameContainer.width * 0.5, this.gameContainer.height * 0.5);
 	}
 
-	/**
-	 * Crea un placeholder gráfico para el marco de la tragamonedas.
-	 */
 	private createSlotMachineFrame(): void {
-		const frame = new Graphics();
-		frame.beginFill(0x333333);
-		frame.drawRoundedRect(0, 0, 600, 500, 20);
-		frame.endFill();
-		frame.alpha = 0.5;
-		frame.x = 300;
-		frame.y = 250;
-		frame.pivot.set(frame.width * 0.5, frame.height * 0.5);
-		this.gameContainer.addChildAt(frame, 0);
+		this.frame = Sprite.from("frame");
+		this.frame.anchor.set(0.5);
+		this.frame.scale.set(0.8);
+		this.gameContainer.addChildAt(this.frame, 0);
+	}
+
+	private createLights(): void {
+		const lightColors: number[] = [0xff0000, 0xffff00, 0x2eb4ff, 0x00ff00, 0xff0000, 0x2eb4ff, 0xffff00];
+		const lightRadius = 30;
+
+		const frameWidth = this.frame ? this.frame.width : 600;
+
+		const margin = (frameWidth * 0.925) / (lightColors.length + 1);
+
+		const yPos = this.frame ? this.frame.y - this.frame.height / 2 - lightRadius * 2 : 50;
+
+		const glowFilters: GlowFilter[] = [];
+
+		for (let i = 0; i < lightColors.length; i++) {
+			const light = new Graphics();
+			light.beginFill(lightColors[i]);
+			light.drawCircle(0, 0, lightRadius);
+			light.endFill();
+
+			light.alpha = 0.1;
+
+			light.x = (i + 1) * margin - this.frame.width / 2 + 26;
+			light.y = yPos + 124;
+
+			this.frame.addChild(light);
+
+			const glow = new GlowFilter({
+				distance: 15,
+				outerStrength: 0,
+				innerStrength: 0,
+				quality: 0.5,
+				color: lightColors[i],
+			});
+
+			light.filters = [glow];
+
+			glowFilters.push(glow);
+		}
+
+		const maxGlow = 10;
+		const durationUp = 100;
+		const durationDown = 100;
+		const delayBetween = 50;
+
+		function animateWave(index: number): void {
+			const currentGlow = glowFilters[index];
+			new Tween(currentGlow)
+				.to({ outerStrength: maxGlow }, durationUp)
+				.easing(Easing.Quadratic.Out)
+				.onComplete(() => {
+					new Tween(currentGlow)
+						.to({ outerStrength: 0 }, durationDown)
+						.easing(Easing.Quadratic.In)
+						.onComplete(() => {
+							const nextIndex = (index + 1) % glowFilters.length;
+							setTimeout(() => {
+								animateWave(nextIndex);
+							}, delayBetween);
+						})
+						.start();
+				})
+				.start();
+		}
+		animateWave(0);
 	}
 
 	private createReels(): void {
+		const reels = Sprite.from("reels");
+		reels.anchor.set(0.5);
+		reels.scale.set(0.82, 0.75);
+		this.frame.addChild(reels);
 		for (let i = 0; i < 3; i++) {
 			const reel = new Container();
-			reel.x = i * 150;
-			reel.y = 100;
-			this.gameContainer.addChild(reel);
+			reel.x = i * 200 - this.frame.width / 2 + 50;
+			reel.y = 100 - this.frame.height / 2 + 200;
+			this.frame.addChild(reel);
 			this.reels.push(reel);
 			this.populateReel(reel);
 		}
 	}
 
-	/**
-	 * Crea la palanca (lever) de la máquina tragamonedas.
-	 * Se utiliza un Graphics para dibujar una palanca simple: una línea y una bola al final.
-	 * Se configura el pivot en la parte superior para simular el punto de giro.
-	 */
 	private createLever(): void {
-		this.lever = new Graphics();
-		// Dibuja la "vara" de la palanca
-		this.lever.lineStyle(4, 0xffffff);
-		this.lever.moveTo(0, 0);
-		this.lever.lineTo(0, 100);
-		// Dibuja la bola al final
-		this.lever.beginFill(0xff0000);
-		this.lever.drawCircle(0, 100, 10);
-		this.lever.endFill();
+		this.lever = Sprite.from("lever");
+		this.lever.scale.set(0.2, -0.2);
+		this.lever.anchor.set(0.5);
 
-		// Se establece el pivot en la parte superior para rotar alrededor de este punto.
-		this.lever.pivot.set(0, 0);
-		// Posiciona la palanca en el contenedor (ajusta la posición según necesites)
-		this.lever.x = 550;
-		this.lever.y = 200;
+		this.lever.pivot.set(0, 200);
+
+		this.lever.x = 340;
+		this.lever.y = 0;
 		this.lever.rotation = -Math.PI;
 		this.gameContainer.addChild(this.lever);
 	}
 
-	/**
-	 * Anima la palanca usando Tweedle.js.
-	 * Se rota la palanca desde su posición inicial (rotation = -Math.PI) hasta 0,
-	 * y luego, mediante un tween encadenado, vuelve a rotation = -Math.PI de forma más rápida.
-	 */
 	private animateLever(): void {
 		const tweenPull = new Tween(this.lever).to({ rotation: 0 }, 300).easing(Easing.Quadratic.Out);
 
 		const tweenReturn = new Tween(this.lever).to({ rotation: -Math.PI }, 100).easing(Easing.Quadratic.In);
 
-		// Encadena el tween de retorno al final del tween de tirón.
+		SoundLib.playSound("leverSFX", { volume: 0.3 });
+
 		tweenPull.chain(tweenReturn);
 		tweenPull.start();
 	}
 
-	/**
-	 * Calcula las propiedades de un símbolo según su índice y un offset angular.
-	 */
 	private getSymbolProperties(index: number, angleOffset: number = 0): { x: number; y: number; scale: number; visible: boolean } {
 		const baseAngle = this.baseAngles[index];
 		const newAngle = baseAngle + angleOffset;
@@ -154,44 +206,56 @@ export class SlotScene extends PixiScene {
 	private createSpinButton(): void {
 		this.spinButton = new Graphics();
 		this.spinButton.beginFill(0xff0000);
-		this.spinButton.drawRoundedRect(200, 400, 200, 50, 10);
+		this.spinButton.drawRoundedRect(145, 252, 100, 50, 10);
 		this.spinButton.endFill();
 		this.spinButton.interactive = true;
 
-		const buttonText = new Text("SPIN", { fontSize: 24, fill: "white" });
+		const style = new TextStyle({
+			fill: "#4fba61",
+			fontFamily: "Verdana",
+			fontWeight: "bolder",
+			letterSpacing: 3,
+			lineJoin: "round",
+			strokeThickness: 1,
+			fontSize: 24,
+		});
+
+		const buttonText = new Text("SPIN", style);
 		buttonText.anchor.set(0.5);
-		buttonText.x = 300;
-		buttonText.y = 425;
+		buttonText.x = 195;
+		buttonText.y = 277;
 
 		this.spinButton.addChild(buttonText);
 		this.gameContainer.addChild(this.spinButton);
 
-		// Al hacer clic, se anima la palanca y se inicia el spin.
 		this.spinButton.on("pointerdown", () => {
 			this.animateLever();
 			this.startSpin();
 		});
 	}
 
-	/**
-	 * Crea la UI para mostrar el dinero actual.
-	 */
 	private createMoneyUI(): void {
-		this.moneyText = new Text(`Money: $${this.money}`, { fontSize: 32, fill: "yellow" });
+		const style = new TextStyle({
+			fill: "yellow",
+			fontFamily: "Verdana",
+			fontWeight: "bolder",
+			letterSpacing: 3,
+			lineJoin: "round",
+			strokeThickness: 1,
+			fontSize: 32,
+		});
+		this.moneyText = new Text(`Money: $${this.money}`, style);
 		this.moneyText.anchor.set(0, 0);
-		this.moneyText.x = 20;
-		this.moneyText.y = 20;
+		this.moneyText.x = -250;
+		this.moneyText.y = 255;
 		this.gameContainer.addChild(this.moneyText);
 	}
 
-	/**
-	 * Crea un placeholder para mostrar mensajes de resultado (ganar/perder).
-	 */
 	private createResultUI(): void {
 		this.resultText = new Text("", { fontSize: 48, fill: "white" });
 		this.resultText.anchor.set(0.5);
-		this.resultText.x = 300;
-		this.resultText.y = 480;
+		this.resultText.x = 0;
+		this.resultText.y = 0;
 		this.gameContainer.addChild(this.resultText);
 	}
 
@@ -200,6 +264,16 @@ export class SlotScene extends PixiScene {
 	}
 
 	private showResultMessage(message: string, color: number = 0xffffff): void {
+		const style = new TextStyle({
+			fill: "#4fba61",
+			fontFamily: "Verdana",
+			fontWeight: "bolder",
+			letterSpacing: 3,
+			lineJoin: "round",
+			strokeThickness: 1,
+			fontSize: 54,
+		});
+		this.resultText.style = style;
 		this.resultText.text = message;
 		this.resultText.style.fill = color;
 		setTimeout(() => {
@@ -236,9 +310,6 @@ export class SlotScene extends PixiScene {
 		});
 	}
 
-	/**
-	 * Inicia la animación de giro para un carrete, generando nuevos símbolos y asignando la animación.
-	 */
 	private animateReel(reel: Container, onComplete: () => void): void {
 		const newSymbols: Text[] = [];
 		for (let i = 0; i < 3; i++) {
@@ -258,9 +329,6 @@ export class SlotScene extends PixiScene {
 		this.activeReelAnimations.push(animation);
 	}
 
-	/**
-	 * En cada frame actualizamos la animación de giro de cada carrete y actualizamos Tweedle.js.
-	 */
 	public override update(dt: number): void {
 		const toRemove: ReelAnimation[] = [];
 
@@ -300,9 +368,6 @@ export class SlotScene extends PixiScene {
 		this.reels.forEach((reel) => this.applyDeformation(reel));
 	}
 
-	/**
-	 * Aplica un efecto de deformación adicional a cada símbolo (para suavizar el efecto en los extremos).
-	 */
 	private applyDeformation(reel: Container): void {
 		const center = this.centerY;
 		reel.children.forEach((child) => {
@@ -319,10 +384,6 @@ export class SlotScene extends PixiScene {
 		return this.symbols[Math.floor(Math.random() * this.symbols.length)];
 	}
 
-	/**
-	 * Revisa el resultado del spin comparando el símbolo central (índice 1) de cada carrete.
-	 * Si son iguales, el jugador gana; si no, pierde.
-	 */
 	private checkOutcome(): void {
 		const results = this.reels.map((reel) => {
 			const symbol = reel.getChildAt(1) as Text;
@@ -333,6 +394,7 @@ export class SlotScene extends PixiScene {
 			const winAmount = this.costPerSpin * this.winMultiplier;
 			this.money += winAmount;
 			this.showResultMessage(`Win $${winAmount}!`, 0x00ff00);
+			SoundLib.playSound("winSFX", { volume: 0.3 });
 		} else {
 			this.showResultMessage("Try Again", 0xff0000);
 		}
@@ -340,7 +402,11 @@ export class SlotScene extends PixiScene {
 	}
 
 	public override onResize(_newW: number, _newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, _newW, _newH, 720, 720, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToIdeal(this.casinoBG, _newW, _newH, 800, 720, ScaleHelper.FILL);
+		this.casinoBG.x = _newW * 0.5;
+		this.casinoBG.y = _newH * 0.5;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, _newW, _newH, 800, 720, ScaleHelper.FIT);
 		this.gameContainer.x = _newW * 0.5;
 		this.gameContainer.y = _newH * 0.5;
 	}

@@ -23,7 +23,12 @@ export class PlayerController {
 					this.player.playState("move");
 				}
 				this.moveRight(background);
-			} else if (Keyboard.shared.justReleased("ArrowRight") || Keyboard.shared.justReleased("KeyD") || Keyboard.shared.justReleased("ArrowLeft") || Keyboard.shared.justReleased("KeyA")) {
+			} else if (
+				Keyboard.shared.justReleased("ArrowRight") ||
+				Keyboard.shared.justReleased("KeyD") ||
+				Keyboard.shared.justReleased("ArrowLeft") ||
+				Keyboard.shared.justReleased("KeyA")
+			) {
 				this.player.playState("idle");
 			}
 		}
