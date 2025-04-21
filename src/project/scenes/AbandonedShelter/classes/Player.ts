@@ -4,6 +4,7 @@ import { StateMachineAnimator } from "../../../../engine/animation/StateMachineA
 import type { IHitable } from "../../../../engine/collision/IHitable";
 import { HitPoly } from "../../../../engine/collision/HitPoly";
 import { Keyboard } from "../../../../engine/input/Keyboard";
+import { SoundLib } from "../../../../engine/sound/SoundLib";
 
 export interface PlayerConfig {
 	x?: number;
@@ -32,7 +33,7 @@ export class AHPlayer extends Container {
 		this.addChild(this.animator);
 
 		// Hitbox for collisions
-		this.hitbox = HitPoly.makeBox(-25, -50, 50, 100);
+		this.hitbox = HitPoly.makeBox(-25, -50, 50, 100, false);
 		this.hitbox.eventMode = "none";
 		this.animator.addChild(this.hitbox);
 	}
@@ -46,6 +47,7 @@ export class AHPlayer extends Container {
 
 		if (left || right) {
 			if (!this.isWalking) {
+				SoundLib.playMusic("steps", { volume: 0.02, speed: 2, loop: true });
 				this.animator.playState("walk");
 				this.isWalking = true;
 			}
@@ -54,6 +56,7 @@ export class AHPlayer extends Container {
 			this.x += dir * this.speed * (dt / 1000);
 			this.scale.x = dir;
 		} else if (this.isWalking) {
+			SoundLib.stopMusic("steps");
 			this.animator.playState("idle");
 			this.isWalking = false;
 		}

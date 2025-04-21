@@ -11,16 +11,26 @@ export class GameStateManager {
 		return GameStateManager._instance;
 	}
 
-	// Estado de la linterna
 	public batteryLevel = 3;
-	public flashlightOn = true;
-
-	// Objetos recogidos (IDs)
+	public flashlightOn = false;
+	public healthPoints = 100;
 	public pickedItems = new Set<string>();
+	public activeItem: string | null = null;
 
 	public reset(): void {
 		this.batteryLevel = 3;
-		this.flashlightOn = true;
+		this.flashlightOn = false;
+	}
+
+	public resetObjects(): void {
 		this.pickedItems.clear();
+	}
+
+	public fullHealth(): void {
+		this.healthPoints = 100;
+	}
+
+	public setHP(healthPoints: number): void {
+		this.healthPoints = healthPoints;
 	}
 }

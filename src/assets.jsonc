@@ -326,18 +326,41 @@
 				"AH_walk1": "./img/abandonedhouse/AH_walk1.png",
 				"AH_walk2": "./img/abandonedhouse/AH_walk2.png",
 				"AH_idle": "./img/abandonedhouse/AH_idle.png",
+				
 				"AH_enemy": "./img/abandonedhouse/AH_enemy.png",
+				"AH_ghost": "./img/abandonedhouse/AH_ghost.png",
+				
 				"batteryIndicator": "./img/abandonedhouse/batteryIndicator.png",
 				"battery0": "./img/abandonedhouse/battery0.png",
 				"battery1": "./img/abandonedhouse/battery1.png",
 				"battery2": "./img/abandonedhouse/battery2.png",
 				"battery3": "./img/abandonedhouse/battery3.png",
-				"AH_bag": "./img/abandonedhouse/AH_bag.png",
-				"AH_config": "./img/abandonedhouse/AH_config.png",
-				"cellFrame": "./img/abandonedhouse/cellFrame.png",
 				
-				"switch": "./sfx/switch.mp3",
+				"AH_bag": "./img/abandonedhouse/AH_bag.png",
+				"AH_pausemenu": "./img/abandonedhouse/AH_pausemenu.png",
+				"AH_config": "./img/abandonedhouse/AH_config.png",
+				"AH_drawer": "./img/abandonedhouse/AH_drawer.png",
+				"cellFrame": "./img/abandonedhouse/cellFrame.png",
+
+				"AH_batteryicon": "./img/abandonedhouse/AH_batteryicon.png",
+				"AH_holywatericon": "./img/abandonedhouse/AH_holywater.png",
+				"AH_sacredgunicon": "./img/abandonedhouse/AH_sacredgun.png",
+				
+				"AH_bar": "./img/abandonedhouse/AH_bar.png",
+				"AH_slenderman": "./img/abandonedhouse/AH_slenderman.png",
+				"KeyE": "./img/abandonedhouse/KeyE.png",
+				"KeyC": "./img/abandonedhouse/KeyC.png",
+				"AH_barcenter": "./img/abandonedhouse/AH_barcenter.png",
+
+				"steps": "./sfx/AH/steps.wav",
+				"creakingDoor": "./sfx/AH/creakingDoor.mp3",
+				"switch": "./sfx/AH/switch.mp3",
+				"gun": "./sfx/AH/gun.mp3",
+				"drawer": "./sfx/AH/drawer.mp3",
+				"AH_grab": "./sfx/AH/AH_grab.mp3",
+				"reload": "./sfx/runfall/camera-shutter.mp3",
 				"abandonedhouse": "./music/abandonedhouse.mp3",
+				"AH_hintroom": "./img/abandonedhouse/AH_hintroom.jpg",
 				"houseBG": "./img/abandonedhouse/houseBG.png"
 			}
 		},

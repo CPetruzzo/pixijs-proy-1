@@ -4,8 +4,6 @@ import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { Sprite, Texture, Graphics, Container, BLEND_MODES, BlurFilter, Point } from "pixi.js";
 import { ColorMatrixFilter } from "pixi.js";
-import { HitPoly } from "../../../engine/collision/HitPoly";
-import type { IHitable } from "../../../engine/collision/IHitable";
 import { Manager } from "../../..";
 import { SoundLib } from "../../../engine/sound/SoundLib";
 
@@ -14,17 +12,21 @@ import { InventoryController } from "./game/InventoryController";
 import { GameStateManager } from "./game/GameStateManager";
 import { FlashlightController } from "./game/FlashLightController";
 import { AHPlayer } from "./classes/Player";
-import { Tween } from "tweedle.js";
+import { Easing, Tween } from "tweedle.js";
 import { Trigger } from "./classes/Trigger";
+import { AHHintRoom } from "./AHHintRoom";
+import { ProgressBar } from "@pixi/ui";
+import { PausePopUp } from "./game/PausePopUp";
 
 export class AbandonedShelterScene extends PixiScene {
 	private gameContainer = new Container();
+	private pauseContainer = new Container();
 	private uiRightContainer = new Container();
+	private uiCenterContainer = new Container();
 	private uiLeftContainer = new Container();
 
 	// World
 	private background!: Sprite;
-	private playerHitbox!: Graphics & IHitable;
 
 	// Light & enemy
 	private darknessMask!: Graphics;
@@ -46,15 +48,27 @@ export class AbandonedShelterScene extends PixiScene {
 
 	private previousBattery = this.state.batteryLevel;
 	private trigger: Trigger;
+	private hpBar: ProgressBar;
+
+	private pausePopUp: PausePopUp | null = null;
+	private activeIcon!: Sprite | null;
+	private weaponSprite!: Sprite;
+
+	private bullets: { sprite: Sprite; vx: number; vy: number }[] = [];
+	// eslint-disable-next-line @typescript-eslint/naming-convention
+	private BULLET_SPEED = 2500; // px/s
 
 	constructor() {
 		super();
 		this.addChild(this.gameContainer);
+		this.addChild(this.pauseContainer);
 		this.addChild(this.uiLeftContainer);
+		this.addChild(this.uiCenterContainer);
 		this.addChild(this.uiRightContainer);
 
 		console.log("this it's the new scene");
-		SoundLib.playMusic("abandonedhouse", { volume: 0.1, loop: true });
+		console.log(this.state.pickedItems);
+		SoundLib.playMusic("abandonedhouse", { volume: 0.03, loop: true });
 
 		// build
 		this.createBackground();
@@ -79,7 +93,7 @@ export class AbandonedShelterScene extends PixiScene {
 			this.previousBattery = state.batteryLevel;
 		});
 
-		this.inventoryCtrl.on("picked", (id) => this.showNewItem(id));
+		this.inventoryCtrl.on("picked", (id) => this.inventoryCtrl.showNewItem(id, this.gameContainer));
 
 		// initial sync
 		this.syncFlashlightUI();
@@ -99,27 +113,49 @@ export class AbandonedShelterScene extends PixiScene {
 		this.player = new AHPlayer({ x: -510, y: 150, speed: 200 });
 		this.gameContainer.addChild(this.player);
 
-		// hitbox centered on player
-		this.playerHitbox = HitPoly.makeBox(-25, -50, 50, 100);
-		this.player.addChild(this.playerHitbox);
+		this.weaponSprite = Sprite.from("AH_sacredgunicon");
+		this.weaponSprite.anchor.set(0.5);
+		this.weaponSprite.x = 100;
+		this.weaponSprite.y = -35;
+		this.weaponSprite.scale.set(0.3);
+		this.weaponSprite.visible = false;
+
+		this.player.addChild(this.weaponSprite);
 	}
 
 	private createEnemy(): void {
 		this.enemyBase = Sprite.from("AH_enemy");
-		this.enemyBase.anchor.set(0.5);
+		this.enemyBase.anchor.set(0.5, 1);
 		this.enemyBase.scale.set(0.85);
-		this.enemyBase.position.set(600, 150);
+		this.enemyBase.position.set(600, 150 + this.enemyBase.height * 0.5);
 		this.gameContainer.addChild(this.enemyBase);
+		this.enemyBase.alpha = 0.3;
+
+		const applyBreathingTween = (creature: Sprite): void => {
+			const baseScaleY = creature.scale.y;
+			const targetScaleY = baseScaleY * 1.015;
+			const duration = 1500 + (Math.random() * 100 - 50);
+
+			new Tween(creature.scale).to({ y: targetScaleY }, duration).easing(Easing.Quadratic.InOut).yoyo(true).repeat(Infinity).start();
+		};
 
 		this.enemyLit = Sprite.from("AH_enemy");
-		this.enemyLit.anchor.set(0.5);
+		this.enemyLit.anchor.set(0.5, 1);
 		this.enemyLit.scale.set(0.85);
 		this.enemyLit.position.copyFrom(this.enemyBase.position);
 
 		const cm = new ColorMatrixFilter();
-		cm.brightness(1.5, false);
+		cm.brightness(1.3, false);
+		// cm.blackAndWhite(true);
+		const cmbase = new ColorMatrixFilter();
+		cmbase.contrast(50, false);
+		cmbase.desaturate();
+		this.enemyBase.filters = [cmbase];
 		this.enemyLit.filters = [cm];
 		this.enemyLit.visible = false;
+
+		applyBreathingTween(this.enemyBase);
+		applyBreathingTween(this.enemyLit);
 
 		this.gameContainer.addChild(this.enemyLit);
 	}
@@ -170,17 +206,16 @@ export class AbandonedShelterScene extends PixiScene {
 
 	private createUI(): void {
 		const batteryBG = Sprite.from("battery0");
-		batteryBG.x = -5;
+		batteryBG.x = -batteryBG.width - 50;
+		batteryBG.y = 50;
+
 		this.uiRightContainer.addChild(batteryBG);
 
 		const spacing = 10;
-		// Array con los keys de las tres texturas
 		const texKeys = ["batteryIndicator", "batteryIndicator", "batteryIndicator"];
 		for (let i = 0; i < texKeys.length; i++) {
-			// Creamos un sprite con la textura correspondiente
 			const bar = new Sprite(Texture.from(texKeys[i]));
 			bar.anchor.set(0, 0);
-			// Lo posicionamos con un pequeño espacio
 			bar.x = i * (bar.width + spacing) + 23;
 			bar.y = 22;
 			batteryBG.addChild(bar);
@@ -188,43 +223,65 @@ export class AbandonedShelterScene extends PixiScene {
 		}
 
 		const cellFrame = Sprite.from("cellFrame");
-		cellFrame.y = 10;
 		cellFrame.scale.set(0.25);
-		this.uiLeftContainer.addChild(cellFrame);
+		cellFrame.y = cellFrame.height / 2 + 5;
+		cellFrame.anchor.set(0.5);
+		this.uiCenterContainer.addChild(cellFrame);
+
+		this.activeIcon = Sprite.from(Texture.EMPTY);
+		this.activeIcon.x = cellFrame.x;
+		this.activeIcon.y = cellFrame.y;
+		this.activeIcon.anchor.set(0.5);
+		this.activeIcon.width = cellFrame.width * 0.6;
+		this.activeIcon.height = cellFrame.height * 0.6;
+
+		this.activeIcon.scale.set(0.5);
+		this.uiCenterContainer.addChild(this.activeIcon);
 
 		const backpack = Sprite.from("AH_bag");
 		backpack.x = 130;
-		backpack.y = 10;
+		backpack.y = cellFrame.y;
+		backpack.anchor.set(0.5);
 		backpack.scale.set(0.25);
-		this.uiLeftContainer.addChild(backpack);
+		this.uiCenterContainer.addChild(backpack);
 
 		backpack.eventMode = "static";
 		backpack.on("pointerdown", () => {
-			console.log("Backpack clicked");
+			if (!this.pausePopUp) {
+				this.pausePopUp = new PausePopUp();
+				this.pauseContainer.addChild(this.pausePopUp);
+			} else {
+				this.pausePopUp.close();
+				this.pausePopUp = null;
+			}
 		});
-
 		const config = Sprite.from("AH_config");
 		config.x = -120;
-		config.y = 15;
+		config.y = cellFrame.y + 5;
 		config.scale.set(0.25);
-		this.uiLeftContainer.addChild(config);
+		config.anchor.set(0.5);
 
-		// other UI elements (cellFrame, backpack, etc.)
+		this.uiCenterContainer.addChild(config);
+
+		this.hpBar = new ProgressBar({
+			bg: "AH_bar",
+			fill: "AH_barcenter",
+			progress: this.state.healthPoints,
+		});
+		this.hpBar.position.set(this.hpBar.width * 0.2, 50);
+		this.uiLeftContainer.addChild(this.hpBar);
 	}
 
 	private animateBatteryDrain(oldLevel: number): void {
 		const idx = oldLevel - 1;
 		const bar = this.batteryBars[idx];
-		// barra desaparece
 		new Tween(bar).to({ alpha: 0 }, 500).start();
-		// parpadeo de la luz
 		new Tween(this.lightCone).to({ alpha: 0.3 }, 100).yoyo(true).repeat(3).start();
 	}
 
 	private syncFlashlightUI(): void {
 		const { batteryLevel, flashlightOn } = this.state;
 
-		// Apagá la luz si no hay batería
 		if (batteryLevel <= 0) {
 			this.lightCone.alpha = 0;
 		} else {
@@ -235,8 +292,31 @@ export class AbandonedShelterScene extends PixiScene {
 		this.batteryBars.forEach((b, i) => (b.alpha = i < batteryLevel ? 1 : 0));
 	}
 
-	private showNewItem(id: string): void {
-		console.log("Item picked:", id);
+	private syncActiveIcon(): void {
+		const { activeItem } = this.state;
+		if (!activeItem) {
+			this.activeIcon.texture = Texture.EMPTY;
+		} else {
+			this.activeIcon.texture = Texture.from(`AH_${activeItem}icon`);
+		}
+	}
+
+	private syncEquippedItem(): void {
+		const { activeItem } = this.state;
+		// si es la pistola sagrada, la mostramos; si no, la ocultamos
+		this.weaponSprite.visible = activeItem === "sacredgun";
+	}
+
+	private updateHP(): void {
+		let { healthPoints } = this.state;
+
+		if (healthPoints <= 0) {
+		} else {
+			healthPoints -= 0.01;
+		}
+
+		this.state.setHP(healthPoints);
+		this.hpBar.progress = this.state.healthPoints;
 	}
 
 	private flashlightBlink(): void {
@@ -342,7 +422,13 @@ export class AbandonedShelterScene extends PixiScene {
 	}
 
 	public override update(dt: number): void {
+		if (this.pausePopUp !== null) {
+			if (this.pausePopUp.popupOpened) {
+				return;
+			}
+		}
 		if (Keyboard.shared.justReleased("KeyR")) {
+			SoundLib.playSound("reload", { volume: 0.2 });
 			this.state.reset();
 		}
 
@@ -354,8 +440,11 @@ export class AbandonedShelterScene extends PixiScene {
 			this.flashlightCtrl.toggle();
 			SoundLib.playSound("switch", { volume: 0.1 });
 		}
+
 		this.flashlightCtrl.update(dt);
 		this.syncFlashlightUI();
+		this.syncActiveIcon();
+		this.syncEquippedItem();
 
 		// Trigger overlap & input
 		const pb = this.player.hitbox.getBounds();
@@ -363,11 +452,15 @@ export class AbandonedShelterScene extends PixiScene {
 		const inTrig = pb.x + pb.width > tb.x && pb.x < tb.x + tb.width && pb.y + pb.height > tb.y && pb.y < tb.y + tb.height;
 		this.trigger.triggerText.visible = inTrig;
 		if (inTrig && Keyboard.shared.justReleased("KeyE")) {
+			SoundLib.playMusic("creakingDoor", { volume: 0.3, speed: 2, loop: false, end: 3 });
 			console.log("Trigger activated");
-			Manager.changeScene(AbandonedShelterScene, { transitionClass: FadeColorTransition });
+			Manager.changeScene(AHHintRoom, { transitionClass: FadeColorTransition });
 		}
 
-		// justo aquí pon:
+		this.updateHP();
+		this.checkUsedItem();
+		this.updateBullets(dt / 1000); // dt en segundos
+
 		this.updateDarknessMask();
 		this.updateLight();
 		this.updateEnemyLit();
@@ -375,18 +468,97 @@ export class AbandonedShelterScene extends PixiScene {
 		super.update(dt);
 	}
 
+	private updateBullets(deltaSec: number): void {
+		for (let i = this.bullets.length - 1; i >= 0; i--) {
+			const { sprite, vx, vy } = this.bullets[i];
+			sprite.x += vx * deltaSec;
+			sprite.y += vy * deltaSec;
+
+			// 3a) Fuera de pantalla → eliminar
+			if (sprite.x < -750 || sprite.x > Manager.width + 100 || sprite.y < -100 || sprite.y > Manager.height + 100) {
+				sprite.destroy();
+				console.log("se gue");
+				this.bullets.splice(i, 1);
+				continue;
+			}
+
+			// 3b) Colisión con el enemigo
+			if (sprite.getBounds().intersects(this.enemyBase.getBounds())) {
+				// lo iluminamos y hacemos desaparecer la bala
+				this.enemyLit.visible = true;
+				console.log("le dio al enemigo");
+				sprite.destroy();
+				this.bullets.splice(i, 1);
+			}
+		}
+	}
+
+	private checkUsedItem(): void {
+		if (Keyboard.shared.justReleased("KeyU")) {
+			const state = this.state;
+			if (state.activeItem) {
+				console.log("Usaste el ítem:", state.activeItem);
+				if (state.activeItem === "battery") {
+					SoundLib.playSound("reload", { volume: 0.2 });
+					this.state.reset();
+				}
+				if (state.activeItem === "holywater") {
+					SoundLib.playSound("reload", { volume: 0.2 });
+					this.state.fullHealth();
+				}
+				if (state.activeItem === "sacredgun") {
+					SoundLib.playSound("gun", { volume: 0.2, start: 0.6, end: 3 });
+					this.fireBullet();
+				}
+				if (state.activeItem !== "sacredgun") {
+					state.pickedItems.delete(state.activeItem);
+					state.activeItem = null;
+					this.syncActiveIcon();
+				}
+			}
+		}
+	}
+
+	private fireBullet(): void {
+		// 1) crea la bala
+		const bullet = Sprite.from("AH_batteryicon"); // reemplazá por tu textura
+		bullet.anchor.set(0.5);
+		bullet.scale.set(0.1);
+
+		// 2) calculamos la punta del arma en global
+		const halfW = (this.weaponSprite.width * this.weaponSprite.scale.x) / 2;
+		const localTip = new Point(halfW, 0);
+		const globalTip = this.weaponSprite.toGlobal(localTip);
+
+		// 3) convertimos ese punto global a coords de gameContainer
+		const localInGame = this.gameContainer.toLocal(globalTip);
+		bullet.position.set(localInGame.x + 5, localInGame.y - 15);
+
+		// 4) lo añadimos y le damos velocidad
+		this.gameContainer.addChild(bullet);
+		const dir = this.player.scale.x >= 0 ? +1 : -1;
+		this.bullets.push({ sprite: bullet, vx: dir * this.BULLET_SPEED, vy: 0 });
+	}
+
 	public override onResize(newW: number, newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, newW, newH, 900, 900, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, newW, newH, 1536, 1024, ScaleHelper.FIT);
 		this.gameContainer.x = newW / 2;
 		this.gameContainer.y = newH / 2;
 
-		const margin = 20;
-		const totalW = 3 * 30 + 2 * 5;
-		this.uiRightContainer.x = newW - margin - totalW;
-		this.uiRightContainer.y = margin;
+		ScaleHelper.setScaleRelativeToIdeal(this.pauseContainer, newW, newH, 1536, 1024, ScaleHelper.FILL);
+		this.pauseContainer.x = newW / 2;
+		this.pauseContainer.y = newH / 2;
 
-		ScaleHelper.setScaleRelativeToIdeal(this.uiLeftContainer, newW, newH, 900, 900, ScaleHelper.FIT);
-		this.uiLeftContainer.x = newW * 0.5;
+		ScaleHelper.setScaleRelativeToIdeal(this.uiRightContainer, newW, newH, 1536, 1024, ScaleHelper.FIT);
+		this.uiRightContainer.x = newW;
+		this.uiRightContainer.y = 0;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.uiCenterContainer, newW, newH, 1536, 1024, ScaleHelper.FIT);
+		this.uiCenterContainer.x = newW * 0.5;
+		this.uiCenterContainer.y = 0;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.uiLeftContainer, newW, newH, 1536, 1024, ScaleHelper.FIT);
+		this.uiLeftContainer.x = 0;
 		this.uiLeftContainer.y = 0;
 	}
 }

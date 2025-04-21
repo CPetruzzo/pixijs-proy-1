@@ -14,12 +14,11 @@ export class FlashlightController extends EventEmitter {
 		this.emit("changed", this.state);
 	}
 
-	// Llamar cada tick con dt
 	public update(dt: number): void {
 		if (!this.state.flashlightOn) {
 			return;
 		}
-		// por ejemplo, gastar 1 nivel c/5s:
+
 		this._elapsed += dt;
 		if (this._elapsed >= 5000) {
 			this._elapsed -= 5000;
