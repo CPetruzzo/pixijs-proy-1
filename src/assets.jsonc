@@ -78,6 +78,17 @@
 					}
 				},
 				{
+					"name": "Pixelate-Regular",
+					"srcs": "./fonts/Pixelate-Regular.ttf",
+					"data": {
+						"family": "Pixelate-Regular",
+						"weight": [
+							"normal",
+							"bold"
+						]
+					}
+				},
+				{
 					"name": "BoardFont",
 					"srcs": "./fonts/DK Boarding House I.otf",
 					"data": {
@@ -323,12 +334,30 @@
 		{
 			"name": "abandonedhouse",
 			"assets": {
+				"AH_hintroom": "./img/abandonedhouse/AH_hintroom.jpg",
+				"AH_altarroom": "./img/abandonedhouse/AH_altarroom.jpg",
+				"AH_altarroomnoskull": "./img/abandonedhouse/AH_altarroomnoskull.jpg",
+				"houseBG": "./img/abandonedhouse/houseBG.png",
+				"homeBG": "./img/abandonedhouse/homeBG.png",
+				"homeBGWindows": "./img/abandonedhouse/homeBGWindows.png",
+				"AH_fireroom": "./img/abandonedhouse/AH_fireroom.png",
+				"AH_gamblingroom": "./img/abandonedhouse/AH_gamblingroom.png",
+				"AH_frontlayer": "./img/abandonedhouse/AH_frontlayer.png",
+
+				"AH_title": "./img/abandonedhouse/AH_title.png",
+				"AH_start": "./img/abandonedhouse/AH_start.png",
+				"AH_credits": "./img/abandonedhouse/AH_credits.png",
+				"AH_skullicon": "./img/abandonedhouse/skull.png",
+				"altar": "./img/abandonedhouse/altar.jpg",
+
 				"AH_walk1": "./img/abandonedhouse/AH_walk1.png",
 				"AH_walk2": "./img/abandonedhouse/AH_walk2.png",
 				"AH_idle": "./img/abandonedhouse/AH_idle.png",
-				
+				"playerProfile": "./img/abandonedhouse/playerProfile.png",
+
 				"AH_enemy": "./img/abandonedhouse/AH_enemy.png",
 				"AH_ghost": "./img/abandonedhouse/AH_ghost.png",
+				"AH_slenderman": "./img/abandonedhouse/AH_slenderman.png",
 				
 				"batteryIndicator": "./img/abandonedhouse/batteryIndicator.png",
 				"battery0": "./img/abandonedhouse/battery0.png",
@@ -342,14 +371,18 @@
 				"AH_drawer": "./img/abandonedhouse/AH_drawer.png",
 				"cellFrame": "./img/abandonedhouse/cellFrame.png",
 
+				"AH_enemyfade2": "./img/abandonedhouse/AH_enemyfade2.png",
+				"AH_enemyfade3": "./img/abandonedhouse/AH_enemyfade3.png",
+				"AH_enemyfade4": "./img/abandonedhouse/AH_enemyfade4.png",
+
 				"AH_batteryicon": "./img/abandonedhouse/AH_batteryicon.png",
 				"AH_holywatericon": "./img/abandonedhouse/AH_holywater.png",
 				"AH_sacredgunicon": "./img/abandonedhouse/AH_sacredgun.png",
 				
 				"AH_bar": "./img/abandonedhouse/AH_bar.png",
-				"AH_slenderman": "./img/abandonedhouse/AH_slenderman.png",
 				"KeyE": "./img/abandonedhouse/KeyE.png",
 				"KeyC": "./img/abandonedhouse/KeyC.png",
+				"KeyU": "./img/abandonedhouse/KeyU.png",
 				"AH_barcenter": "./img/abandonedhouse/AH_barcenter.png",
 
 				"steps": "./sfx/AH/steps.wav",
@@ -360,8 +393,12 @@
 				"AH_grab": "./sfx/AH/AH_grab.mp3",
 				"reload": "./sfx/runfall/camera-shutter.mp3",
 				"abandonedhouse": "./music/abandonedhouse.mp3",
-				"AH_hintroom": "./img/abandonedhouse/AH_hintroom.jpg",
-				"houseBG": "./img/abandonedhouse/houseBG.png"
+				"homeBGM": "./music/homeBGM.mp3",
+				"witch-laugh": "./sfx/AH/witch-laugh.mp3",
+				"possessed-laugh": "./sfx/AH/possessed-laugh.mp3",
+				"monster-roars": "./sfx/AH/monster-roars.mp3",
+				"monster-growl": "./sfx/AH/monster-growl.mp3",
+				"zombie_monster_demon": "./sfx/AH/zombie_monster_demon.mp3"
 			}
 		},
 		{

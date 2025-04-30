@@ -1,8 +1,12 @@
+import { CRTFilter } from "@pixi/filter-crt";
+import { GlitchFilter } from "@pixi/filter-glitch";
+
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Keyboard } from "../../../engine/input/Keyboard";
-import { Sprite, Texture, Graphics, Container, BLEND_MODES, BlurFilter, Point, AnimatedSprite } from "pixi.js";
+import type { Text } from "pixi.js";
+import { Sprite, Texture, Graphics, Container, BLEND_MODES, BlurFilter, Point } from "pixi.js";
 import { ColorMatrixFilter } from "pixi.js";
 import { Manager } from "../../..";
 import { SoundLib } from "../../../engine/sound/SoundLib";
@@ -14,26 +18,21 @@ import { FlashlightController } from "./game/FlashLightController";
 import { AHPlayer } from "./classes/Player";
 import { Easing, Tween } from "tweedle.js";
 import { Trigger } from "./classes/Trigger";
-import { AHHintRoom } from "./AHHintRoom";
-import type { ProgressBar } from "@pixi/ui";
-import type { PausePopUp } from "./game/PausePopUp";
-import { AHAltarRoom } from "./AHAltarRoom";
-import { Background } from "./Background";
-import { UI } from "./UI";
-import { OverlayScene } from "./OverlayScene";
+import { AbandonedShelterScene } from "./AbandonedShelterScene";
+import Random from "../../../engine/random/Random";
+import { ProgressBar } from "@pixi/ui";
+import { PausePopUp } from "./game/PausePopUp";
 import { Timer } from "../../../engine/tweens/Timer";
-// import { FlashLight } from "./classes/FlashLight";
 
-export class AbandonedShelterScene extends PixiScene {
+export class AHAltarRoom extends PixiScene {
 	private gameContainer = new Container();
-	private frontLayerContainer = new Container();
-	private pauseContainer = new Container();
 	private uiRightContainer = new Container();
 	private uiCenterContainer = new Container();
 	private uiLeftContainer = new Container();
+	private pauseContainer = new Container();
 
 	// World
-	public background!: Background;
+	private background!: Sprite;
 
 	// Light & enemy
 	private darknessMask!: Graphics;
@@ -55,26 +54,32 @@ export class AbandonedShelterScene extends PixiScene {
 
 	private previousBattery = this.state.batteryLevel;
 	private trigger: Trigger;
+	private glitch: GlitchFilter;
 	private altarTrigger: Trigger;
+	private crt: CRTFilter;
 
+	private drawerOpened: boolean = false;
+
+	private altar: Sprite;
+	private skullIcon: Sprite;
+	private altarCloseText: Text | Sprite;
 	private hpBar: ProgressBar;
+
+	// dentro de AHHintRoom
+	private skullTrigger!: Trigger;
 
 	private pausePopUp: PausePopUp | null = null;
 	private activeIcon!: Sprite | null;
+
 	private weaponSprite!: Sprite;
 
 	private bullets: { sprite: Sprite; vx: number; vy: number }[] = [];
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	private BULLET_SPEED = 2500; // px/s
-	public ui: UI;
-	private overlay: OverlayScene;
-
-	// private flashlight: FlashLight;
 
 	constructor() {
 		super();
 		this.addChild(this.gameContainer);
-		this.addChild(this.frontLayerContainer);
 		this.addChild(this.pauseContainer);
 		this.addChild(this.uiLeftContainer);
 		this.addChild(this.uiCenterContainer);
@@ -82,43 +87,41 @@ export class AbandonedShelterScene extends PixiScene {
 
 		console.log("this it's the new scene");
 		console.log(this.state.pickedItems);
+
 		SoundLib.playMusic("abandonedhouse", { volume: 0.1, loop: true });
 
+		new Timer()
+			.duration(1500)
+			.start()
+			.onComplete(() => {
+				SoundLib.playSound("possessed-laugh", { volume: 0.05 });
+			});
 		// build
-		this.background = new Background("houseBG", this.gameContainer, this.frontLayerContainer);
+		this.createBackground();
 		this.createPlayer();
 		this.createEnemy();
 		this.createLightMask();
 		this.createLightCone();
-		this.ui = new UI(
-			this.uiRightContainer,
-			this.batteryBars,
-			this.activeIcon,
-			this.uiCenterContainer,
-			this.pausePopUp,
-			this.pauseContainer,
-			this.hpBar,
-			this.uiLeftContainer,
-			this.state,
-			this.weaponSprite,
-			this.lightCone
-		);
+		this.createUI();
 
 		this.trigger = new Trigger();
 		this.trigger.createTrigger(this.gameContainer);
+		this.trigger.triggerZone.x = this.trigger.triggerZone.x - 100;
+		this.trigger.triggerZone.y = this.trigger.triggerZone.y + 50;
+		this.trigger.triggerText.x = this.trigger.triggerZone.x - 50;
 
 		this.altarTrigger = new Trigger();
 		this.altarTrigger.createTrigger(this.gameContainer);
-		this.altarTrigger.triggerZone.x += 1100;
-		this.altarTrigger.triggerText.x += 1100;
+		this.altarTrigger.triggerZone.x = this.altarTrigger.triggerZone.x + 490;
+		this.altarTrigger.triggerText.x = this.altarTrigger.triggerZone.x;
+		this.altarTrigger.triggerText.y = this.altarTrigger.triggerZone.y + 50;
 
 		this.flashlightCtrl.on("changed", (state) => {
 			if (state.batteryLevel < this.previousBattery) {
-				this.ui.animateBatteryDrain(this.previousBattery);
-
+				this.animateBatteryDrain(this.previousBattery);
 				this.flashlightBlink();
 			} else {
-				this.ui.syncFlashlightUI();
+				this.syncFlashlightUI();
 				this.resetMasks();
 			}
 
@@ -127,32 +130,27 @@ export class AbandonedShelterScene extends PixiScene {
 
 		this.inventoryCtrl.on("picked", (id) => this.inventoryCtrl.showNewItem(id, this.gameContainer));
 
-		this.ui.syncFlashlightUI();
+		// initial sync
+		this.syncFlashlightUI();
 
 		// apply blur filter
-		this.darknessMask.filters = [new BlurFilter(50)];
+		this.darknessMask.filters = [new BlurFilter(8)];
+	}
 
-		this.overlay = new OverlayScene();
-		if (!this.state.gunGrabbed) {
-			this.overlay.typeText(
-				"Hace frío aquí... qué es eso delante de mi? Quizás pueda ver mejor si apunto la linterna hacia lo que sea que eso sea. \nCon qué se encendía? Ah! Presiona Space para probar la linterna.",
-				"Space",
-				"red",
-				50
-			);
+	private createBackground(): void {
+		if (!this.state.skullPicked) {
+			this.background = Sprite.from("AH_altarroom");
 		} else {
-			if (!this.state.enemyDefeated) {
-				this.overlay.typeText("Quizás esa pistola que agarré sirva para algo. Equipala desde la mochila y presiona U para usarla.", "pistola", "red", 50);
-			} else {
-				this.overlay.visible = false;
-			}
+			this.background = Sprite.from("AH_altarroomnoskull");
 		}
-		this.gameContainer.addChild(this.overlay);
+		this.background.anchor.set(0.5);
+		this.gameContainer.addChildAt(this.background, 0);
 	}
 
 	private createPlayer(): void {
 		// en createPlayer o constructor:
 		this.player = new AHPlayer({ x: -510, y: 150, speed: 200 });
+		this.player.y = this.player.y + 10;
 		this.gameContainer.addChild(this.player);
 
 		this.weaponSprite = Sprite.from("AH_sacredgunicon");
@@ -166,45 +164,54 @@ export class AbandonedShelterScene extends PixiScene {
 	}
 
 	private createEnemy(): void {
-		this.enemyBase = Sprite.from("AH_enemy");
-		this.enemyBase.anchor.set(0.5, 1);
+		this.enemyBase = Sprite.from("AH_ghost");
+		this.enemyBase.anchor.set(0.5);
 		this.enemyBase.scale.set(0.85);
 		this.enemyBase.position.set(600, 150 + this.enemyBase.height * 0.5);
+		this.gameContainer.addChild(this.enemyBase);
+		this.enemyBase.alpha = 0.001;
 
-		if (!this.state.enemyDefeated) {
-			this.gameContainer.addChild(this.enemyBase);
-		}
-		this.enemyBase.alpha = 0.3;
-
-		const applyBreathingTween = (creature: Sprite): void => {
+		const applyBreathingTweenAndFloat = (creature: Sprite): void => {
 			const baseScaleY = creature.scale.y;
 			const targetScaleY = baseScaleY * 1.015;
 			const duration = 1500 + (Math.random() * 100 - 50);
-
 			new Tween(creature.scale).to({ y: targetScaleY }, duration).easing(Easing.Quadratic.InOut).yoyo(true).repeat(Infinity).start();
 		};
 
-		this.enemyLit = Sprite.from("AH_enemy");
+		this.enemyLit = Sprite.from("AH_ghost");
 		this.enemyLit.anchor.set(0.5, 1);
 		this.enemyLit.scale.set(0.85);
 		this.enemyLit.position.copyFrom(this.enemyBase.position);
 
 		const cm = new ColorMatrixFilter();
-		cm.brightness(1.3, false);
-		// cm.blackAndWhite(true);
+		cm.brightness(4, false);
+		cm.blackAndWhite(true);
 		const cmbase = new ColorMatrixFilter();
-		cmbase.contrast(50, false);
-		cmbase.desaturate();
+		cmbase.contrast(4, false);
 		this.enemyBase.filters = [cmbase];
-		this.enemyLit.filters = [cm];
+
+		// 1) Creamos los filtros CRT + Glitch
+		this.crt = new CRTFilter({
+			lineWidth: 2, // grosor de scanlines
+			lineContrast: 0.3, // contraste de líneas
+			vignetting: 0.5,
+			vignettingAlpha: 0.3,
+		});
+		this.glitch = new GlitchFilter({
+			slices: 20,
+			offset: 10,
+			fillMode: 1, // 1 => repeat
+		});
+
+		// 2) Asignamos al ghost “lit” (la versión brillante)
+		this.enemyLit.filters = [cm, this.crt, this.glitch];
+
 		this.enemyLit.visible = false;
 
-		applyBreathingTween(this.enemyBase);
-		applyBreathingTween(this.enemyLit);
+		applyBreathingTweenAndFloat(this.enemyBase);
+		applyBreathingTweenAndFloat(this.enemyLit);
 
-		if (!this.state.enemyDefeated) {
-			this.gameContainer.addChild(this.enemyLit);
-		}
+		this.gameContainer.addChild(this.enemyLit);
 	}
 
 	private createLightMask(): void {
@@ -251,6 +258,105 @@ export class AbandonedShelterScene extends PixiScene {
 		this.enemyLit.mask = this.coneMask;
 	}
 
+	private createUI(): void {
+		const batteryBG = Sprite.from("battery0");
+		batteryBG.x = -batteryBG.width - 50;
+		batteryBG.y = 50;
+
+		this.uiRightContainer.addChild(batteryBG);
+
+		const spacing = 10;
+		const texKeys = ["batteryIndicator", "batteryIndicator", "batteryIndicator"];
+		for (let i = 0; i < texKeys.length; i++) {
+			const bar = new Sprite(Texture.from(texKeys[i]));
+			bar.anchor.set(0, 0);
+			bar.x = i * (bar.width + spacing) + 23;
+			bar.y = 22;
+			batteryBG.addChild(bar);
+			this.batteryBars.push(bar);
+		}
+
+		const cellFrame = Sprite.from("cellFrame");
+		cellFrame.scale.set(0.25);
+		cellFrame.y = cellFrame.height / 2 + 5;
+		cellFrame.anchor.set(0.5);
+		this.uiCenterContainer.addChild(cellFrame);
+
+		// placeholder para el activo
+		this.activeIcon = Sprite.from(Texture.EMPTY);
+		this.activeIcon.x = cellFrame.x;
+		this.activeIcon.y = cellFrame.y;
+		this.activeIcon.anchor.set(0.5);
+		this.activeIcon.width = cellFrame.width * 0.6;
+		this.activeIcon.height = cellFrame.height * 0.6;
+
+		this.activeIcon.scale.set(0.5);
+		this.uiCenterContainer.addChild(this.activeIcon);
+
+		const backpack = Sprite.from("AH_bag");
+		backpack.x = 130;
+		backpack.y = cellFrame.y;
+		backpack.anchor.set(0.5);
+		backpack.scale.set(0.25);
+		this.uiCenterContainer.addChild(backpack);
+
+		const keyU = Sprite.from("KeyU");
+		keyU.anchor.set(0.5);
+		keyU.scale.set(0.8);
+		keyU.x = cellFrame.x + 45;
+		keyU.y = backpack.y + 55;
+		this.uiCenterContainer.addChild(keyU);
+
+		backpack.eventMode = "static";
+		backpack.on("pointerdown", () => {
+			if (!this.pausePopUp) {
+				this.pausePopUp = new PausePopUp();
+				this.pauseContainer.addChild(this.pausePopUp);
+			} else {
+				this.pausePopUp.close();
+				this.pausePopUp = null;
+			}
+		});
+		const config = Sprite.from("AH_config");
+		config.x = -120;
+		config.y = cellFrame.y + 5;
+		config.scale.set(0.25);
+		config.anchor.set(0.5);
+
+		this.uiCenterContainer.addChild(config);
+
+		this.hpBar = new ProgressBar({
+			bg: "AH_bar",
+			fill: "AH_barcenter",
+			progress: this.state.healthPoints,
+		});
+		this.hpBar.position.set(this.hpBar.width * 0.2, 50);
+		this.uiLeftContainer.addChild(this.hpBar);
+	}
+
+	private animateBatteryDrain(oldLevel: number): void {
+		const idx = oldLevel - 1;
+		const bar = this.batteryBars[idx];
+		// barra desaparece
+		new Tween(bar).to({ alpha: 0 }, 500).start();
+		// parpadeo de la luz
+		new Tween(this.lightCone).to({ alpha: 0.3 }, 100).yoyo(true).repeat(3).start();
+	}
+
+	private syncFlashlightUI(): void {
+		const { batteryLevel, flashlightOn } = this.state;
+
+		// Apagá la luz si no hay batería
+		if (batteryLevel <= 0) {
+			this.lightCone.alpha = 0;
+		} else {
+			// Si hay batería, seguí el estado de encendido/apagado
+			this.lightCone.alpha = flashlightOn ? 0.3 : 0;
+		}
+
+		this.batteryBars.forEach((b, i) => (b.alpha = i < batteryLevel ? 1 : 0));
+	}
+
 	private flashlightBlink(): void {
 		console.log("blink called");
 		new Tween(this.lightContainer)
@@ -260,7 +366,7 @@ export class AbandonedShelterScene extends PixiScene {
 			.onUpdate(() => console.log("blinking...", this.lightContainer.alpha))
 			.onComplete(() => {
 				console.log("blink done");
-				this.ui.syncFlashlightUI();
+				this.syncFlashlightUI();
 			})
 			.start();
 	}
@@ -269,6 +375,27 @@ export class AbandonedShelterScene extends PixiScene {
 		this.coneMask.clear();
 		this.enemyLit.visible = false;
 		this.updateDarknessMask();
+	}
+
+	private updateHP(): void {
+		let { healthPoints } = this.state;
+
+		if (healthPoints <= 0) {
+		} else {
+			healthPoints -= 0.01;
+		}
+
+		this.state.setHP(healthPoints);
+		this.hpBar.progress = this.state.healthPoints;
+	}
+
+	private syncActiveIcon(): void {
+		const { activeItem } = this.state;
+		if (!activeItem) {
+			this.activeIcon.texture = Texture.EMPTY;
+		} else {
+			this.activeIcon.texture = Texture.from(`AH_${activeItem}icon`);
+		}
 	}
 
 	private updateDarknessMask(): void {
@@ -354,8 +481,8 @@ export class AbandonedShelterScene extends PixiScene {
 	}
 
 	public override update(dt: number): void {
-		if (this.ui.pausePopUp !== null) {
-			if (this.ui.pausePopUp.popupOpened) {
+		if (this.pausePopUp !== null) {
+			if (this.pausePopUp.popupOpened) {
 				return;
 			}
 		}
@@ -364,17 +491,13 @@ export class AbandonedShelterScene extends PixiScene {
 			this.state.reset();
 		}
 
-		if (this.overlay.visible) {
-			if (Keyboard.shared.justReleased("Enter")) {
-				this.overlay.visible = false;
-			}
-		}
+		// cada frame variamos un poco el desplazamiento horizontal
+		this.glitch.seed = Math.random();
+		this.glitch.offset = 2 + Math.random() * 10;
+		// a veces activamos un slice extra
+		this.glitch.slices = Math.random() < 0.1 ? 10 : 5;
 
-		// // pasamos la posición global del jugador y su orientación
-		// const playerPos = this.player.getGlobalPosition(new Point());
-		// const facingAngle = this.player.scale.x >= 0 ? 0 : Math.PI;
-		// this.flashlight.update(dt, playerPos, facingAngle);
-
+		this.crt.noise = Random.shared.random(0, 1);
 		// Player movement
 		this.player.update(dt);
 
@@ -383,36 +506,93 @@ export class AbandonedShelterScene extends PixiScene {
 			this.flashlightCtrl.toggle();
 			SoundLib.playSound("switch", { volume: 0.05 });
 		}
-
 		this.flashlightCtrl.update(dt);
-		this.ui.syncFlashlightUI();
-		this.ui.syncActiveIcon();
-		this.ui.syncEquippedItem();
+		this.syncFlashlightUI();
+		this.syncActiveIcon();
+		this.syncEquippedItem();
 
-		// Trigger overlap & input
+		// player hitbox bounds
 		const pb = this.player.hitbox.getBounds();
+		// Trigger overlap & input
 		const tb = this.trigger.triggerZone.getBounds();
 		const inTrig = pb.x + pb.width > tb.x && pb.x < tb.x + tb.width && pb.y + pb.height > tb.y && pb.y < tb.y + tb.height;
 		this.trigger.triggerText.visible = inTrig;
 		if (inTrig && Keyboard.shared.justReleased("KeyE")) {
 			SoundLib.playMusic("creakingDoor", { volume: 0.3, speed: 2, loop: false, end: 3 });
 			console.log("Trigger activated");
-			Manager.changeScene(AHHintRoom, { transitionClass: FadeColorTransition });
+			Manager.changeScene(AbandonedShelterScene, { transitionClass: FadeColorTransition });
 		}
 
-		this.ui.updateHP();
+		// DrawerTrigger overlap & input
+		const drawertb = this.altarTrigger.triggerZone.getBounds();
+		const drawerinTrig = pb.x + pb.width > drawertb.x && pb.x < drawertb.x + drawertb.width && pb.y + pb.height > drawertb.y && pb.y < drawertb.y + drawertb.height;
+		this.altarTrigger.triggerText.visible = drawerinTrig;
 
-		if (this.state.enemyDefeated) {
-			const altb = this.altarTrigger.triggerZone.getBounds();
-			const altInTrig = pb.x + pb.width > altb.x && pb.x < altb.x + altb.width && pb.y + pb.height > altb.y && pb.y < altb.y + altb.height;
-			this.altarTrigger.triggerText.visible = altInTrig;
-			if (altInTrig && Keyboard.shared.justReleased("KeyE")) {
-				SoundLib.playMusic("creakingDoor", { volume: 0.3, speed: 2, loop: false, end: 3 });
-				console.log("Trigger activated");
-				Manager.changeScene(AHAltarRoom, { transitionClass: FadeColorTransition });
+		if (drawerinTrig && Keyboard.shared.justPressed("KeyC") && this.drawerOpened) {
+			this.drawerOpened = false;
+			SoundLib.playSound("drawer", { volume: 0.3, speed: 2, loop: false });
+			this.altar.removeChildren();
+			new Tween(this.altar)
+				.to({ alpha: 0 }, 500)
+				.start()
+				.onComplete(() => {
+					this.gameContainer.removeChild(this.altar);
+				});
+		}
+
+		if (drawerinTrig && Keyboard.shared.justReleased("KeyE") && !this.drawerOpened) {
+			SoundLib.playSound("drawer", { volume: 0.3, speed: 2, loop: false });
+			console.log("Trigger activated");
+
+			this.altar = Sprite.from("altar");
+			this.altar.anchor.set(0.5);
+			this.altar.scale.set(0.8);
+			this.altar.alpha = 0;
+			this.gameContainer.addChild(this.altar);
+			new Tween(this.altar).to({ alpha: 1 }, 500).start();
+
+			this.drawerOpened = true;
+
+			if (!this.state.pickedItems.has("skull")) {
+				this.skullIcon = Sprite.from("AH_skullicon");
+				this.skullIcon.anchor.set(0.5);
+				this.altar.addChild(this.skullIcon);
+
+				this.skullTrigger = new Trigger();
+				this.skullTrigger.createPointerTrigger(this.altar, this.skullIcon.x, this.skullIcon.y, () => {
+					SoundLib.playSound("AH_grab", { start: 0.2, end: 1, volume: 0.5 });
+					this.inventoryCtrl.pick("skull");
+					this.state.skullPicked = true;
+					this.altar.removeChild(this.skullIcon);
+					this.background.texture = Texture.from("AH_altarroomnoskull");
+					this.skullTrigger.triggerZone.destroy();
+					this.skullTrigger.triggerText.destroy();
+				});
+			} else {
+				// dentro de update o donde configures el trigger:
+				const dropTrigger = new Trigger();
+				dropTrigger.createPointerTrigger(this.altar, 0, 0, () => {
+					// al hacer click sobre el altar
+					this.inventoryCtrl.drop("skull", this.altar, 0, 0, () => {
+						// callback: podés cambiar la textura del altar
+						this.state.skullPicked = false;
+						if (this.state.activeItem === "skull") {
+							this.state.activeItem = null;
+						}
+						this.background.texture = Texture.from("AH_altarroom");
+						SoundLib.playSound("AH_grab", { start: 0.2, end: 1, volume: 0.5 });
+					});
+				});
 			}
+			// this.drawerCloseText = new Text("C", { fill: "#fff", fontSize: 96 });
+			this.altarCloseText = Sprite.from("KeyC");
+			this.altarCloseText.position.y = 350;
+			this.altarCloseText.scale.set(2.5);
+			this.altarCloseText.anchor.set(0.5);
+			this.altar.addChild(this.altarCloseText);
 		}
 
+		this.updateHP();
 		this.checkUsedItem();
 		this.updateBullets(dt / 1000); // dt en segundos
 
@@ -423,57 +603,10 @@ export class AbandonedShelterScene extends PixiScene {
 		super.update(dt);
 	}
 
-	private updateBullets(deltaSec: number): void {
-		for (let i = this.bullets.length - 1; i >= 0; i--) {
-			const { sprite, vx, vy } = this.bullets[i];
-			sprite.x += vx * deltaSec;
-			sprite.y += vy * deltaSec;
-
-			// 3a) Fuera de pantalla → eliminar
-			if (sprite.x < -750 || sprite.x > Manager.width + 100 || sprite.y < -100 || sprite.y > Manager.height + 100) {
-				sprite.destroy();
-				this.bullets.splice(i, 1);
-				continue;
-			}
-
-			// 3b) Colisión con el enemigo
-			if (sprite.getBounds().intersects(this.enemyBase.getBounds())) {
-				// 1) Haz visible la versión iluminada
-				this.enemyLit.visible = true;
-				SoundLib.playSound("monster-roars", { volume: 0.1, singleInstance: true, start: 0.3, end: 2 });
-
-				// 2) Crea el AnimatedSprite de la desintegración
-				const fadeFrames = [Texture.from("AH_enemyfade2"), Texture.from("AH_enemyfade3"), Texture.from("AH_enemyfade4")];
-				const explosion = new AnimatedSprite(fadeFrames);
-				explosion.animationSpeed = 0.15; // Ajusta la velocidad a tu gusto
-				explosion.loop = false; // Sólo una pasada
-				explosion.anchor.set(0.5, 1); // igual que enemy sprite
-				explosion.scale.set(0.9);
-				explosion.x = this.enemyBase.x;
-				explosion.y = this.enemyBase.y;
-				this.gameContainer.addChild(explosion);
-
-				// 3) Cuando termine la animación, límpialo y remueve al enemigo
-				explosion.onComplete = () => {
-					explosion.destroy();
-					this.gameContainer.removeChild(this.enemyBase);
-					this.gameContainer.removeChild(this.enemyLit);
-					this.state.enemyDefeated = true;
-				};
-				explosion.play();
-
-				// 4) Destruye la bala y la referencia
-				sprite.destroy();
-				this.bullets.splice(i, 1);
-
-				new Timer()
-					.to(800)
-					.start()
-					.onComplete(() => {
-						this.overlay.typeText("Funcionó! Menos mal...!", "Funcionó", "red", 50);
-					});
-			}
-		}
+	private syncEquippedItem(): void {
+		const { activeItem } = this.state;
+		// si es la pistola sagrada, la mostramos; si no, la ocultamos
+		this.weaponSprite.visible = activeItem === "sacredgun";
 	}
 
 	private checkUsedItem(): void {
@@ -493,15 +626,41 @@ export class AbandonedShelterScene extends PixiScene {
 					SoundLib.playSound("gun", { volume: 0.2, start: 0.6, end: 3 });
 					this.fireBullet();
 				}
+
 				if (state.activeItem !== "sacredgun") {
 					state.pickedItems.delete(state.activeItem);
 					state.activeItem = null;
-					this.ui.syncActiveIcon();
+					this.syncActiveIcon();
 				}
 			}
 		}
 	}
 
+	private updateBullets(deltaSec: number): void {
+		for (let i = this.bullets.length - 1; i >= 0; i--) {
+			const { sprite, vx, vy } = this.bullets[i];
+			sprite.x += vx * deltaSec;
+			sprite.y += vy * deltaSec;
+
+			// 3a) Fuera de pantalla → eliminar
+			if (sprite.x < -750 || sprite.x > Manager.width + 100 || sprite.y < -100 || sprite.y > Manager.height + 100) {
+				sprite.destroy();
+				console.log("se gue");
+				this.bullets.splice(i, 1);
+				continue;
+			}
+
+			// 3b) Colisión con el enemigo
+			if (sprite.getBounds().intersects(this.enemyBase.getBounds())) {
+				// lo iluminamos y hacemos desaparecer la bala
+				this.enemyLit.visible = true;
+				console.log("le dio al enemigo");
+				SoundLib.playSound("witch-laugh", { volume: 0.1, singleInstance: true });
+			}
+		}
+	}
+
+	// 2) Método para crear y disparar la bala
 	private fireBullet(): void {
 		// 1) crea la bala
 		const bullet = Sprite.from("AH_batteryicon"); // reemplazá por tu textura
@@ -528,14 +687,6 @@ export class AbandonedShelterScene extends PixiScene {
 		this.gameContainer.x = newW / 2;
 		this.gameContainer.y = newH / 2;
 
-		ScaleHelper.setScaleRelativeToIdeal(this.frontLayerContainer, newW, newH, 1536, 1024, ScaleHelper.FIT);
-		this.frontLayerContainer.x = newW / 2;
-		this.frontLayerContainer.y = newH / 2;
-
-		ScaleHelper.setScaleRelativeToIdeal(this.pauseContainer, newW, newH, 1536, 1200, ScaleHelper.FIT);
-		this.pauseContainer.x = newW / 2;
-		this.pauseContainer.y = newH / 2;
-
 		ScaleHelper.setScaleRelativeToIdeal(this.uiRightContainer, newW, newH, 1536, 1024, ScaleHelper.FIT);
 		this.uiRightContainer.x = newW;
 		this.uiRightContainer.y = 0;
@@ -547,5 +698,9 @@ export class AbandonedShelterScene extends PixiScene {
 		ScaleHelper.setScaleRelativeToIdeal(this.uiLeftContainer, newW, newH, 1536, 1024, ScaleHelper.FIT);
 		this.uiLeftContainer.x = 0;
 		this.uiLeftContainer.y = 0;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.pauseContainer, newW, newH, 1536, 1024, ScaleHelper.FILL);
+		this.pauseContainer.x = newW / 2;
+		this.pauseContainer.y = newH / 2;
 	}
 }

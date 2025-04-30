@@ -34,8 +34,6 @@
   "devDependencies": {
     "@capacitor/cli": "^6.2.0",
     "@killabunnies/eslint-config": "^1.0.5",
-    "@pixi/storybook-renderer": "^1.0.0",
-    "@pixi/storybook-webpack5": "^1.0.0",
     "@tauri-apps/cli": "^2.2.7",
     "@types/fontfaceobserver": "2.1.0",
     "@types/matter-js": "^0.14.10",

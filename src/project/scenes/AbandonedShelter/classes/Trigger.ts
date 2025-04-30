@@ -34,7 +34,7 @@ export class Trigger extends Container {
 	 */
 	public createPointerTrigger(parent: Container, x: number, y: number, onActivate: () => void): void {
 		// Zona invisible pero interactiva
-		this.triggerZone = new Graphics().beginFill(0xff0000, 0.001).drawRect(-125, -20, 150, 40).endFill();
+		this.triggerZone = new Graphics().beginFill(0xff0000, 0.001).drawRect(-85, -75, 150, 150).endFill();
 		this.triggerZone.position.set(x, y);
 		this.triggerZone.eventMode = "static";
 		this.triggerZone.on("pointerover", () => (this.triggerText.visible = true));

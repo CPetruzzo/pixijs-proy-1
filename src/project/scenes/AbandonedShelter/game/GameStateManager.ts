@@ -11,11 +11,22 @@ export class GameStateManager {
 		return GameStateManager._instance;
 	}
 
+	// --- Estado de Linterna ---
 	public batteryLevel = 3;
 	public flashlightOn = false;
-	public healthPoints = 100;
+
+	// --- Salud ---
+	public healthPoints = 1000;
+
+	// --- Inventario ---
 	public pickedItems = new Set<string>();
 	public activeItem: string | null = null;
+
+	// --- Estado de Enemigos ---
+	/** Será true cuando el enemigo haya muerto/desintegrado */
+	public enemyDefeated = false;
+	public skullPicked = false;
+	public gunGrabbed = false;
 
 	public reset(): void {
 		this.batteryLevel = 3;

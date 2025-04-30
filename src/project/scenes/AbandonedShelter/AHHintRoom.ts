@@ -22,9 +22,12 @@ import { AbandonedShelterScene } from "./AbandonedShelterScene";
 import Random from "../../../engine/random/Random";
 import { ProgressBar } from "@pixi/ui";
 import { PausePopUp } from "./game/PausePopUp";
+import { Timer } from "../../../engine/tweens/Timer";
+import { OverlayScene } from "./OverlayScene";
 
 export class AHHintRoom extends PixiScene {
 	private gameContainer = new Container();
+	private frontLayerContainer = new Container();
 	private uiRightContainer = new Container();
 	private uiCenterContainer = new Container();
 	private uiLeftContainer = new Container();
@@ -80,10 +83,12 @@ export class AHHintRoom extends PixiScene {
 	private bullets: { sprite: Sprite; vx: number; vy: number }[] = [];
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	private BULLET_SPEED = 2500; // px/s
+	private overlay: OverlayScene;
 
 	constructor() {
 		super();
 		this.addChild(this.gameContainer);
+		this.addChild(this.frontLayerContainer);
 		this.addChild(this.pauseContainer);
 		this.addChild(this.uiLeftContainer);
 		this.addChild(this.uiCenterContainer);
@@ -94,6 +99,15 @@ export class AHHintRoom extends PixiScene {
 
 		SoundLib.playMusic("abandonedhouse", { volume: 0.1, loop: true });
 
+		new Timer()
+			.duration(1500)
+			.start()
+			.onComplete(() => {
+				SoundLib.playSound("possessed-laugh", { volume: 0.05 });
+				this.overlay = new OverlayScene();
+				this.gameContainer.addChild(this.overlay);
+				this.overlay.typeText("HA ha hA ha haaaAaAa...", "haaaAaAa", "red", 50);
+			});
 		// build
 		this.createBackground();
 		this.createPlayer();
@@ -134,6 +148,18 @@ export class AHHintRoom extends PixiScene {
 
 		// apply blur filter
 		this.darknessMask.filters = [new BlurFilter(8)];
+
+		new Timer()
+			.to(4000)
+			.start()
+			.onComplete(() => {
+				this.overlay.typeText(
+					"Qué fueron esas voces?!!! Esta casa está muy mal... Pero bueno, menos mal que tengo una linterna. Espero que no se me acabe la batería...",
+					"batería",
+					"red",
+					38
+				);
+			});
 	}
 
 	private createBackground(): void {
@@ -152,7 +178,7 @@ export class AHHintRoom extends PixiScene {
 		this.weaponSprite.anchor.set(0.5);
 		this.weaponSprite.x = 100;
 		this.weaponSprite.y = -35;
-		this.weaponSprite.scale.set(0.3);
+		this.weaponSprite.scale.set(0.25);
 		this.weaponSprite.visible = false;
 
 		this.player.addChild(this.weaponSprite);
@@ -294,6 +320,13 @@ export class AHHintRoom extends PixiScene {
 		backpack.anchor.set(0.5);
 		backpack.scale.set(0.25);
 		this.uiCenterContainer.addChild(backpack);
+
+		const keyU = Sprite.from("KeyU");
+		keyU.anchor.set(0.5);
+		keyU.scale.set(0.8);
+		keyU.x = cellFrame.x + 45;
+		keyU.y = backpack.y + 55;
+		this.uiCenterContainer.addChild(keyU);
 
 		backpack.eventMode = "static";
 		backpack.on("pointerdown", () => {
@@ -479,6 +512,14 @@ export class AHHintRoom extends PixiScene {
 			this.state.reset();
 		}
 
+		if (this.overlay) {
+			if (this.overlay.visible) {
+				if (Keyboard.shared.justReleased("Enter")) {
+					this.overlay.visible = false;
+				}
+			}
+		}
+
 		// cada frame variamos un poco el desplazamiento horizontal
 		this.glitch.seed = Math.random();
 		this.glitch.offset = 2 + Math.random() * 10;
@@ -492,7 +533,7 @@ export class AHHintRoom extends PixiScene {
 		// Flashlight input
 		if (Keyboard.shared.justReleased("Space")) {
 			this.flashlightCtrl.toggle();
-			SoundLib.playSound("switch", { volume: 0.1 });
+			SoundLib.playSound("switch", { volume: 0.05 });
 		}
 		this.flashlightCtrl.update(dt);
 		this.syncFlashlightUI();
@@ -590,6 +631,7 @@ export class AHHintRoom extends PixiScene {
 					SoundLib.playSound("AH_grab", { start: 0.2, end: 1, volume: 0.5 });
 					this.inventoryCtrl.pick("sacredgun");
 					this.drawer.removeChild(this.sacredgun);
+					this.state.gunGrabbed = true;
 					this.sacredgunTrigger.triggerZone.destroy();
 					this.sacredgunTrigger.triggerText.destroy();
 				});
@@ -666,8 +708,14 @@ export class AHHintRoom extends PixiScene {
 				// lo iluminamos y hacemos desaparecer la bala
 				this.enemyLit.visible = true;
 				console.log("le dio al enemigo");
-				sprite.destroy();
-				this.bullets.splice(i, 1);
+				SoundLib.playSound("witch-laugh", { volume: 0.1, singleInstance: true });
+				this.overlay.visible = true;
+				this.overlay.typeText(
+					"Y si! No sé qué pensé que iba a pasar... o sea... un fantasma, una bala... realmente pensé que podía impactar? dejá no má...",
+					"fantasma",
+					"red",
+					38
+				);
 			}
 		}
 	}
@@ -702,6 +750,10 @@ export class AHHintRoom extends PixiScene {
 		ScaleHelper.setScaleRelativeToIdeal(this.uiRightContainer, newW, newH, 1536, 1024, ScaleHelper.FIT);
 		this.uiRightContainer.x = newW;
 		this.uiRightContainer.y = 0;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.frontLayerContainer, newW, newH, 1536, 1024, ScaleHelper.FIT);
+		this.frontLayerContainer.x = newW / 2;
+		this.frontLayerContainer.y = newH / 2;
 
 		ScaleHelper.setScaleRelativeToIdeal(this.uiCenterContainer, newW, newH, 1536, 1024, ScaleHelper.FIT);
 		this.uiCenterContainer.x = newW * 0.5;
