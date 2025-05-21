@@ -17,7 +17,7 @@ import { JoystickEmits } from "./utils/Joystick";
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { ENV_FIREBASE } from "./env";
-import { CameraOrbitControlAim } from "./project/scenes/3dgame/Camera/CameraOrbitControlAim";
+// import { CameraOrbitControlAim } from "./project/scenes/3dgame/Camera/CameraOrbitControlAim";
 import { Capacitor } from "@capacitor/core";
 import { StatusBar } from "@capacitor/status-bar";
 import { NavigationBar } from "@hugotomazi/capacitor-navigation-bar";
@@ -26,7 +26,8 @@ import { App } from "@capacitor/app";
 import { AdMob } from "@capacitor-community/admob";
 import { SoundLib } from "./engine/sound/SoundLib";
 import { Sounds } from "./project/scenes/RunFall/Managers/SoundManager";
-import { TetrisScene } from "./project/scenes/Tetris/TetrisScene";
+import { AHHomeScene } from "./project/scenes/AbandonedShelter/AHHomeScene";
+
 settings.RENDER_OPTIONS.hello = false;
 
 DEFAULTS.safetyCheckFunction = (obj: any) => !obj?.destroyed;
@@ -60,6 +61,7 @@ export const db = getDatabase(app);
 
 document.getElementById("pixi-content").style.background = "#" + "000000"; // app.renderer.backgroundColor.toString(16);
 document.getElementById("pixi-content").appendChild(pixiSettings.view);
+document.getElementById("pixi-content").style.cursor = "pointer";
 
 preventDrag(); // prevents scrolling by dragging.
 preventKeys(); // prevents scrolling by keyboard keys. (usually required for latam)
@@ -67,13 +69,29 @@ forceFocus();
 // registerWorker(); // registers the service worker for pwa
 
 export const pixiRenderer = new PixiRenderer(pixiSettings);
+
+// asegúrate de que la ruta al .png sea accesible desde el CSS
+// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+const skullCursor = `url('/skull.png}') 0 0, auto`;
+// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+const skullHover = `url('/skull.png}') 0 0, auto`;
+
+// 1) asigna tu cursor por defecto (fuera de cualquier escena)
+pixiRenderer.pixiRenderer.view.style.cursor = skullCursor;
+
+// 2) registra los estilos de cursor en el InteractionPlugin de PIXI
+const interaction = pixiRenderer.pixiRenderer.plugins.interaction;
+interaction.cursorStyles.default = skullCursor;
+interaction.cursorStyles.pointer = skullCursor; // cuándo devuelva "pointer"
+interaction.cursorStyles.hover = skullHover; // si quieres un “hover” específico
+
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const Manager = new SceneManager(pixiRenderer);
 
 export const cameraControl = new CameraOrbitControl(pixiSettings.view);
 
 // Suponiendo que 'element' es el HTMLElement donde capturas los eventos y 'camera' es tu objeto Camera.
-export const aimControl = new CameraOrbitControlAim(pixiSettings.view, cameraControl.camera);
+// export const aimControl = new CameraOrbitControlAim(pixiSettings.view, cameraControl.camera);
 
 export const isMobile: boolean = DataManager.getValue(JoystickEmits.MOBILE);
 
@@ -112,7 +130,7 @@ window.addEventListener("contextmenu", (e) => {
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));  }
 
-	Manager.changeScene(TetrisScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(AHHomeScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

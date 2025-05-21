@@ -22,6 +22,7 @@ import { Background } from "./Background";
 import { UI } from "./UI";
 import { OverlayScene } from "./OverlayScene";
 import { Timer } from "../../../engine/tweens/Timer";
+import { CRTFilter } from "@pixi/filter-crt";
 // import { FlashLight } from "./classes/FlashLight";
 
 export class AbandonedShelterScene extends PixiScene {
@@ -68,7 +69,8 @@ export class AbandonedShelterScene extends PixiScene {
 	private BULLET_SPEED = 2500; // px/s
 	public ui: UI;
 	private overlay: OverlayScene;
-
+	private tutorial: boolean = true;
+	private crt: CRTFilter;
 	// private flashlight: FlashLight;
 
 	constructor() {
@@ -133,13 +135,16 @@ export class AbandonedShelterScene extends PixiScene {
 		this.darknessMask.filters = [new BlurFilter(50)];
 
 		this.overlay = new OverlayScene();
+
 		if (!this.state.gunGrabbed) {
-			this.overlay.typeText(
-				"Hace frío aquí... qué es eso delante de mi? Quizás pueda ver mejor si apunto la linterna hacia lo que sea que eso sea. \nCon qué se encendía? Ah! Presiona Space para probar la linterna.",
-				"Space",
-				"red",
-				50
-			);
+			if (this.tutorial) {
+				this.overlay.typeText(
+					"Hace frío aquí... qué es eso delante de mi? Quizás pueda ver mejor si apunto la linterna hacia lo que sea que eso sea. \nCon qué se encendía? Ah! Presiona Space para probar la linterna.",
+					"Space",
+					"red",
+					50
+				);
+			}
 		} else {
 			if (!this.state.enemyDefeated) {
 				this.overlay.typeText("Quizás esa pistola que agarré sirva para algo. Equipala desde la mochila y presiona U para usarla.", "pistola", "red", 50);
@@ -148,6 +153,15 @@ export class AbandonedShelterScene extends PixiScene {
 			}
 		}
 		this.gameContainer.addChild(this.overlay);
+
+		this.crt = new CRTFilter({
+			vignetting: 1,
+			vignettingAlpha: 0.95,
+		});
+
+		this.background.background.filters = [this.crt];
+		this.enemyBase.filters = [this.crt];
+		this.player.filters = [this.crt];
 	}
 
 	private createPlayer(): void {
@@ -380,6 +394,16 @@ export class AbandonedShelterScene extends PixiScene {
 
 		// Flashlight input
 		if (Keyboard.shared.justReleased("Space")) {
+			if (this.tutorial) {
+				this.tutorial = false;
+				new Tween(this.crt)
+					.to({ vignetting: 0 }, 1000)
+					.easing(Easing.Quadratic.InOut)
+					.start()
+					.onComplete(() => {
+						this.background.background.filters = [];
+					});
+			}
 			this.flashlightCtrl.toggle();
 			SoundLib.playSound("switch", { volume: 0.05 });
 		}
@@ -409,7 +433,7 @@ export class AbandonedShelterScene extends PixiScene {
 			if (altInTrig && Keyboard.shared.justReleased("KeyE")) {
 				SoundLib.playMusic("creakingDoor", { volume: 0.3, speed: 2, loop: false, end: 3 });
 				console.log("Trigger activated");
-				Manager.changeScene(AHAltarRoom, { transitionClass: FadeColorTransition });
+				Manager.changeScene(AHAltarRoom, { transitionClass: FadeColorTransition, sceneParams: ["shelter"] });
 			}
 		}
 

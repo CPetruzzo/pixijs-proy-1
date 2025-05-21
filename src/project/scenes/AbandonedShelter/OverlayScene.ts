@@ -26,7 +26,7 @@ export class OverlayScene extends PixiScene {
 		// fondo principal
 		this.background = Sprite.from("overlayBG");
 		this.background.anchor.set(0.5);
-		this.backgroundContainer.addChild(this.background);
+		// this.backgroundContainer.addChild(this.background);
 
 		// overlay (perfil, etc)
 		this.overlay = Sprite.from("playerProfile");

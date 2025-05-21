@@ -18,12 +18,12 @@ import { FlashlightController } from "./game/FlashLightController";
 import { AHPlayer } from "./classes/Player";
 import { Easing, Tween } from "tweedle.js";
 import { Trigger } from "./classes/Trigger";
-import { AbandonedShelterScene } from "./AbandonedShelterScene";
 import Random from "../../../engine/random/Random";
 import { ProgressBar } from "@pixi/ui";
 import { PausePopUp } from "./game/PausePopUp";
 import { Timer } from "../../../engine/tweens/Timer";
 import { OverlayScene } from "./OverlayScene";
+import { AbandonedShelterScene } from "./AbandonedShelterScene";
 
 export class AHHintRoom extends PixiScene {
 	private gameContainer = new Container();

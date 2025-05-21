@@ -16,7 +16,7 @@ export class GameStateManager {
 	public flashlightOn = false;
 
 	// --- Salud ---
-	public healthPoints = 1000;
+	public healthPoints = 100;
 
 	// --- Inventario ---
 	public pickedItems = new Set<string>();
@@ -25,7 +25,7 @@ export class GameStateManager {
 	// --- Estado de Enemigos ---
 	/** Será true cuando el enemigo haya muerto/desintegrado */
 	public enemyDefeated = false;
-	public skullPicked = false;
+	public skullPicked = true;
 	public gunGrabbed = false;
 
 	public reset(): void {

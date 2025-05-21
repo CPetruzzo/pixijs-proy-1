@@ -6,7 +6,7 @@ import type { RigidBody } from "@dimforge/rapier3d";
 import { World, RigidBodyDesc, ColliderDesc } from "@dimforge/rapier3d";
 import { Keyboard } from "../../../engine/input/Keyboard";
 // Importamos el objeto global de cámara (asegurate de que esté exportado desde tu módulo principal)
-import { aimControl } from "../../../index";
+import { cameraControl } from "../../../index";
 import { Assets, Graphics } from "pixi.js";
 
 // Constantes de configuración
@@ -44,7 +44,7 @@ export class PlayerControllerScene extends PixiScene {
 		this.addChild(sphere);
 
 		// Configuramos el cameraControl (asegurate de que esté correctamente inicializado)
-		this.aimControl = aimControl;
+		this.aimControl = cameraControl;
 		this.aimControl.distance = 50;
 		// Inicialmente, el target será (0, CAMERA_OFFSET_Y, 0)
 		this.aimControl.target = { x: 0, y: CAMERA_OFFSET_Y, z: 0 };

@@ -1,7 +1,7 @@
 import { ColorMatrixFilter, Container, Sprite } from "pixi.js";
 
 export class Background extends Container {
-	private background: Sprite;
+	public background: Sprite;
 	private gameContainer: Container;
 
 	constructor(asset: string, parentContainer: Container, frontLayerContainer: Container) {

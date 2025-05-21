@@ -29,5 +29,7 @@ declare namespace GlobalMixins {
 		TIME_ENDED: any;
 
 		aimToggled: any;
+
+		winAHSlot: any;
 	}
 }

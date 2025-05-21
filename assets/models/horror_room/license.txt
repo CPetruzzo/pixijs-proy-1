@@ -1,0 +1,11 @@
+Model Information:
+* title:	Horror room
+* source:	https://sketchfab.com/3d-models/horror-room-885eb21b01634322b6730a77e024505b
+* author:	Vfx Boy (https://sketchfab.com/saini.hitesh16061980)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Horror room" (https://sketchfab.com/3d-models/horror-room-885eb21b01634322b6730a77e024505b) by Vfx Boy (https://sketchfab.com/saini.hitesh16061980) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

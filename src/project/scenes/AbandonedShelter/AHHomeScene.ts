@@ -5,10 +5,10 @@ import { CRTFilter } from "@pixi/filter-crt";
 import { GlitchFilter } from "@pixi/filter-glitch";
 import { Tween } from "tweedle.js";
 import { Manager } from "../../..";
-import { AbandonedShelterScene } from "./AbandonedShelterScene";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 import { SoundLib } from "../../../engine/sound/SoundLib";
 import Random from "../../../engine/random/Random";
+import { AbandonedShelterScene } from "./AbandonedShelterScene";
 
 export class AHHomeScene extends PixiScene {
 	private backgroundContainer = new Container();

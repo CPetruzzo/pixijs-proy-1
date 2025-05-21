@@ -3,8 +3,8 @@ import { ColorMatrixFilter, Container, Graphics, Text, TextStyle } from "pixi.js
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
-import type { GlitchFilter } from "@pixi/filter-glitch";
-import type { CRTFilter } from "@pixi/filter-crt";
+// import type { GlitchFilter } from "@pixi/filter-glitch";
+// import type { CRTFilter } from "@pixi/filter-crt";
 import { Easing, Tween } from "tweedle.js";
 
 interface Tetromino {
@@ -46,11 +46,11 @@ export class TetrisScene extends PixiScene {
 	private previewLayer = new Graphics();
 	private clearLayer = new Container();
 	private clearPool: Graphics[] = [];
-	private glitchFilter: GlitchFilter | null = null;
+	// private glitchFilter: GlitchFilter | null = null;
 
-	private readonly startLineWidth = 5;
-	private readonly startLineContrast = 0.8;
-	private crt: CRTFilter | null = null;
+	// private readonly startLineWidth = 5;
+	// private readonly startLineContrast = 0.8;
+	// private crt: CRTFilter | null = null;
 
 	// nuevo contenedor para el Game Over
 	private gameOverContainer = new Container();

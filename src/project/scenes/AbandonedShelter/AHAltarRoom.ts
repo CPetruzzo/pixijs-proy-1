@@ -18,11 +18,13 @@ import { FlashlightController } from "./game/FlashLightController";
 import { AHPlayer } from "./classes/Player";
 import { Easing, Tween } from "tweedle.js";
 import { Trigger } from "./classes/Trigger";
-import { AbandonedShelterScene } from "./AbandonedShelterScene";
 import Random from "../../../engine/random/Random";
 import { ProgressBar } from "@pixi/ui";
 import { PausePopUp } from "./game/PausePopUp";
 import { Timer } from "../../../engine/tweens/Timer";
+import { AbandonedShelterScene } from "./AbandonedShelterScene";
+import { AHGamblingScene } from "./AHGamblingScene";
+import { AHOldClockScene } from "./AHOldClockScene";
 
 export class AHAltarRoom extends PixiScene {
 	private gameContainer = new Container();
@@ -54,6 +56,8 @@ export class AHAltarRoom extends PixiScene {
 
 	private previousBattery = this.state.batteryLevel;
 	private trigger: Trigger;
+	private triggerGamblingRoom: Trigger;
+
 	private glitch: GlitchFilter;
 	private altarTrigger: Trigger;
 	private crt: CRTFilter;
@@ -77,7 +81,7 @@ export class AHAltarRoom extends PixiScene {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	private BULLET_SPEED = 2500; // px/s
 
-	constructor() {
+	constructor(_comingFrom?: any) {
 		super();
 		this.addChild(this.gameContainer);
 		this.addChild(this.pauseContainer);
@@ -98,7 +102,7 @@ export class AHAltarRoom extends PixiScene {
 			});
 		// build
 		this.createBackground();
-		this.createPlayer();
+		this.createPlayer(_comingFrom);
 		this.createEnemy();
 		this.createLightMask();
 		this.createLightCone();
@@ -109,6 +113,12 @@ export class AHAltarRoom extends PixiScene {
 		this.trigger.triggerZone.x = this.trigger.triggerZone.x - 100;
 		this.trigger.triggerZone.y = this.trigger.triggerZone.y + 50;
 		this.trigger.triggerText.x = this.trigger.triggerZone.x - 50;
+
+		this.triggerGamblingRoom = new Trigger();
+		this.triggerGamblingRoom.createTrigger(this.gameContainer);
+		this.triggerGamblingRoom.triggerZone.x = this.triggerGamblingRoom.triggerZone.x + 1100;
+		this.triggerGamblingRoom.triggerZone.y = this.triggerGamblingRoom.triggerZone.y + 50;
+		this.triggerGamblingRoom.triggerText.x = this.triggerGamblingRoom.triggerZone.x;
 
 		this.altarTrigger = new Trigger();
 		this.altarTrigger.createTrigger(this.gameContainer);
@@ -135,6 +145,39 @@ export class AHAltarRoom extends PixiScene {
 
 		// apply blur filter
 		this.darknessMask.filters = [new BlurFilter(8)];
+
+		const polaroid = Sprite.from("polaroid_empty");
+		polaroid.scale.set(0.5);
+		polaroid.anchor.set(0.5);
+		polaroid.x = 400;
+		polaroid.y = 300;
+
+		const polaroidPaper = Sprite.from("polaroid_paper");
+		polaroidPaper.scale.set(0.4);
+		polaroidPaper.x = 400;
+		polaroidPaper.y = 200;
+		polaroidPaper.anchor.set(0.5);
+		new Tween(polaroidPaper).to({ y: 530, scale: { x: 0.5, y: 0.5 } }, 2600).start();
+
+		const meter = Sprite.from("meter");
+		meter.scale.set(0.5);
+		meter.x = 1300;
+		meter.y = 500;
+		meter.anchor.set(0.5);
+
+		const meterNeedle = Sprite.from("meter_needle");
+		meterNeedle.scale.set(0.5);
+		meterNeedle.x = 1290;
+		meterNeedle.y = 460;
+
+		const initialValue = -10;
+		const maxValue = 70;
+		const timeForNeedle = 500;
+		meterNeedle.angle = initialValue;
+		meterNeedle.anchor.set(1);
+
+		new Tween(meterNeedle).to({ angle: maxValue }, timeForNeedle).start().repeat(Infinity).yoyo(true).easing(Easing.Bounce.InOut);
+		// this.addChild(polaroidPaper, polaroid, meter, meterNeedle);
 	}
 
 	private createBackground(): void {
@@ -147,9 +190,19 @@ export class AHAltarRoom extends PixiScene {
 		this.gameContainer.addChildAt(this.background, 0);
 	}
 
-	private createPlayer(): void {
+	private createPlayer(_comingFrom: any): void {
 		// en createPlayer o constructor:
-		this.player = new AHPlayer({ x: -510, y: 150, speed: 200 });
+		switch (_comingFrom) {
+			case "shelter":
+				this.player = new AHPlayer({ x: -510, y: 150, speed: 200 });
+				break;
+			case "gambling":
+				this.player = new AHPlayer({ x: 600, y: 150, speed: 200 });
+				break;
+			default:
+				this.player = new AHPlayer({ x: -510, y: 150, speed: 200 });
+				break;
+		}
 		this.player.y = this.player.y + 10;
 		this.gameContainer.addChild(this.player);
 
@@ -523,6 +576,16 @@ export class AHAltarRoom extends PixiScene {
 			Manager.changeScene(AbandonedShelterScene, { transitionClass: FadeColorTransition });
 		}
 
+		const tbGambling = this.triggerGamblingRoom.triggerZone.getBounds();
+		const inTrigtbGambling =
+			pb.x + pb.width > tbGambling.x && pb.x < tbGambling.x + tbGambling.width && pb.y + pb.height > tbGambling.y && pb.y < tbGambling.y + tbGambling.height;
+		this.triggerGamblingRoom.triggerText.visible = inTrigtbGambling;
+		if (inTrigtbGambling && Keyboard.shared.justReleased("KeyE")) {
+			SoundLib.playMusic("creakingDoor", { volume: 0.3, speed: 2, loop: false, end: 3 });
+			console.log("Trigger activated");
+			Manager.changeScene(AHGamblingScene, { transitionClass: FadeColorTransition });
+		}
+
 		// DrawerTrigger overlap & input
 		const drawertb = this.altarTrigger.triggerZone.getBounds();
 		const drawerinTrig = pb.x + pb.width > drawertb.x && pb.x < drawertb.x + drawertb.width && pb.y + pb.height > drawertb.y && pb.y < drawertb.y + drawertb.height;
@@ -569,12 +632,11 @@ export class AHAltarRoom extends PixiScene {
 					this.skullTrigger.triggerText.destroy();
 				});
 			} else {
-				// dentro de update o donde configures el trigger:
+				// … dentro del else de “ya lo tienes” …
 				const dropTrigger = new Trigger();
 				dropTrigger.createPointerTrigger(this.altar, 0, 0, () => {
-					// al hacer click sobre el altar
+					// 1) Sacamos el ítem del inventario inmediatamente
 					this.inventoryCtrl.drop("skull", this.altar, 0, 0, () => {
-						// callback: podés cambiar la textura del altar
 						this.state.skullPicked = false;
 						if (this.state.activeItem === "skull") {
 							this.state.activeItem = null;
@@ -582,6 +644,24 @@ export class AHAltarRoom extends PixiScene {
 						this.background.texture = Texture.from("AH_altarroom");
 						SoundLib.playSound("AH_grab", { start: 0.2, end: 1, volume: 0.5 });
 					});
+
+					// 2) Animamos la sala “subiendo” (puede ser gameContainer, o si sólo quieres mover el fondo, usa this.background)
+					new Tween(this.gameContainer.position)
+						.to({ y: this.gameContainer.position.y - 600 }, 1000)
+						.easing(Easing.Quadratic.In)
+						.start();
+
+					// 3) Simultáneamente “hacemos caer” al player
+					new Tween(this.player.position)
+						.to({ y: this.player.position.y + 800 }, 1000)
+						.easing(Easing.Quadratic.In)
+						.start()
+						.onComplete(() => {
+							// 4) Al terminar la caída, abrimos AHOldClockScene con fade
+							Manager.changeScene(AHOldClockScene, {
+								transitionClass: FadeColorTransition,
+							});
+						});
 				});
 			}
 			// this.drawerCloseText = new Text("C", { fill: "#fff", fontSize: 96 });

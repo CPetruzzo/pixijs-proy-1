@@ -18,7 +18,8 @@ import { MuliplayerLobby } from "./MultiplayerLobby";
 import { VirtualJoystick } from "./VirtualJoystick";
 import { Tween } from "tweedle.js";
 // import { SoundLib } from "../../../engine/sound/SoundLib";
-import { aimControl } from "../../../index";
+// import { aimControl } from "../../../index";
+import { cameraControl } from "../../../index";
 import { Crosshair } from "./Utils/Crosshair";
 import { WorldBuilding } from "./Utils/WorldBuilding";
 import { SoundLib } from "../../../engine/sound/SoundLib";
@@ -88,7 +89,8 @@ export class Multiplayer3DScene extends PixiScene {
 		this.worldBuilding = new WorldBuilding(this);
 
 		// CREATE CAMERA
-		this.aimControl = aimControl;
+		// this.aimControl = aimControl;
+		this.aimControl = cameraControl;
 		this.aimControl.distance = 35;
 		this.aimControl.angles.x = 55;
 		this.aimControl.target = { x: 0, y: 1.3, z: -70 };
