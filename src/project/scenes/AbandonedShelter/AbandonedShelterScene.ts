@@ -142,7 +142,7 @@ export class AbandonedShelterScene extends PixiScene {
 					"Hace frío aquí... qué es eso delante de mi? Quizás pueda ver mejor si apunto la linterna hacia lo que sea que eso sea. \nCon qué se encendía? Ah! Presiona Space para probar la linterna.",
 					"Space",
 					"red",
-					50
+					30
 				);
 			}
 		} else {

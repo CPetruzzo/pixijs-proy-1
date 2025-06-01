@@ -16,24 +16,30 @@ export class OverlayScene extends PixiScene {
 	public static readonly BUNDLES = ["abandonedhouse"];
 	private closeText: Text;
 	private arrow: Text;
+	private spr: string;
 
-	constructor() {
+	constructor(_spr: string = "playerProfile") {
 		super();
 
 		this.addChild(this.backgroundContainer);
 		this.addChild(this.uiContainer);
 
 		// fondo principal
-		this.background = Sprite.from("overlayBG");
+		this.background = Sprite.from("playerProfile");
 		this.background.anchor.set(0.5);
 		// this.backgroundContainer.addChild(this.background);
 
 		// overlay (perfil, etc)
-		this.overlay = Sprite.from("playerProfile");
+		this.spr = _spr || "playerProfile";
+		this.overlay = Sprite.from(this.spr);
 		this.overlay.scale.set(0.6);
 		this.overlay.anchor.set(0.5);
+		if (this.spr === "llorona") {
+			this.overlay.x = 600;
+		} else {
+			this.overlay.x = -500;
+		}
 		this.overlay.y = 250;
-		this.overlay.x = -500;
 		this.backgroundContainer.addChild(this.overlay);
 
 		// cuadro semitransparente

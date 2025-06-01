@@ -1,12 +1,28 @@
+STREAM 31/5/2025
+
+# PENDING
+- animated sprite al player mientras camina
+- agregar efecto de daño a la pantalla (filtro y shake en pantalla, update healtbar UI)
+- agregar trigger (con letra U) en el altar para leer el ritual
+- escena ending leyendo ritual - llorona 
+- sonido al caer en la sala del reloj
+- UI - reloj - implementar UI en todas las escenas
+
+# DONE 
+- armado de flujo de escenas
+- poner imagen de papiro
+- agregar un horario en el que gano el papiro
+- cambio de escena a la escena de topdown
+
 STREAM 19/5/2025
 
 # PENDING
-- slotmachine
 - libreta - escena - base - template
 - blackjack con fantasmas -BACKLOG
-- plantear un puzzle
 
 # DONE 
+- slotmachine
+- plantear un puzzle
 - ghost in mirror
 - cinematic 3d camera - points and circular
 - skeletons billboard sprites

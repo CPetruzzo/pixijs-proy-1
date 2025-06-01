@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import type { Container } from "pixi.js";
 import {
 	// Graphics,
@@ -13,7 +14,7 @@ export class Grid {
 	public static woodTiles: boolean[][]; // Matriz para marcar tiles de tipo wood
 
 	public static initializeWoodTiles(grid: number[][]): void {
-		this.woodTiles = grid.map(row => row.map(cell => cell === 1)); // Suponiendo que 2 indica un tile de tipo wood
+		this.woodTiles = grid.map((row) => row.map((cell) => cell === 1)); // Suponiendo que 2 indica un tile de tipo wood
 	}
 
 	// Verificar si un tile es de tipo wood
@@ -60,15 +61,14 @@ export class Grid {
 		const grid = Array.from({ length: rows }, () => Array(cols).fill(1));
 
 		// Función para verificar si una celda es válida
-		const isValidCell = (x: number, y: number) =>
-			x >= 0 && x < cols && y >= 0 && y < rows && grid[y][x] === 1;
+		const isValidCell = (x: number, y: number) => x >= 0 && x < cols && y >= 0 && y < rows && grid[y][x] === 1;
 
 		// Direcciones de movimiento (arriba, abajo, izquierda, derecha)
 		const directions = [
 			[0, -1], // Arriba
-			[0, 1],  // Abajo
+			[0, 1], // Abajo
 			[-1, 0], // Izquierda
-			[1, 0],  // Derecha
+			[1, 0], // Derecha
 		];
 
 		// Función recursiva para crear el laberinto
@@ -184,6 +184,4 @@ export class Grid {
 	public static clearOccupiedCells(): void {
 		this.occupiedCells = [];
 	}
-
-
 }

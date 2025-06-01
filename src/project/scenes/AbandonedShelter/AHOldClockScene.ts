@@ -9,6 +9,15 @@ import { Background } from "./Background";
 import { GlitchFilter } from "@pixi/filter-glitch";
 import { CRTFilter } from "@pixi/filter-crt";
 import { AHPlayer } from "./classes/Player";
+import { InventoryController } from "./game/InventoryController";
+import { UI } from "./UI";
+import type { ProgressBar } from "@pixi/ui";
+import type { PausePopUp } from "./game/PausePopUp";
+import { GameStateManager } from "./game/GameStateManager";
+import { Timer } from "../../../engine/tweens/Timer";
+import { Manager } from "../../..";
+import { CameraAStarScene } from "../Tutorial/TutorialAStarScene";
+import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 
 export class AHOldClockScene extends PixiScene {
 	private gameContainer = new Container();
@@ -43,6 +52,15 @@ export class AHOldClockScene extends PixiScene {
 	private candles: Sprite;
 	private player!: AHPlayer;
 	private weaponSprite!: Sprite;
+	private inventoryCtrl = new InventoryController();
+	public ui: UI;
+	private batteryBars: Sprite[] = [];
+	private hpBar: ProgressBar;
+	private lightCone!: Sprite;
+	private state = GameStateManager.instance;
+
+	private pausePopUp: PausePopUp | null = null;
+	private activeIcon!: Sprite | null;
 
 	constructor() {
 		super();
@@ -57,7 +75,6 @@ export class AHOldClockScene extends PixiScene {
 
 		// fondo
 		this.background = new Background("AH_pendulumClockSceneBG", this.gameContainer, this.frontLayerContainer);
-		this.createPlayer();
 
 		// Más agresivo:
 		this.glitchFilter = new GlitchFilter({
@@ -117,6 +134,8 @@ export class AHOldClockScene extends PixiScene {
 		this.ghostMirror.y = -175;
 		this.gameContainer.addChild(this.ghostMirror);
 
+		this.createPlayer();
+
 		// guardamos la textura original
 		this.originalGhostTex = this.ghostMirror.texture;
 
@@ -131,6 +150,21 @@ export class AHOldClockScene extends PixiScene {
 		this.candles.anchor.set(0.5);
 		this.candles.y = -250;
 		this.gameContainer.addChild(this.candles);
+
+		this.ui = new UI(
+			this.uiRightContainer,
+			this.batteryBars,
+			this.activeIcon,
+			this.uiCenterContainer,
+			this.pausePopUp,
+			this.pauseContainer,
+			this.hpBar,
+			this.uiLeftContainer,
+			this.state,
+			this.weaponSprite,
+			this.lightCone
+		);
+		this.inventoryCtrl.on("picked", (id) => this.inventoryCtrl.showNewItem(id, this.gameContainer));
 	}
 
 	/** Crea dos botones +5 y -5 minutos */
@@ -232,6 +266,22 @@ export class AHOldClockScene extends PixiScene {
 		if (h === 0 && m === 15) {
 			this.possessTable(3000);
 			SoundLib.playSound("possessed-laugh", { volume: 0.3 });
+		}
+
+		// ** NUEVO: efecto poseído a las 0:15 **
+		if (h === 0 && m === 25) {
+			this.inventoryCtrl.pick("papiro");
+			this.state.skullPicked = true;
+			this.state.pickedItems.add("papiro");
+			this.ui.syncActiveIcon();
+			this.ui.syncEquippedItem();
+
+			new Timer()
+				.duration(1000)
+				.onComplete(() => {
+					Manager.changeScene(CameraAStarScene, { transitionClass: FadeColorTransition });
+				})
+				.start();
 		}
 	}
 

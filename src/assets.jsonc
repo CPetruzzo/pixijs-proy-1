@@ -337,11 +337,17 @@
         "AH_credits": "./img/abandonedhouse/AH_credits.png",
         "AH_skullicon": "./img/abandonedhouse/skull.png",
         "altar": "./img/abandonedhouse/altar.jpg",
+        "AH_topdown": "./img/abandonedhouse/AH_topdown.jpg",
+        "AH_papiroicon": "./img/abandonedhouse/AH_papiro.png",
+        "AH_topdown_player": "./img/abandonedhouse/AH_topdown_player.png",
+        "AH_player_walk1": "./img/abandonedhouse/AH_player_walk1.png",
+        "AH_player_walk2": "./img/abandonedhouse/AH_player_walk2.png",
 
         "AH_walk1": "./img/abandonedhouse/AH_walk1.png",
         "AH_walk2": "./img/abandonedhouse/AH_walk2.png",
         "AH_idle": "./img/abandonedhouse/AH_idle.png",
         "playerProfile": "./img/abandonedhouse/playerProfile.png",
+        "llorona": "./img/abandonedhouse/llorona.png",
 
         "AH_enemy": "./img/abandonedhouse/AH_enemy.png",
         "AH_ghost": "./img/abandonedhouse/AH_ghost.png",
@@ -358,6 +364,7 @@
         "AH_config": "./img/abandonedhouse/AH_config.png",
         "AH_drawer": "./img/abandonedhouse/AH_drawer.png",
         "cellFrame": "./img/abandonedhouse/cellFrame.png",
+        "move_sign": "./img/abandonedhouse/move_sign.png",
 
         // SLOT
         "slotghost": "./img/abandonedhouse/slotghost.png",
@@ -424,7 +431,7 @@
         "wheel-bicycle": "./sfx/AH/wheel-bicycle.mp3",
         "wheel-spin": "./sfx/AH/wheel-spin.mp3",
         "clickSFX": "./sfx/AH/clickSFX.mp3",
-
+        "AH_Eternal_Pursuit": "./sfx/AH/AH_Eternal_Pursuit.mp3",
         "scene": "models/horror_room/scene.gltf"
       }
     },
@@ -737,6 +744,19 @@
         "intro": "./sfx/jubilpostor/intro.mp3",
         "police_siren": "./sfx/jubilpostor/policesiren.mp3",
         "marcha": "./sfx/jubilpostor/marcha.wav"
+      }
+    },
+    {
+      "name": "tetris",
+      "assets": {
+        "tetrisBGM": "./music/tetrisBGM.wav",
+        "sound_collectable": "./sfx/uiCollectable.mp3",
+        "sound_award": "./sfx/Fruitcollect1.wav",
+        "sound_big_award": "./sfx/BigEggcollect1.wav",
+        "sound_hit": "./sfx/Bosshit1.wav",
+        "sound_cancel": "./sfx/Cancel1.wav",
+        "sound_confirm": "./sfx/Confirm1.wav",
+        "sound_block": "./sfx/BlockBreak1.wav"
       }
     },
     {

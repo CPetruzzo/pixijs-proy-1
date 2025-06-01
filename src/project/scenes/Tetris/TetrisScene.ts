@@ -6,12 +6,19 @@ import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 // import type { GlitchFilter } from "@pixi/filter-glitch";
 // import type { CRTFilter } from "@pixi/filter-crt";
 import { Easing, Tween } from "tweedle.js";
+import { SoundLib } from "../../../engine/sound/SoundLib";
 
 interface Tetromino {
 	name: string;
 	matrix: number[][];
 	row: number;
 	col: number;
+}
+
+enum GameState {
+	WAITING_TO_START,
+	PLAYING,
+	GAME_OVER,
 }
 
 export class TetrisScene extends PixiScene {
@@ -25,11 +32,20 @@ export class TetrisScene extends PixiScene {
 	private next: string | null = null;
 	private dropCounter = 0;
 	private dropInterval = 500; // ms
+	private initialDropInterval = 500; // valor inicial para reset
 
 	private cellSize = 32;
 	private rows = 20;
 	private cols = 10;
-	private gameOver = false;
+	private gameState = GameState.WAITING_TO_START;
+
+	// Score system
+	private score = 0;
+	private linesCleared = 0;
+	private level = 1;
+	private readonly LINES_PER_LEVEL = 10; // Modificable: líneas necesarias para subir de nivel
+	private readonly SPEED_INCREASE_FACTOR = 0.9; // Modificable: factor de aceleración (0.9 = 10% más rápido)
+	private scoreText: Text;
 
 	// HitStop
 	private hitStopActive = false;
@@ -52,10 +68,24 @@ export class TetrisScene extends PixiScene {
 	// private readonly startLineContrast = 0.8;
 	// private crt: CRTFilter | null = null;
 
-	// nuevo contenedor para el Game Over
+	// Game state containers
 	private gameOverContainer = new Container();
 	private gameOverTextChars: Text[] = [];
 	private hasLaunchedGameOverAnim = false;
+	private retryButton: Graphics;
+
+	private startContainer = new Container();
+	private startButton: Graphics;
+
+	// Botones táctiles
+	private buttonContainer = new Container();
+	private leftButton: Graphics;
+	private rightButton: Graphics;
+	private rotateButton: Graphics;
+	private dropButton: Graphics;
+	private buttonSize = 60;
+	private buttonPressed: Record<string, boolean> = {};
+	public static readonly BUNDLES = ["tetris"];
 
 	constructor() {
 		super();
@@ -122,20 +152,268 @@ export class TetrisScene extends PixiScene {
 			this.clearPool.push(new Graphics());
 		}
 
-		// 5) agregamos las capas a gameContainer (órden de dibujo)
+		// agregamos las capas a gameContainer (órden de dibujo)
 		this.gameContainer.addChild(this.bgLayer);
 		this.gameContainer.addChild(this.clearLayer);
-		this.gameContainer.addChild(this.previewLayer);
-		// y el contenedor de game over (invisible al inicio)
+		this.addChild(this.previewLayer);
+
+		// Score text
+		this.scoreText = new Text(
+			"",
+			new TextStyle({
+				fill: "white",
+				fontFamily: "Arial",
+				fontSize: 20,
+				fontWeight: "bold",
+			})
+		);
+		this.addChild(this.scoreText);
+
+		// Game over container
 		this.gameOverContainer.visible = false;
 		this.gameContainer.addChild(this.gameOverContainer);
+
+		// Start container
+		this.createStartScreen();
+		this.addChild(this.startContainer);
 
 		// center
 		this.gameContainer.pivot.set((this.cols * this.cellSize) / 2, (this.rows * this.cellSize) / 2);
 
-		// start
-		this.spawnTetromino();
+		// Crear botones táctiles
+		this.createTouchButtons();
+		this.addChild(this.buttonContainer);
+
+		// Ocultar botones táctiles al inicio
+		this.buttonContainer.visible = false;
+
 		this.setupInput();
+	}
+
+	private createStartScreen(): void {
+		this.startButton = new Graphics();
+		this.startButton.beginFill(0x4caf50, 0.8).lineStyle(3, 0x2e7d32).drawRoundedRect(0, 0, 200, 80, 10).endFill();
+
+		const startText = new Text(
+			"START GAME",
+			new TextStyle({
+				fill: "white",
+				fontSize: 24,
+				fontWeight: "bold",
+			})
+		);
+		startText.anchor.set(0.5);
+		startText.x = 100;
+		startText.y = 40;
+		this.startButton.addChild(startText);
+
+		this.startButton.interactive = true;
+		this.startButton.on("pointerdown", () => {
+			this.startGame();
+		});
+
+		this.startContainer.addChild(this.startButton);
+	}
+
+	private createRetryButton(): void {
+		this.retryButton = new Graphics();
+		this.retryButton.beginFill(0x2196f3, 0.8).lineStyle(3, 0x1976d2).drawRoundedRect(0, 0, 180, 60, 10).endFill();
+
+		const retryText = new Text(
+			"RETRY",
+			new TextStyle({
+				fill: "white",
+				fontSize: 20,
+				fontWeight: "bold",
+			})
+		);
+		retryText.anchor.set(0.5);
+		retryText.x = 90;
+		retryText.y = 30;
+		this.retryButton.addChild(retryText);
+
+		this.retryButton.interactive = true;
+		this.retryButton.on("pointerdown", () => {
+			this.resetGame();
+		});
+	}
+
+	private startGame(): void {
+		this.gameState = GameState.PLAYING;
+		this.startContainer.visible = false;
+		this.buttonContainer.visible = true;
+
+		// Iniciar música
+		SoundLib.playMusic("tetrisBGM");
+
+		// Spawn first tetromino
+		this.spawnTetromino();
+	}
+
+	private resetGame(): void {
+		// Reset all game variables
+		this.playfield = Array.from({ length: this.rows }, () => Array(this.cols).fill(0));
+		this.active = null;
+		this.next = null;
+		this.dropCounter = 0;
+		this.dropInterval = this.initialDropInterval;
+		this.score = 0;
+		this.linesCleared = 0;
+		this.level = 1;
+		this.tetrominoSequence = [];
+
+		// Reset flags
+		this.hitStopActive = false;
+		this.hitStopElapsed = 0;
+		this.softDropTriggered = false;
+		this.clearingRows = [];
+		this.isClearPhase = false;
+		this.hasLaunchedGameOverAnim = false;
+
+		// Hide game over screen
+		this.gameOverContainer.visible = false;
+		this.gameOverContainer.removeChildren();
+
+		// Start game
+		this.startGame();
+	}
+
+	private updateScore(linesCleared: number): void {
+		// Puntos por líneas eliminadas
+		const linePoints = [0, 100, 300, 500, 800]; // 0, 1, 2, 3, 4 líneas
+		this.score += linePoints[linesCleared] * this.level;
+		this.linesCleared += linesCleared;
+
+		// Calcular nuevo nivel
+		const newLevel = Math.floor(this.linesCleared / this.LINES_PER_LEVEL) + 1;
+		if (newLevel > this.level) {
+			this.level = newLevel;
+			// Acelerar el juego
+			this.dropInterval = Math.max(50, this.initialDropInterval * Math.pow(this.SPEED_INCREASE_FACTOR, this.level - 1));
+			// Acelerar música (esto puede variar según tu implementación de SoundLib)
+			// SoundLib.setMusicSpeed(1 + (this.level - 1) * 0.1);
+		}
+
+		this.updateScoreDisplay();
+	}
+
+	private updateScoreDisplay(): void {
+		this.scoreText.text = `Score: ${this.score}\nLevel: ${this.level}\nLines: ${this.linesCleared}`;
+	}
+
+	private createTouchButtons(): void {
+		// Botón izquierda
+		this.leftButton = new Graphics();
+		this.createButton(this.leftButton, "◀", () => this.moveLeft());
+
+		// Botón derecha
+		this.rightButton = new Graphics();
+		this.createButton(this.rightButton, "▶", () => this.moveRight());
+
+		// Botón rotar
+		this.rotateButton = new Graphics();
+		this.createButton(this.rotateButton, "↻", () => this.rotatePiece());
+
+		// Botón bajar rápido
+		this.dropButton = new Graphics();
+		this.createButton(this.dropButton, "▼", () => this.softDrop());
+
+		this.buttonContainer.addChild(this.leftButton);
+		this.buttonContainer.addChild(this.rightButton);
+		this.buttonContainer.addChild(this.rotateButton);
+		this.buttonContainer.addChild(this.dropButton);
+	}
+
+	private createButton(button: Graphics, symbol: string, callback: () => void): void {
+		const size = this.buttonSize;
+
+		// Dibujar el botón
+		button.beginFill(0x333333, 0.8).lineStyle(2, 0x666666).drawRoundedRect(0, 0, size, size, 8).endFill();
+
+		// Agregar texto/símbolo
+		const text = new Text(
+			symbol,
+			new TextStyle({
+				fill: "white",
+				fontSize: 28,
+				fontWeight: "bold",
+			})
+		);
+		text.anchor.set(0.5);
+		text.x = size / 2;
+		text.y = size / 2;
+		button.addChild(text);
+
+		// Hacer interactivo
+		button.interactive = true;
+
+		// Eventos táctiles
+		button.on("pointerdown", () => {
+			this.buttonPressed[symbol] = true;
+			this.animateButtonPress(button, true);
+			callback();
+		});
+
+		button.on("pointerup", () => {
+			this.buttonPressed[symbol] = false;
+			this.animateButtonPress(button, false);
+		});
+
+		button.on("pointerupoutside", () => {
+			this.buttonPressed[symbol] = false;
+			this.animateButtonPress(button, false);
+		});
+	}
+
+	private animateButtonPress(button: Graphics, pressed: boolean): void {
+		const scale = pressed ? 0.9 : 1.0;
+		const alpha = pressed ? 0.7 : 1.0;
+
+		new Tween(button.scale).to({ x: scale, y: scale }, 100).easing(Easing.Quadratic.Out).start();
+
+		new Tween(button).to({ alpha }, 100).easing(Easing.Quadratic.Out).start();
+	}
+
+	private moveLeft(): void {
+		if (this.gameState !== GameState.PLAYING) {
+			return;
+		}
+		if (this.active && this.isValidMove(this.active.matrix, this.active.row, this.active.col - 1)) {
+			this.active.col--;
+		}
+	}
+
+	private moveRight(): void {
+		if (this.gameState !== GameState.PLAYING) {
+			return;
+		}
+		if (this.active && this.isValidMove(this.active.matrix, this.active.row, this.active.col + 1)) {
+			this.active.col++;
+		}
+	}
+
+	private rotatePiece(): void {
+		if (this.gameState !== GameState.PLAYING) {
+			return;
+		}
+		if (this.active) {
+			const rotated = this.rotate(this.active.matrix);
+			if (this.isValidMove(rotated, this.active.row, this.active.col)) {
+				this.active.matrix = rotated;
+			}
+		}
+	}
+
+	private softDrop(): void {
+		if (this.gameState !== GameState.PLAYING) {
+			return;
+		}
+		if (this.active && this.isValidMove(this.active.matrix, this.active.row + 1, this.active.col)) {
+			this.active.row++;
+		} else {
+			this.softDropTriggered = true;
+			this.placeTetromino();
+		}
 	}
 
 	private getRandomInt(min: number, max: number): number {
@@ -214,7 +492,7 @@ export class TetrisScene extends PixiScene {
 		for (let r = 0; r < matrix.length; r++) {
 			for (let c = 0; c < matrix[r].length; c++) {
 				if (matrix[r][c] && row + r < 0) {
-					this.gameOver = true;
+					this.gameState = GameState.GAME_OVER;
 					return;
 				}
 			}
@@ -228,6 +506,12 @@ export class TetrisScene extends PixiScene {
 			}
 		}
 		if (rowsToClear.length) {
+			// Reproducir sonido de líneas eliminadas
+			SoundLib.playSound("sound_big_award", {});
+
+			// Actualizar puntaje
+			this.updateScore(rowsToClear.length);
+
 			this.clearingRows = rowsToClear;
 			this.startHitStop(true);
 			return;
@@ -251,36 +535,27 @@ export class TetrisScene extends PixiScene {
 	}
 
 	private setupInput(): void {
+		if (this.gameState !== GameState.PLAYING) {
+			return;
+		}
+
 		this.softDropTriggered = false;
 
+		// Mantener el input de teclado existente
 		if (Keyboard.shared.justPressed("ArrowLeft")) {
-			if (this.active && this.isValidMove(this.active.matrix, this.active.row, this.active.col - 1)) {
-				this.active.col--;
-			}
+			this.moveLeft();
 		}
 
 		if (Keyboard.shared.justPressed("ArrowRight")) {
-			if (this.active && this.isValidMove(this.active.matrix, this.active.row, this.active.col + 1)) {
-				this.active.col++;
-			}
+			this.moveRight();
 		}
 
 		if (Keyboard.shared.isDown("ArrowDown")) {
-			if (this.active && this.isValidMove(this.active.matrix, this.active.row + 1, this.active.col)) {
-				this.active.row++;
-			} else {
-				this.softDropTriggered = true;
-				this.placeTetromino();
-			}
+			this.softDrop();
 		}
 
 		if (Keyboard.shared.justPressed("ArrowUp")) {
-			if (this.active) {
-				const rotated = this.rotate(this.active.matrix);
-				if (this.isValidMove(rotated, this.active.row, this.active.col)) {
-					this.active.matrix = rotated;
-				}
-			}
+			this.rotatePiece();
 		}
 	}
 
@@ -346,7 +621,7 @@ export class TetrisScene extends PixiScene {
 
 		// 3) Preview next
 		this.previewLayer.clear();
-		if (this.next) {
+		if (this.next && this.gameState === GameState.PLAYING) {
 			const mat = this.tetrominos[this.next];
 			const color = this.colors[this.next];
 			const ps = this.cellSize - 4;
@@ -365,7 +640,7 @@ export class TetrisScene extends PixiScene {
 		}
 
 		// 4) Game Over
-		if (this.gameOver) {
+		if (this.gameState === GameState.GAME_OVER) {
 			// si no lo visibilizamos aún, lo hacemos y lanzamos anim
 			if (!this.hasLaunchedGameOverAnim) {
 				this.launchGameOverAnim();
@@ -410,10 +685,20 @@ export class TetrisScene extends PixiScene {
 				.start();
 		}
 
+		// Crear y agregar botón de retry debajo del texto
+		this.createRetryButton();
+		this.retryButton.x = offsetX + (text.length * 28) / 2 - 90; // Centrar el botón
+		this.retryButton.y = baseY + 80; // Debajo del texto
+		this.gameOverContainer.addChild(this.retryButton);
+
 		this.gameOverContainer.visible = true;
 	}
 
 	public override update(dt: number): void {
+		if (this.gameState === GameState.WAITING_TO_START) {
+			return;
+		}
+
 		if (this.hitStopActive) {
 			this.hitStopElapsed += dt;
 			if (this.hitStopElapsed >= this.hitStopDuration) {
@@ -440,7 +725,7 @@ export class TetrisScene extends PixiScene {
 			return;
 		}
 
-		if (this.gameOver) {
+		if (this.gameState === GameState.GAME_OVER) {
 			this.draw();
 			return;
 		}
@@ -461,8 +746,39 @@ export class TetrisScene extends PixiScene {
 	}
 
 	public override onResize(newW: number, newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, newW * 0.85, newH * 0.85, this.cols * this.cellSize, this.rows * this.cellSize, ScaleHelper.FIT);
+		// Reposicionar el juego
+		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, newW * 0.75, newH * 0.75, this.cols * this.cellSize, this.rows * this.cellSize, ScaleHelper.FIT);
 		this.gameContainer.x = newW / 2;
-		this.gameContainer.y = newH / 2;
+		this.gameContainer.y = newH / 2 - 20;
+
+		// Posicionar botón de start
+		this.startButton.x = newW / 2 - 100;
+		this.startButton.y = newH / 2 - 40;
+
+		// Posicionar score text (a la izquierda, misma altura que preview)
+		this.scoreText.x = 20;
+		this.scoreText.y = 40;
+
+		// Posicionar botones táctiles
+		const margin = 20;
+		const buttonSpacing = this.buttonSize;
+
+		// Botones de movimiento (izquierda y derecha) en la parte inferior izquierda
+		this.leftButton.x = margin;
+		this.leftButton.y = newH - this.buttonSize - margin;
+
+		this.rightButton.x = newW - this.rightButton.width - margin;
+		this.rightButton.y = newH - this.buttonSize - margin;
+
+		// Botones de acción (rotar y bajar) en la parte inferior derecha
+		this.rotateButton.x = newW * 0.5 + margin;
+		this.rotateButton.y = newH - this.buttonSize - margin;
+
+		this.dropButton.x = newW * 0.5 - buttonSpacing - margin;
+		this.dropButton.y = newH - this.buttonSize - margin;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.previewLayer, newW * 0.5, newH * 0.5, this.cols * this.cellSize, this.rows * this.cellSize, ScaleHelper.FIT);
+		this.previewLayer.x = 100;
+		this.previewLayer.y = 0;
 	}
 }
