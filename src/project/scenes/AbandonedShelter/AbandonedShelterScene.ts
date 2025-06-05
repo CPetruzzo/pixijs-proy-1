@@ -142,12 +142,12 @@ export class AbandonedShelterScene extends PixiScene {
 					"Hace frío aquí... qué es eso delante de mi? Quizás pueda ver mejor si apunto la linterna hacia lo que sea que eso sea. \nCon qué se encendía? Ah! Presiona Space para probar la linterna.",
 					"Space",
 					"red",
-					30
+					20
 				);
 			}
 		} else {
 			if (!this.state.enemyDefeated) {
-				this.overlay.typeText("Quizás esa pistola que agarré sirva para algo. Equipala desde la mochila y presiona U para usarla.", "pistola", "red", 50);
+				this.overlay.typeText("Quizás esa pistola que agarré sirva para algo. Equipala desde la mochila y presiona U para usarla.", "pistola", "red", 20);
 			} else {
 				this.overlay.visible = false;
 			}
@@ -177,6 +177,8 @@ export class AbandonedShelterScene extends PixiScene {
 		this.weaponSprite.visible = false;
 
 		this.player.addChild(this.weaponSprite);
+
+		this.player.setHorizontalBounds(-700, +700);
 	}
 
 	private createEnemy(): void {
@@ -424,8 +426,6 @@ export class AbandonedShelterScene extends PixiScene {
 			Manager.changeScene(AHHintRoom, { transitionClass: FadeColorTransition });
 		}
 
-		this.ui.updateHP();
-
 		if (this.state.enemyDefeated) {
 			const altb = this.altarTrigger.triggerZone.getBounds();
 			const altInTrig = pb.x + pb.width > altb.x && pb.x < altb.x + altb.width && pb.y + pb.height > altb.y && pb.y < altb.y + altb.height;
@@ -496,7 +496,24 @@ export class AbandonedShelterScene extends PixiScene {
 					.onComplete(() => {
 						this.overlay.typeText("Funcionó! Menos mal...!", "Funcionó", "red", 50);
 					});
+
+				if (this.state.enemyDefeated) {
+					if (this.state.activeItem === "sacredgun") {
+						this.state.pickedItems.delete(this.state.activeItem);
+						this.state.activeItem = null;
+						this.syncActiveIcon();
+					}
+				}
 			}
+		}
+	}
+
+	private syncActiveIcon(): void {
+		const { activeItem } = this.state;
+		if (!activeItem) {
+			this.activeIcon.texture = Texture.EMPTY;
+		} else {
+			this.activeIcon.texture = Texture.from(`AH_${activeItem}icon`);
 		}
 	}
 

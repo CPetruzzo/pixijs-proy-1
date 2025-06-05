@@ -31,5 +31,6 @@ declare namespace GlobalMixins {
 		aimToggled: any;
 
 		winAHSlot: any;
+		curse: any;
 	}
 }

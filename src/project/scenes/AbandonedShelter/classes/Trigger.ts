@@ -10,8 +10,8 @@ export class Trigger extends Container {
 		super();
 	}
 
-	public createTrigger(gameContainer: Container): void {
-		this.triggerZone = new Graphics().beginFill(0xff0000, 0.001).drawRect(-125, -20, 150, 40).endFill();
+	public createTrigger(gameContainer: Container, from: number = 1, to: number = 1.1): void {
+		this.triggerZone = new Graphics().beginFill(0xff0000, 0.01).drawRect(-125, -20, 150, 40).endFill();
 		this.triggerZone.x = -500;
 		this.triggerZone.y = 100;
 		gameContainer.addChild(this.triggerZone);
@@ -21,7 +21,7 @@ export class Trigger extends Container {
 		this.triggerText.anchor.set(0.5);
 		this.triggerText.position.set(this.triggerZone.x - this.triggerZone.width / 2 + 30, this.triggerZone.y - 30);
 		this.triggerText.visible = false;
-		new Tween(this.triggerText.scale).to({ x: 1.1, y: 1.1 }, 500).repeat(Infinity).yoyo(true).start();
+		new Tween(this.triggerText.scale).from({ x: from, y: from }).to({ x: to, y: to }, 500).repeat(Infinity).yoyo(true).start();
 		gameContainer.addChild(this.triggerText);
 	}
 

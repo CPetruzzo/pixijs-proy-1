@@ -134,6 +134,25 @@ export class AHGamblingScene extends PixiScene {
 		this.slotScene.y = 65;
 		this.slotScene.visible = false;
 
+		// *** NOS SUSCRIBIMOS AL NUEVO EVENTO "curse" ***
+		this.slotScene.on("curse", () => {
+			if (!this.state.skullPicked) {
+				// Creamos un OverlayScene con el texto deseado
+				const curseOverlay = new OverlayScene();
+				curseOverlay.typeText("¡Maldita máquina dame algo!", "dame algo", "red", 20);
+				this.gameContainer.addChild(curseOverlay);
+
+				// Opcional: después de unos segundos, podemos desvaneCerlo
+				// (dependiendo de cómo quieras que desaparezca;
+				// OverlayScene no se auto‐oculta, así que lo quitamos manualmente)
+				setTimeout(() => {
+					if (curseOverlay.parent) {
+						curseOverlay.destroy();
+					}
+				}, 2000); // 2 s antes de eliminarlo
+			}
+		});
+
 		this.overlay = new OverlayScene();
 		this.overlay.typeText(
 			"Una sala de juegos? Ahora si estamos hablando mi idioma! Esa tragamonedas parece estar encendida y funcional. Quizás pueda usarla para conseguir algo útil...",
@@ -145,13 +164,17 @@ export class AHGamblingScene extends PixiScene {
 		this.gameContainer.addChild(this.slotContainer);
 		this.gameContainer.addChild(this.overlay);
 
-		this.slotScene.on("winAHSlot", () => {
-			this.inventoryCtrl.pick("skull");
-			this.state.skullPicked = true;
-			this.state.pickedItems.add("skull");
-			this.ui.syncActiveIcon();
-			this.ui.syncEquippedItem();
-		});
+		if (!this.state.skullPicked) {
+			this.slotScene.on("winAHSlot", () => {
+				this.inventoryCtrl.pick("skull");
+				this.state.skullPicked = true;
+				this.state.altarAvailable = true;
+				SoundLib.playSound("AH_grab", { start: 0.2, end: 1, volume: 0.5 });
+				this.state.pickedItems.add("skull");
+				this.ui.syncActiveIcon();
+				this.ui.syncEquippedItem();
+			});
+		}
 	}
 
 	private createPlayer(): void {
@@ -167,6 +190,9 @@ export class AHGamblingScene extends PixiScene {
 		this.weaponSprite.visible = false;
 
 		this.player.addChild(this.weaponSprite);
+
+		// Colocamos límites horizontales, por ejemplo de -700 a +700
+		this.player.setHorizontalBounds(-700, +700);
 	}
 
 	private flashlightBlink(): void {
@@ -232,6 +258,11 @@ export class AHGamblingScene extends PixiScene {
 			this.slotScene.visible = false;
 		}
 
+		// ... en algún punto, por ejemplo al presionar una tecla:
+		if (Keyboard.shared.justReleased("KeyD") && this.slotOpened) {
+			this.slotScene.forceWinAnimated();
+		}
+
 		if (drawerinTrig && Keyboard.shared.justReleased("KeyE") && !this.slotOpened) {
 			SoundLib.playSound("clickSFX", { volume: 0.3, speed: 2, loop: false });
 			console.log("Trigger activated");
@@ -240,6 +271,7 @@ export class AHGamblingScene extends PixiScene {
 			this.slotScene.visible = true;
 
 			this.slotScene.soulToCoin();
+			SoundLib.playSound("static", { speed: 0.5, loop: false, end: 1.3 });
 			this.slotLeaveText = Sprite.from("KeyC");
 			this.slotLeaveText.position.y = 650;
 			this.slotLeaveText.scale.set(2.5);
@@ -250,6 +282,15 @@ export class AHGamblingScene extends PixiScene {
 			this.overlay = new OverlayScene();
 			this.overlay.typeText("'INSERT SOUL'? No será demasiado? De todos modos no tengo así que no me preocupa. ", "tragamonedas", "red", 20);
 			this.gameContainer.addChild(this.overlay);
+
+			// Opcional: después de unos segundos, podemos desvaneCerlo
+			// (dependiendo de cómo quieras que desaparezca;
+			// OverlayScene no se auto‐oculta, así que lo quitamos manualmente)
+			setTimeout(() => {
+				if (this.overlay.parent) {
+					this.overlay.visible = false;
+				}
+			}, 4000); // 2 s antes de eliminarlo
 		}
 
 		this.checkUsedItem();

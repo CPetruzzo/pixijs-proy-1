@@ -17,7 +17,8 @@ import { GameStateManager } from "./game/GameStateManager";
 import { Timer } from "../../../engine/tweens/Timer";
 import { Manager } from "../../..";
 import { CameraAStarScene } from "../Tutorial/TutorialAStarScene";
-import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
+import { OverlayScene } from "./OverlayScene";
+import { Keyboard } from "../../../engine/input/Keyboard";
 
 export class AHOldClockScene extends PixiScene {
 	private gameContainer = new Container();
@@ -61,6 +62,11 @@ export class AHOldClockScene extends PixiScene {
 
 	private pausePopUp: PausePopUp | null = null;
 	private activeIcon!: Sprite | null;
+
+	private overlay: OverlayScene;
+
+	private cluesSpr: Sprite;
+	private cluesSprVisible: boolean;
 
 	constructor() {
 		super();
@@ -120,7 +126,7 @@ export class AHOldClockScene extends PixiScene {
 		this.clock.addChild(this.pendulum, this.mainNeedle, this.secondaryNeedle);
 
 		new Tween(this.pendulum).from({ angle: -15 }).to({ angle: 15 }, 1000).easing(Easing.Quadratic.InOut).repeat(Infinity).yoyo(true).start();
-		SoundLib.playSound("clockticking", { loop: true, volume: 0.1, speed: 0.94, end: 1.95 });
+		SoundLib.playMusic("clockticking", { loop: true, volume: 0.1, speed: 0.94, end: 1.95 });
 
 		this.createTimeButtons();
 		this.createConfirmButton();
@@ -165,6 +171,13 @@ export class AHOldClockScene extends PixiScene {
 			this.lightCone
 		);
 		this.inventoryCtrl.on("picked", (id) => this.inventoryCtrl.showNewItem(id, this.gameContainer));
+
+		this.overlay = new OverlayScene();
+		this.overlay.typeText("Un reloj... Qué afortunado sería si tuviera una pista de qué hora es", "pista", "red", 20);
+		this.gameContainer.addChild(this.overlay);
+		new Timer().to(1000).onComplete(() => {
+			this.overlay.visible = false;
+		});
 	}
 
 	/** Crea dos botones +5 y -5 minutos */
@@ -235,6 +248,8 @@ export class AHOldClockScene extends PixiScene {
 		this.weaponSprite.visible = false;
 
 		this.player.addChild(this.weaponSprite);
+
+		this.player.setHorizontalBounds(-700, +700);
 	}
 
 	/** Aquí colgá tu lógica para cuando el usuario confirme la hora  ◀– NUEVO */
@@ -243,12 +258,12 @@ export class AHOldClockScene extends PixiScene {
 		const m = this.currentTimeMin % 60;
 		console.log(`⏰ Hora confirmada: ${h}:${m.toString().padStart(2, "0")}`);
 
-		if (h === 0 && m === 10) {
+		if (h === 0 && m === 0) {
 			this.swapGhostTexture("AH_slenderman", 3000);
 			SoundLib.playSound("witch-laugh", { volume: 0.3 });
 		}
 
-		if (h === 0 && m === 5) {
+		if (h === 2 && m === 5) {
 			this.ghostMirror.filters = [this.glitchFilter, this.crtFilter];
 			this.background.background.filters = [this.glitchFilter, this.crtFilter];
 			this.glitchFilter.seed = Math.random();
@@ -263,13 +278,13 @@ export class AHOldClockScene extends PixiScene {
 		}
 
 		// ** NUEVO: efecto poseído a las 0:15 **
-		if (h === 0 && m === 15) {
+		if (h === 0 && m === 25) {
 			this.possessTable(3000);
 			SoundLib.playSound("possessed-laugh", { volume: 0.3 });
 		}
 
 		// ** NUEVO: efecto poseído a las 0:15 **
-		if (h === 0 && m === 25) {
+		if (h === 5 && m === 20) {
 			this.inventoryCtrl.pick("papiro");
 			this.state.skullPicked = true;
 			this.state.pickedItems.add("papiro");
@@ -279,7 +294,8 @@ export class AHOldClockScene extends PixiScene {
 			new Timer()
 				.duration(1000)
 				.onComplete(() => {
-					Manager.changeScene(CameraAStarScene, { transitionClass: FadeColorTransition });
+					SoundLib.stopAllMusic();
+					Manager.changeScene(CameraAStarScene);
 				})
 				.start();
 		}
@@ -362,6 +378,59 @@ export class AHOldClockScene extends PixiScene {
 			this.glitchFilter.seed = Math.random();
 			// avanzamos tiempo en CRT para mover las líneas
 			this.crtFilter.time += 0.05;
+		}
+
+		if (this.overlay) {
+			if (this.overlay.visible) {
+				if (Keyboard.shared.justReleased("Enter")) {
+					this.overlay.visible = false;
+				}
+			}
+		}
+
+		this.checkUsedItem();
+		if (Keyboard.shared.justPressed("KeyC") && this.cluesSprVisible) {
+			this.cluesSprVisible = false;
+			this.gameContainer.removeChild(this.cluesSpr);
+		}
+	}
+
+	private checkUsedItem(): void {
+		if (Keyboard.shared.justReleased("KeyU")) {
+			const state = this.state;
+			if (state.activeItem) {
+				console.log("Usaste el ítem:", state.activeItem);
+				if (state.activeItem === "battery") {
+					SoundLib.playSound("reload", { volume: 0.2 });
+					this.state.reset();
+					state.pickedItems.delete(state.activeItem);
+					state.activeItem = null;
+					this.ui.syncActiveIcon();
+				}
+				if (state.activeItem === "holywater") {
+					SoundLib.playSound("reload", { volume: 0.2 });
+					this.state.fullHealth();
+					state.pickedItems.delete(state.activeItem);
+					state.activeItem = null;
+					this.ui.syncActiveIcon();
+				}
+				if (state.activeItem === "clues") {
+					console.log("clues");
+					SoundLib.playSound("reload", { volume: 0.2 });
+					this.cluesSpr = Sprite.from("AH_cluesicon");
+					this.cluesSprVisible = true;
+
+					// this.drawerCloseText = new Text("C", { fill: "#fff", fontSize: 96 });
+					const drawerCloseText = Sprite.from("KeyC");
+					drawerCloseText.position.y = 350;
+					drawerCloseText.scale.set(2.5);
+					drawerCloseText.anchor.set(0.5);
+					this.cluesSpr.addChild(drawerCloseText);
+
+					this.gameContainer.addChild(this.cluesSpr);
+					this.cluesSpr.anchor.set(0.5);
+				}
+			}
 		}
 	}
 

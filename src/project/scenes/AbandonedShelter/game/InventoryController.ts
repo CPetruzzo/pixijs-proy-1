@@ -33,6 +33,7 @@ export class InventoryController extends EventEmitter {
 			holywater: "AH_holywatericon",
 			skull: "AH_skullicon",
 			papiro: "AH_papiroicon",
+			clues: "AH_cluesicon",
 		};
 		const texKey = textureMap[itemId] ?? itemId;
 		const droppedIcon = Sprite.from(texKey);
@@ -69,6 +70,7 @@ export class InventoryController extends EventEmitter {
 			holywater: "AH_holywatericon",
 			skull: "AH_skullicon",
 			papiro: "AH_papiroicon",
+			clues: "AH_cluesicon",
 
 			// añade más items si los tuvieras…
 		};

@@ -181,7 +181,7 @@ export class AHAltarRoom extends PixiScene {
 	}
 
 	private createBackground(): void {
-		if (!this.state.skullPicked) {
+		if (!this.state.skullPicked && this.state.altarAvailable) {
 			this.background = Sprite.from("AH_altarroom");
 		} else {
 			this.background = Sprite.from("AH_altarroomnoskull");
@@ -214,6 +214,8 @@ export class AHAltarRoom extends PixiScene {
 		this.weaponSprite.visible = false;
 
 		this.player.addChild(this.weaponSprite);
+
+		this.player.setHorizontalBounds(-700, +700);
 	}
 
 	private createEnemy(): void {
@@ -430,18 +432,6 @@ export class AHAltarRoom extends PixiScene {
 		this.updateDarknessMask();
 	}
 
-	private updateHP(): void {
-		let { healthPoints } = this.state;
-
-		if (healthPoints <= 0) {
-		} else {
-			healthPoints -= 0.01;
-		}
-
-		this.state.setHP(healthPoints);
-		this.hpBar.progress = this.state.healthPoints;
-	}
-
 	private syncActiveIcon(): void {
 		const { activeItem } = this.state;
 		if (!activeItem) {
@@ -603,7 +593,7 @@ export class AHAltarRoom extends PixiScene {
 				});
 		}
 
-		if (drawerinTrig && Keyboard.shared.justReleased("KeyE") && !this.drawerOpened) {
+		if (drawerinTrig && Keyboard.shared.justReleased("KeyE") && !this.drawerOpened && this.state.altarAvailable) {
 			SoundLib.playSound("drawer", { volume: 0.3, speed: 2, loop: false });
 			console.log("Trigger activated");
 
@@ -672,7 +662,6 @@ export class AHAltarRoom extends PixiScene {
 			this.altar.addChild(this.altarCloseText);
 		}
 
-		this.updateHP();
 		this.checkUsedItem();
 		this.updateBullets(dt / 1000); // dt en segundos
 

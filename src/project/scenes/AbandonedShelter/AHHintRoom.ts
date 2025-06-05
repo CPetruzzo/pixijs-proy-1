@@ -84,6 +84,10 @@ export class AHHintRoom extends PixiScene {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	private BULLET_SPEED = 2500; // px/s
 	private overlay: OverlayScene;
+	private clues!: Sprite;
+	private cluesTrigger!: Trigger;
+	private cluesSpr: Sprite;
+	private cluesSprVisible: boolean;
 
 	constructor() {
 		super();
@@ -106,7 +110,7 @@ export class AHHintRoom extends PixiScene {
 				SoundLib.playSound("possessed-laugh", { volume: 0.05 });
 				this.overlay = new OverlayScene();
 				this.gameContainer.addChild(this.overlay);
-				this.overlay.typeText("HA ha hA ha haaaAaAa...", "haaaAaAa", "red", 50);
+				this.overlay.typeText("HA ha hA ha haaaAaAa...", "haaaAaAa", "red", 30);
 			});
 		// build
 		this.createBackground();
@@ -157,7 +161,7 @@ export class AHHintRoom extends PixiScene {
 					"Qué fueron esas voces?!!! Esta casa está muy mal... Pero bueno, menos mal que tengo una linterna. Espero que no se me acabe la batería...",
 					"batería",
 					"red",
-					38
+					20
 				);
 			});
 	}
@@ -182,6 +186,8 @@ export class AHHintRoom extends PixiScene {
 		this.weaponSprite.visible = false;
 
 		this.player.addChild(this.weaponSprite);
+
+		this.player.setHorizontalBounds(-700, +700);
 	}
 
 	private createEnemy(): void {
@@ -398,18 +404,6 @@ export class AHHintRoom extends PixiScene {
 		this.updateDarknessMask();
 	}
 
-	private updateHP(): void {
-		let { healthPoints } = this.state;
-
-		if (healthPoints <= 0) {
-		} else {
-			healthPoints -= 0.01;
-		}
-
-		this.state.setHP(healthPoints);
-		this.hpBar.progress = this.state.healthPoints;
-	}
-
 	private syncActiveIcon(): void {
 		const { activeItem } = this.state;
 		if (!activeItem) {
@@ -569,6 +563,11 @@ export class AHHintRoom extends PixiScene {
 				});
 		}
 
+		if (Keyboard.shared.justPressed("KeyC") && this.cluesSprVisible) {
+			this.cluesSprVisible = false;
+			this.gameContainer.removeChild(this.cluesSpr);
+		}
+
 		if (drawerinTrig && Keyboard.shared.justReleased("KeyE") && !this.drawerOpened) {
 			SoundLib.playSound("drawer", { volume: 0.3, speed: 2, loop: false });
 			console.log("Trigger activated");
@@ -617,6 +616,25 @@ export class AHHintRoom extends PixiScene {
 				});
 			}
 
+			if (!this.state.pickedItems.has("clues")) {
+				this.clues = Sprite.from("AH_cluesicon");
+				this.clues.scale.set(0.18);
+				this.clues.rotation = 90;
+				this.clues.anchor.set(0.5);
+				this.clues.y = -250;
+				this.clues.x = -250;
+				this.drawer.addChild(this.clues);
+
+				this.cluesTrigger = new Trigger();
+				this.cluesTrigger.createPointerTrigger(this.drawer, this.clues.x, this.clues.y, () => {
+					SoundLib.playSound("AH_grab", { start: 0.2, end: 1, volume: 0.5 });
+					this.inventoryCtrl.pick("clues");
+					this.drawer.removeChild(this.clues);
+					this.cluesTrigger.triggerZone.destroy();
+					this.cluesTrigger.triggerText.destroy();
+				});
+			}
+
 			if (!this.state.pickedItems.has("sacredgun")) {
 				this.sacredgun = Sprite.from("AH_sacredgunicon");
 				this.sacredgun.scale.set(0.45);
@@ -645,7 +663,6 @@ export class AHHintRoom extends PixiScene {
 			this.drawer.addChild(this.drawerCloseText);
 		}
 
-		this.updateHP();
 		this.checkUsedItem();
 		this.updateBullets(dt / 1000); // dt en segundos
 
@@ -670,20 +687,35 @@ export class AHHintRoom extends PixiScene {
 				if (state.activeItem === "battery") {
 					SoundLib.playSound("reload", { volume: 0.2 });
 					this.state.reset();
+					state.pickedItems.delete(state.activeItem);
+					state.activeItem = null;
+					this.syncActiveIcon();
 				}
 				if (state.activeItem === "holywater") {
 					SoundLib.playSound("reload", { volume: 0.2 });
 					this.state.fullHealth();
+					state.pickedItems.delete(state.activeItem);
+					state.activeItem = null;
+					this.syncActiveIcon();
+				}
+				if (state.activeItem === "clues" && !this.cluesSprVisible) {
+					SoundLib.playSound("bookPage", { volume: 0.2, start: 0.5, end: 2, speed: 1.3 });
+					this.cluesSpr = Sprite.from("AH_cluesicon");
+					this.cluesSprVisible = true;
+
+					// this.drawerCloseText = new Text("C", { fill: "#fff", fontSize: 96 });
+					const drawerCloseText = Sprite.from("KeyC");
+					drawerCloseText.position.y = 350;
+					drawerCloseText.scale.set(2.5);
+					drawerCloseText.anchor.set(0.5);
+					this.cluesSpr.addChild(drawerCloseText);
+
+					this.gameContainer.addChild(this.cluesSpr);
+					this.cluesSpr.anchor.set(0.5);
 				}
 				if (state.activeItem === "sacredgun") {
 					SoundLib.playSound("gun", { volume: 0.2, start: 0.6, end: 3 });
 					this.fireBullet();
-				}
-
-				if (state.activeItem !== "sacredgun") {
-					state.pickedItems.delete(state.activeItem);
-					state.activeItem = null;
-					this.syncActiveIcon();
 				}
 			}
 		}
@@ -714,7 +746,7 @@ export class AHHintRoom extends PixiScene {
 					"Y si! No sé qué pensé que iba a pasar... o sea... un fantasma, una bala... realmente pensé que podía impactar? dejá no má...",
 					"fantasma",
 					"red",
-					38
+					15
 				);
 			}
 		}

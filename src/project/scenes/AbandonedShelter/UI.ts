@@ -48,7 +48,7 @@ export class UI extends Container {
 		this.createUI();
 	}
 
-	private createUI(): void {
+	public createUI(): void {
 		const batteryBG = Sprite.from("battery0");
 		batteryBG.x = -batteryBG.width - 50;
 		batteryBG.y = 50;
@@ -167,7 +167,7 @@ export class UI extends Container {
 		if (!this.pausePopUp) {
 			if (healthPoints <= 0) {
 			} else {
-				healthPoints -= 0.01;
+				healthPoints -= 8;
 			}
 		}
 		this.state.setHP(healthPoints);

@@ -1,4 +1,4 @@
-import { Text, TextStyle } from "pixi.js";
+import { Text, TextStyle, Texture } from "pixi.js";
 import { Container, Graphics, Point, Sprite } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
@@ -8,6 +8,16 @@ import { OverlayScene } from "../AbandonedShelter/OverlayScene";
 import { GlitchFilter } from "@pixi/filter-glitch";
 import { SoundLib } from "../../../engine/sound/SoundLib";
 import { filters } from "@pixi/sound";
+import { UI } from "../AbandonedShelter/UI";
+import { GameStateManager } from "../AbandonedShelter/game/GameStateManager";
+import type { PausePopUp } from "../AbandonedShelter/game/PausePopUp";
+import type { ProgressBar } from "@pixi/ui";
+import { Trigger } from "../AbandonedShelter/classes/Trigger";
+import { Manager } from "../../..";
+import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
+import { LoseGameOverScene } from "../AbandonedShelter/LoseGameOverScene";
+import { Timer } from "../../../engine/tweens/Timer";
+import { WinGameOverScene } from "../AbandonedShelter/WinGameOverScene";
 
 class Node {
 	// eslint-disable-next-line prettier/prettier
@@ -37,11 +47,15 @@ export class CameraAStarScene extends PixiScene {
 	private stepDuration = 0;
 	private speed = 200; // px/segundo
 	// … otras propiedades …
-	private zoom = 1;
+	private zoom = 3;
 
 	private viewWidth = 0;
 	private viewHeight = 0;
 	private uiContainer = new Container();
+	private uiRightContainer = new Container();
+	private uiCenterContainer = new Container();
+	private uiLeftContainer = new Container();
+	private pauseContainer = new Container();
 
 	private pathDebug: Container | null = null; // <<<
 	private debugText!: Text; // <<<
@@ -60,14 +74,30 @@ export class CameraAStarScene extends PixiScene {
 	// --- NUEVO: overlay rojo para el “flash” al chocar ---
 	private redOverlay!: Graphics;
 	private redActive = false; // para evitar disparos simultáneos
+	public ui: UI;
+
+	private batteryBars: Sprite[] = [];
+	private activeIcon!: Sprite | null;
+	private weaponSprite!: Sprite;
+	private pausePopUp: PausePopUp | null = null;
+	private state = GameStateManager.instance;
+	private lightCone!: Sprite;
+	private hpBar: ProgressBar;
+	private trigger: Trigger;
+	private gameOverTriggered = false; // ← guard para no disparar FadeColorTransition más de una vez
+	private ghostTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	constructor() {
 		super();
 		this.grid = this.createGrid();
 		this.addChild(this.worldContainer, this.uiContainer);
+		this.addChild(this.uiLeftContainer);
+		this.addChild(this.uiCenterContainer);
+		this.addChild(this.uiRightContainer);
+		this.addChild(this.pauseContainer);
 		this.createBackground();
 
-		SoundLib.playMusic("AH_Eternal_Pursuit", { speed: 2, volume: 0.2 });
+		SoundLib.playMusic("AH_Eternal_Pursuit", { speed: 2, volume: 0.2, loop: false });
 
 		const spr = Sprite.from("AH_topdown");
 		spr.alpha = 0.7;
@@ -83,7 +113,7 @@ export class CameraAStarScene extends PixiScene {
 
 		this.overlay = new OverlayScene();
 		this.uiContainer.addChild(this.overlay);
-		this.overlay.typeText("Bien! Con ese ritual de perdón que acabo de conseguir me faltaría no más llegar hasta el altar. ", "ritual de perdón", "red", 30);
+		this.overlay.typeText("Bien! Con ese ritual de perdón que acabo de conseguir me faltaría no más llegar hasta el altar. ", "ritual de perdón", "red", 20);
 
 		// Vi que el camino tiene zonas de visión reducida, seguro me sirven para esconderme... aunque... es un fantasma, esperemos que funcione.
 		// 1) Recolectar zonas caminables
@@ -96,9 +126,9 @@ export class CameraAStarScene extends PixiScene {
 		}
 
 		// 2) Crear la “llorona” (placeholder AH_player_idle) y ocultarla
-		this.ghost = Sprite.from("AH_ghost");
+		this.ghost = Sprite.from("ghost_whiteeyes");
 		this.ghost.anchor.set(0.5, 0.9);
-		this.ghost.scale.set(0.18);
+		this.ghost.scale.set(0.05);
 		this.ghost.alpha = 0;
 		this.worldContainer.addChild(this.ghost);
 
@@ -110,12 +140,34 @@ export class CameraAStarScene extends PixiScene {
 
 		// 3) Arrancar el ciclo de aparición/desaparición
 		this.spawnGhostLoop();
+
+		this.ui = new UI(
+			this.uiRightContainer,
+			this.batteryBars,
+			this.activeIcon,
+			this.uiCenterContainer,
+			this.pausePopUp,
+			this.pauseContainer,
+			this.hpBar,
+			this.uiLeftContainer,
+			this.state,
+			this.weaponSprite,
+			this.lightCone
+		);
+
+		this.trigger = new Trigger();
+		this.trigger.createTrigger(this.worldContainer, 0.2, 0.24);
+		this.trigger.triggerZone.x += 820;
+		this.trigger.triggerText.x += 820;
+		this.trigger.triggerZone.y += 340;
+		this.trigger.triggerText.y += 340;
+		this.trigger.scale.set(0.5);
 	}
 
 	/** Cada 3–6 segundos movemos y tweeneamos la aparición de la ghost */
 	private spawnGhostLoop(): void {
 		const delay = 3000 + Math.random() * 1000;
-		setTimeout(() => {
+		this.ghostTimeout = setTimeout(() => {
 			if (!this.player) {
 				return;
 			}
@@ -170,7 +222,7 @@ export class CameraAStarScene extends PixiScene {
 					// Solo dashea si la celda del jugador es caminable (grid == 0)
 					if (this.grid[cellX] && this.grid[cellX][cellY] === 0) {
 						// 1) Orientar el sprite según posición relativa
-						const dir = this.player.x > this.ghost.x ? 1 : -1;
+						const dir = this.player.x > this.ghost.x ? -1 : 1;
 						this.ghost.scale.x = Math.abs(this.ghost.scale.x) * dir;
 
 						// 2) Tween hacia el jugador
@@ -182,6 +234,10 @@ export class CameraAStarScene extends PixiScene {
 								},
 								200
 							)
+							.onStart(() => {
+								this.ghost.texture = Texture.from("ghost_redeyes");
+							})
+
 							.easing(Easing.Linear.None)
 							.start();
 					}
@@ -205,6 +261,7 @@ export class CameraAStarScene extends PixiScene {
 						.onComplete(() => {
 							fxContainer.filters = [];
 							this.removeChild(fxContainer);
+							this.ghost.texture = Texture.from("ghost_whiteeyes");
 						})
 						.start();
 
@@ -228,7 +285,32 @@ export class CameraAStarScene extends PixiScene {
 		}, delay);
 	}
 
+	private checkUsedItem(): void {
+		if (Keyboard.shared.justReleased("KeyU")) {
+			const state = this.state;
+			if (state.activeItem) {
+				console.log("Usaste el ítem:", state.activeItem);
+				if (state.activeItem === "holywater") {
+					SoundLib.playSound("reload", { volume: 0.2 });
+					this.state.fullHealth();
+				}
+			}
+		}
+	}
+
 	public override update(dt: number): void {
+		if (this.state.healthPoints <= 0 && !this.gameOverTriggered) {
+			this.gameOverTriggered = true;
+
+			// -- Limpiar cualquier timeout de spawnGhostLoop pendiente:
+			if (this.ghostTimeout !== null) {
+				clearTimeout(this.ghostTimeout);
+				this.ghostTimeout = null;
+			}
+			// Si la salud es 0, cambio a la escena de Game Over
+			Manager.changeScene(LoseGameOverScene, { transitionClass: FadeColorTransition });
+			return;
+		}
 		this.followPath(dt);
 		this.updateCamera(dt);
 
@@ -247,7 +329,24 @@ export class CameraAStarScene extends PixiScene {
 			const ghostBounds = this.ghost.getBounds();
 			if (playerBounds.intersects(ghostBounds)) {
 				this.triggerRedFlash();
+				console.log("triggerRedFlash");
 			}
+		}
+
+		const pb = this.player.getBounds();
+		const tb = this.trigger.triggerZone.getBounds();
+		const inTrig = pb.x + pb.width > tb.x && pb.x < tb.x + tb.width && pb.y + pb.height > tb.y && pb.y < tb.y + tb.height;
+		this.trigger.triggerText.visible = inTrig;
+		if (inTrig && Keyboard.shared.justReleased("KeyE") && !this.gameOverTriggered) {
+			this.gameOverTriggered = true;
+
+			// -- Limpiar cualquier timeout de spawnGhostLoop pendiente:
+			if (this.ghostTimeout !== null) {
+				clearTimeout(this.ghostTimeout);
+				this.ghostTimeout = null;
+			}
+
+			Manager.changeScene(WinGameOverScene, { transitionClass: FadeColorTransition });
 		}
 
 		if (Keyboard.shared.justReleased("Enter")) {
@@ -262,7 +361,7 @@ export class CameraAStarScene extends PixiScene {
 					});
 					this.lloronaOverlay = new OverlayScene("llorona");
 					this.uiContainer.addChild(this.lloronaOverlay);
-					this.lloronaOverlay.typeText("Aaaaahhhhahaha! mis hijos!", "Aaaaahhhhahaha", "red", 30);
+					this.lloronaOverlay.typeText("Aaaaahhhhahaha! mis hijos!", "Aaaaahhhhahaha", "red", 20);
 					break;
 
 				case DialoguePhase.LLORONA_SCREAM:
@@ -275,11 +374,22 @@ export class CameraAStarScene extends PixiScene {
 					this.uiContainer.removeChild(this.lloronaOverlay);
 					this.overlay.visible = true;
 					this.overlay.typeText(
-						"Ok...           Creeeeo que tendría que apurarme con lo del ritual!      Voy a tener que usar esos espacios muertos para esconderme! O sea... es un fantasma... No se si servirá de algo pero no me queda otra.",
+						"Ok... Creeeeo que tendría que apurarme con lo del ritual! Voy a tener que usar esos espacios muertos para esconderme!",
 						"ritual de perdón",
 						"red",
-						30
+						20
 					);
+					new Timer()
+						.to(4000)
+						.onComplete(() => {
+							this.overlay.typeText(
+								"O sea... es un fantasma... No se si servirá de algo pero no me queda otra. Si llega antes que yo al altar, estoy frito.",
+								"ritual de perdón",
+								"red",
+								20
+							);
+						})
+						.start();
 					break;
 
 				case DialoguePhase.PLAYER_HURRY:
@@ -305,6 +415,7 @@ export class CameraAStarScene extends PixiScene {
 		if (Keyboard.shared.justPressed("NumpadSubtract")) {
 			this.setZoom(this.zoom - 1);
 		}
+		this.checkUsedItem();
 	}
 
 	private createGrid(): number[][] {
@@ -435,15 +546,19 @@ export class CameraAStarScene extends PixiScene {
 			return;
 		}
 		this.redActive = true;
-
+		this.ui.updateHP();
+		SoundLib.playSound("sound_hit", { volume: 0.3 });
 		// Redibujo el rectángulo con el tamaño actual de la vista
 		this.redOverlay.clear();
-		this.redOverlay.beginFill(0xff0000, 0).drawRect(0, 0, this.viewWidth, this.viewHeight).endFill();
+		this.redOverlay
+			.beginFill(0xff0000, 1)
+			.drawRect(-this.viewWidth, -this.viewWidth / 2, this.viewWidth * 2, this.viewHeight * 2)
+			.endFill();
 		this.redOverlay.alpha = 0;
 		this.redOverlay.visible = true;
 
 		new Tween<{ a: number }>({ a: 0 })
-			.to({ a: 0.6 }, 100)
+			.to({ a: 0.6 }, 50)
 			.onUpdate((p) => {
 				this.redOverlay.alpha = p.a;
 			})
@@ -612,7 +727,7 @@ export class CameraAStarScene extends PixiScene {
 		this.pathQueue.forEach((pt, _i) => {
 			const dot = new Graphics()
 				.beginFill(0xff0000)
-				.drawCircle(pt.x + this.tileSize / 2, pt.y + this.tileSize / 2, 5)
+				.drawCircle(pt.x + this.tileSize / 2, pt.y + this.tileSize / 2, 3)
 				.endFill();
 			// Le asigno las coords de mundo para luego comparar:
 			(dot as any).worldX = pt.x;
@@ -764,5 +879,21 @@ export class CameraAStarScene extends PixiScene {
 
 		// 4) Aplica tu zoom (escala extra)
 		this.worldContainer.scale.set(this.zoom, this.zoom);
+
+		ScaleHelper.setScaleRelativeToIdeal(this.uiRightContainer, w, h, 1536, 1024, ScaleHelper.FIT);
+		this.uiRightContainer.x = w;
+		this.uiRightContainer.y = 0;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.uiCenterContainer, w, h, 1536, 1024, ScaleHelper.FIT);
+		this.uiCenterContainer.x = w * 0.5;
+		this.uiCenterContainer.y = 0;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.uiLeftContainer, w, h, 1536, 1024, ScaleHelper.FIT);
+		this.uiLeftContainer.x = 0;
+		this.uiLeftContainer.y = 0;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.pauseContainer, w, h, 1536, 1024, ScaleHelper.FIT);
+		this.pauseContainer.x = w / 2;
+		this.pauseContainer.y = h / 2;
 	}
 }

@@ -37,6 +37,7 @@ export class SlotMachineScene extends PixiScene {
 	private reelsContainer = new Container();
 	private decorContainer = new Container();
 
+	// Lista de claves de textura
 	private symbolKeys = [
 		"slotghost", "slotpumpkin", "slotgoldcoin",
 		"slotbat", "sloteye", "slotskull", "slotcandle",
@@ -44,7 +45,7 @@ export class SlotMachineScene extends PixiScene {
 
 	private soulText: Sprite;
 	private spinBtn: Sprite;
-	private lossStreak = 0; // ◀– Nuevo
+	private lossStreak = 0;
 
 	constructor(_onComplete?: any) {
 		super();
@@ -54,6 +55,7 @@ export class SlotMachineScene extends PixiScene {
 		this.addChild(this.reelsContainer);
 		this.addChild(this.decorContainer);
 
+		// Centramos el pivot de los carretes para poder aplicar shake
 		this.reelsContainer.pivot.set(this.MASK_WIDTH / 2 + 25, this.MASK_HEIGHT / 2);
 		this.buildReels();
 
@@ -129,7 +131,7 @@ export class SlotMachineScene extends PixiScene {
 		// — Al segundo, aplico el glitch —
 		setTimeout(() => {
 			this.soulText.filters = [new GlitchFilter()];
-			// tras 500 ms quito el glitch y lo oculto
+			// tras 750 ms quito el glitch y lo oculto
 			setTimeout(() => {
 				this.soulText.filters = [];
 				this.soulText.visible = false;
@@ -165,51 +167,70 @@ export class SlotMachineScene extends PixiScene {
 		}
 	}
 
+	/**
+	 * Revisa **solo** la fila central de los 3 carretes.
+	 * Emite “winAHSlot” si los tres símbolos centrales coinciden.
+	 */
 	private checkWinLine(_onComplete?: any): void {
-		const middleTextures = this.reels.map(r => r.symbols[1].texture);
-		const first = middleTextures[0];
-		const win = middleTextures.every(tex => tex === first);
+		const N = this.NUM_SYMBOLS;
 
-		if (win) {
-			console.log("¡GANASTE!", first);
-			this.lossStreak = 0; // reset
-			SoundLib.playSound("clickSFX", {});
-			this.emit("winAHSlot"); // Emitimos el evento de victoria
+		// Tomamos únicamente la fila central (índice 1)
+		const middleRowTextures: any[] = [];
 
-
-			// … tu lógica de victoria
+		for (const r of this.reels) {
+			// Redondeamos la posición para evitar decimales
+			const rawPos = Math.round(r.position);
+			// Normalizamos a [0..N-1]
+			const pos = ((rawPos % N) + N) % N;
+			// Calculamos qué índice j de `symbols[j]` está en la fila central:
+			// si (pos + j) % N == 1  →  j = (1 - pos) mod N
+			const idxMiddle = ((1 - pos) + N) % N;
+			middleRowTextures.push(r.symbols[idxMiddle].texture);
 		}
-		else {
-			this.lossStreak++;
-			console.log(`Llevas ${this.lossStreak} derrotas seguidas`);
 
-			if (this.lossStreak >= 10) {
-				this.lossStreak = 0;
-				this.showSkeletonJumpscare();
-			}
+		// Verificamos si los tres símbolos centrales son idénticos
+		const [tex0, tex1, tex2] = middleRowTextures;
+		if (tex0 === tex1 && tex1 === tex2) {
+			console.log("¡GANASTE en la fila central con símbolo:", tex0);
+			this.lossStreak = 0; // reiniciar racha
+			SoundLib.playSound("clickSFX", {});
+			this.emit("winAHSlot");
+			return;
+		}
+
+		// Si NO hubo victoria en la fila central
+		this.lossStreak++;
+		console.log(`Llevas ${this.lossStreak} derrotas seguidas`);
+
+		if (this.lossStreak >= 2) {
+			this.lossStreak = 0;
+			this.showSkeletonJumpscare();
 		}
 	}
 
-	/** Muestra un esqueleto inclinado con sonido y se desvanece */
+	/**
+	 * Muestra un esqueleto inclinado con sonido que se desvanece.
+	 * Luego emite el evento "curse" para que la escena padre muestre el OverlayScene.
+	 * Finalmente, hace shake y llama a forceWinAnimated().
+	 */
 	private showSkeletonJumpscare(): void {
-		const skel = Sprite.from("AH_skeleton");
+		const skel = Sprite.from("ghost_handsup");
 		skel.anchor.set(0.5);
 		skel.scale.set(2.5);
-		// Colócalo en el centro de la pantalla:
+		// Lo colocamos en el centro de `decorContainer`
 		skel.x = this.decorContainer.x + 300;
 		skel.y = this.decorContainer.y + 800;
-		skel.rotation = -Math.PI / 8; // 22.5° de tilt
+		skel.rotation = -Math.PI / 8; // tilt de 22.5°
 		skel.alpha = 0;
 		this.decorContainer.addChild(skel);
 
 		// sonido
 		SoundLib.playSound("scare2", {
 			volume: 1,
-			// start: 2.5,
 			speed: 1.5
 		});
 
-		// fade in rápido, esperar un segundo, fade out
+		// Fade in rápido, esperar 1 s, luego fade out y `removeChild`
 		new Tween(skel)
 			.to({ alpha: 1 }, 200)
 			.easing(Easing.Quadratic.Out)
@@ -218,11 +239,116 @@ export class SlotMachineScene extends PixiScene {
 					new Tween(skel)
 						.to({ alpha: 0 }, 500)
 						.easing(Easing.Quadratic.In)
-						.onComplete(() => this.decorContainer.removeChild(skel))
+						.onComplete(() => {
+							this.decorContainer.removeChild(skel);
+
+							// *** EN VEZ DE CREAR UN Text LOCAL, emitimos el evento "curse" ***
+							this.emit("curse");
+
+							// *** Shake de cámara ***
+							this.shakeCamera().then(() => {
+								// *** Forzamos la victoria con animación ***
+								this.forceWinAnimated();
+							});
+						})
 						.start();
 				}, 1000);
 			})
 			.start();
+	}
+
+	/**
+	 * Shake de cámara sobre reelsContainer (~500 ms). Resuelve la promesa cuando termina.
+	 */
+	private shakeCamera(): Promise<void> {
+		return new Promise((resolve) => {
+			const originalX = this.reelsContainer.x;
+			const originalY = this.reelsContainer.y;
+
+			const shakes = 8;
+			let count = 0;
+			SoundLib.playSound("sound_hit", { volume: 0.5, loop: false });
+
+			const doOneShake = (): void => {
+				if (count >= shakes) {
+					this.reelsContainer.x = originalX;
+					this.reelsContainer.y = originalY;
+					resolve();
+					return;
+				}
+				count++;
+
+				const dx = (Math.random() - 0.5) * 20;
+				const dy = (Math.random() - 0.5) * 20;
+
+				new Tween(this.reelsContainer)
+					.to({ x: originalX + dx, y: originalY + dy }, 50)
+					.easing(Easing.Linear.None)
+					.onComplete(() => {
+						new Tween(this.reelsContainer)
+							.to({ x: originalX, y: originalY }, 50)
+							.easing(Easing.Linear.None)
+							.onComplete(() => {
+								setTimeout(doOneShake, 20);
+							})
+							.start();
+					})
+					.start();
+			};
+
+			doOneShake();
+		});
+	}
+
+	/**
+	 * Fuerza una victoria instantánea con animación (solo para debug).
+	 */
+	public forceWinAnimated(): void {
+		const N = this.NUM_SYMBOLS;
+
+		// 1) Elegimos un índice de símbolo al azar
+		const forcedIndex = Math.floor(Math.random() * N);
+		const forcedKey = this.symbolKeys[forcedIndex];
+		const forcedTexture = Sprite.from(forcedKey).texture;
+
+		// 2) Calculamos targetPositions
+		const targetPositions: number[] = [];
+		for (const r of this.reels) {
+			let foundIdx = r.symbols.findIndex(s => s.texture === forcedTexture);
+			if (foundIdx < 0) {
+				foundIdx = 0;
+				r.symbols[0].texture = forcedTexture;
+			}
+			let basePos = ((1 - foundIdx) % N + N) % N;
+			const vueltasExtra = 3;
+			basePos += N * vueltasExtra;
+			targetPositions.push(basePos);
+		}
+
+		// 3) Animamos cada carrete
+		this.isSpinning = true;
+		SoundLib.playSound("wheel-spin", { volume: 0.5, speed: 0.4, loop: false });
+
+		for (let i = 0; i < this.reels.length; i++) {
+			const r = this.reels[i];
+			const target = targetPositions[i];
+			const duration = 2000 + i * 500;
+			this.tweenTo(
+				r,
+				"position",
+				target,
+				duration,
+				this.backout(0.5),
+				undefined,
+				i === this.reels.length - 1
+					? () => {
+						this.isSpinning = false;
+						this.lossStreak = 0;
+						this.emit("winAHSlot");
+					}
+					: undefined
+			);
+		}
 	}
 
 	public override update(_dt: number): void {

@@ -392,15 +392,25 @@
         "AH_batteryicon": "./img/abandonedhouse/AH_batteryicon.png",
         "AH_holywatericon": "./img/abandonedhouse/AH_holywater.png",
         "AH_sacredgunicon": "./img/abandonedhouse/AH_sacredgun.png",
+        "AH_cluesicon": "./img/abandonedhouse/AH_cluesicon.png",
 
         "AH_ghost_mirror": "./img/abandonedhouse/AH_ghost_mirror.png",
         "AH_skeleton": "./img/abandonedhouse/AH_skeleton.png",
-
         "AH_bar": "./img/abandonedhouse/AH_bar.png",
         "KeyE": "./img/abandonedhouse/KeyE.png",
         "KeyC": "./img/abandonedhouse/KeyC.png",
         "KeyU": "./img/abandonedhouse/KeyU.png",
         "AH_barcenter": "./img/abandonedhouse/AH_barcenter.png",
+
+        "ghost_handsup": "./img/abandonedhouse/ghost_handsup.png",
+        "ghost_whiteeyes": "./img/abandonedhouse/ghost_whiteeyes.png",
+        "ghost_redeyes": "./img/abandonedhouse/ghost_redeyes.png",
+
+        "gameover": "./img/abandonedhouse/gameover.png",
+        "goodending": "./img/abandonedhouse/goodending.png",
+
+        "gameoversuccess1": "./img/abandonedhouse/gameoversuccess1.png",
+        "gameoversuccess2": "./img/abandonedhouse/gameoversuccess2.png",
 
         "polaroid_empty": "./img/abandonedhouse/polaroid_empty.png",
         "polaroid_paper": "./img/abandonedhouse/polaroid_paper.png",
@@ -410,6 +420,7 @@
         "steps": "./sfx/AH/steps.wav",
         "creakingDoor": "./sfx/AH/creakingDoor.mp3",
         "switch": "./sfx/AH/switch.mp3",
+        "bookPage": "./sfx/AH/bookPage.mp3",
         "gun": "./sfx/AH/gun.mp3",
         "drawer": "./sfx/AH/drawer.mp3",
         "AH_grab": "./sfx/AH/AH_grab.mp3",
@@ -426,6 +437,10 @@
 
         "scare": "./sfx/AH/scare.mp3",
         "scare2": "./sfx/AH/scare2.mp3",
+        "sound_hit": "./sfx/Bosshit1.wav",
+
+        "static": "./sfx/AH/static.mp3",
+        "counting": "./sfx/AH/counting.mp3",
 
         "bicyclewheel": "./sfx/AH/bicyclewheel.mp3",
         "wheel-bicycle": "./sfx/AH/wheel-bicycle.mp3",

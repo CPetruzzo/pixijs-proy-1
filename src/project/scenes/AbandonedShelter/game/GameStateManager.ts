@@ -25,9 +25,9 @@ export class GameStateManager {
 	// --- Estado de Enemigos ---
 	/** Será true cuando el enemigo haya muerto/desintegrado */
 	public enemyDefeated = false;
-	public skullPicked = true;
+	public skullPicked = false;
 	public gunGrabbed = false;
-
+	public altarAvailable = false;
 	public reset(): void {
 		this.batteryLevel = 3;
 		this.flashlightOn = false;
