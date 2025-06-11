@@ -13,7 +13,7 @@ import { GameStateManager } from "../AbandonedShelter/game/GameStateManager";
 import type { PausePopUp } from "../AbandonedShelter/game/PausePopUp";
 import type { ProgressBar } from "@pixi/ui";
 import { Trigger } from "../AbandonedShelter/classes/Trigger";
-import { Manager } from "../../..";
+import { Manager, pixiRenderer } from "../../..";
 import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
 import { LoseGameOverScene } from "../AbandonedShelter/LoseGameOverScene";
 import { Timer } from "../../../engine/tweens/Timer";
@@ -97,7 +97,7 @@ export class CameraAStarScene extends PixiScene {
 		this.addChild(this.pauseContainer);
 		this.createBackground();
 
-		SoundLib.playMusic("AH_Eternal_Pursuit", { speed: 2, volume: 0.2, loop: false });
+		SoundLib.playMusic("AH_Eternal_Pursuit", { speed: 2, volume: 0.15, loop: false });
 
 		const spr = Sprite.from("AH_topdown");
 		spr.alpha = 0.7;
@@ -162,6 +162,8 @@ export class CameraAStarScene extends PixiScene {
 		this.trigger.triggerZone.y += 340;
 		this.trigger.triggerText.y += 340;
 		this.trigger.scale.set(0.5);
+
+		pixiRenderer.pixiRenderer.view.style.cursor = "";
 	}
 
 	/** Cada 3–6 segundos movemos y tweeneamos la aparición de la ghost */
@@ -323,8 +325,7 @@ export class CameraAStarScene extends PixiScene {
 			}
 		}
 
-		// -------------- DETECTAR COLISIÓN y disparar el flash rojo --------------
-		if (this.player && this.ghost.alpha > 0) {
+		if (this.player && this.ghost.alpha > 0 && this.phase === DialoguePhase.DONE) {
 			const playerBounds = this.player.getBounds();
 			const ghostBounds = this.ghost.getBounds();
 			if (playerBounds.intersects(ghostBounds)) {
@@ -892,7 +893,7 @@ export class CameraAStarScene extends PixiScene {
 		this.uiLeftContainer.x = 0;
 		this.uiLeftContainer.y = 0;
 
-		ScaleHelper.setScaleRelativeToIdeal(this.pauseContainer, w, h, 1536, 1024, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToIdeal(this.pauseContainer, w, h, 1536, 1200, ScaleHelper.FIT);
 		this.pauseContainer.x = w / 2;
 		this.pauseContainer.y = h / 2;
 	}

@@ -388,6 +388,10 @@ export class AHOldClockScene extends PixiScene {
 			}
 		}
 
+		this.ui.syncFlashlightUI();
+		this.ui.syncActiveIcon();
+		this.ui.syncEquippedItem();
+
 		this.checkUsedItem();
 		if (Keyboard.shared.justPressed("KeyC") && this.cluesSprVisible) {
 			this.cluesSprVisible = false;

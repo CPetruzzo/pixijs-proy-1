@@ -66,7 +66,8 @@ export class AHGamblingScene extends PixiScene {
 	private slotLeaveText: Sprite;
 
 	private slotScene: SlotMachineScene;
-
+	private cluesSpr: Sprite;
+	private cluesSprVisible: boolean;
 	constructor() {
 		super();
 		this.addChild(this.gameContainer);
@@ -235,6 +236,11 @@ export class AHGamblingScene extends PixiScene {
 		this.ui.syncActiveIcon();
 		this.ui.syncEquippedItem();
 
+		if (Keyboard.shared.justPressed("KeyC") && this.cluesSprVisible) {
+			this.cluesSprVisible = false;
+			this.gameContainer.removeChild(this.cluesSpr);
+		}
+
 		// Trigger overlap & input
 		const pb = this.player.hitbox.getBounds();
 		const tb = this.trigger.triggerZone.getBounds();
@@ -294,7 +300,9 @@ export class AHGamblingScene extends PixiScene {
 		}
 
 		this.checkUsedItem();
-
+		this.ui.syncFlashlightUI();
+		this.ui.syncActiveIcon();
+		this.ui.syncEquippedItem();
 		super.update(dt);
 	}
 
@@ -306,19 +314,37 @@ export class AHGamblingScene extends PixiScene {
 				if (state.activeItem === "battery") {
 					SoundLib.playSound("reload", { volume: 0.2 });
 					this.state.reset();
+					state.pickedItems.delete(state.activeItem);
+					state.activeItem = null;
+					this.ui.syncActiveIcon();
 				}
 				if (state.activeItem === "holywater") {
 					SoundLib.playSound("reload", { volume: 0.2 });
 					this.state.fullHealth();
+					state.pickedItems.delete(state.activeItem);
+					state.activeItem = null;
+					this.ui.syncActiveIcon();
 				}
 				if (state.activeItem === "sacredgun") {
 					SoundLib.playSound("gun", { volume: 0.2, start: 0.6, end: 3 });
 					this.fireBullet();
 				}
-				if (state.activeItem !== "sacredgun") {
-					state.pickedItems.delete(state.activeItem);
-					state.activeItem = null;
-					this.ui.syncActiveIcon();
+
+				if (state.activeItem === "clues") {
+					console.log("clues");
+					SoundLib.playSound("reload", { volume: 0.2 });
+					this.cluesSpr = Sprite.from("AH_cluesicon");
+					this.cluesSprVisible = true;
+
+					// this.drawerCloseText = new Text("C", { fill: "#fff", fontSize: 96 });
+					const drawerCloseText = Sprite.from("KeyC");
+					drawerCloseText.position.y = 350;
+					drawerCloseText.scale.set(2.5);
+					drawerCloseText.anchor.set(0.5);
+					this.cluesSpr.addChild(drawerCloseText);
+
+					this.gameContainer.addChild(this.cluesSpr);
+					this.cluesSpr.anchor.set(0.5);
 				}
 			}
 		}

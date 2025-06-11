@@ -204,7 +204,7 @@ export class SlotMachineScene extends PixiScene {
 
 		if (this.lossStreak >= 2) {
 			this.lossStreak = 0;
-			this.showSkeletonJumpscare();
+			this.showJumpscare();
 		}
 	}
 
@@ -213,10 +213,10 @@ export class SlotMachineScene extends PixiScene {
 	 * Luego emite el evento "curse" para que la escena padre muestre el OverlayScene.
 	 * Finalmente, hace shake y llama a forceWinAnimated().
 	 */
-	private showSkeletonJumpscare(): void {
+	private showJumpscare(): void {
 		const skel = Sprite.from("ghost_handsup");
 		skel.anchor.set(0.5);
-		skel.scale.set(2.5);
+		skel.scale.set(2.9);
 		// Lo colocamos en el centro de `decorContainer`
 		skel.x = this.decorContainer.x + 300;
 		skel.y = this.decorContainer.y + 800;
@@ -237,7 +237,7 @@ export class SlotMachineScene extends PixiScene {
 			.onComplete(() => {
 				setTimeout(() => {
 					new Tween(skel)
-						.to({ alpha: 0 }, 500)
+						.to({ alpha: 0 }, 400)
 						.easing(Easing.Quadratic.In)
 						.onComplete(() => {
 							this.decorContainer.removeChild(skel);
@@ -252,7 +252,7 @@ export class SlotMachineScene extends PixiScene {
 							});
 						})
 						.start();
-				}, 1000);
+				}, 100);
 			})
 			.start();
 	}

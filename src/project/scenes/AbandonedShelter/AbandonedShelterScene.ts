@@ -72,7 +72,8 @@ export class AbandonedShelterScene extends PixiScene {
 	private tutorial: boolean = true;
 	private crt: CRTFilter;
 	// private flashlight: FlashLight;
-
+	private cluesSpr: Sprite;
+	private cluesSprVisible: boolean;
 	constructor() {
 		super();
 		this.addChild(this.gameContainer);
@@ -444,6 +445,11 @@ export class AbandonedShelterScene extends PixiScene {
 		this.updateLight();
 		this.updateEnemyLit();
 
+		if (Keyboard.shared.justPressed("KeyC") && this.cluesSprVisible) {
+			this.cluesSprVisible = false;
+			this.gameContainer.removeChild(this.cluesSpr);
+		}
+
 		super.update(dt);
 	}
 
@@ -525,19 +531,35 @@ export class AbandonedShelterScene extends PixiScene {
 				if (state.activeItem === "battery") {
 					SoundLib.playSound("reload", { volume: 0.2 });
 					this.state.reset();
+					state.pickedItems.delete(state.activeItem);
+					state.activeItem = null;
+					this.ui.syncActiveIcon();
 				}
 				if (state.activeItem === "holywater") {
 					SoundLib.playSound("reload", { volume: 0.2 });
 					this.state.fullHealth();
+					state.pickedItems.delete(state.activeItem);
+					state.activeItem = null;
+					this.ui.syncActiveIcon();
 				}
 				if (state.activeItem === "sacredgun") {
 					SoundLib.playSound("gun", { volume: 0.2, start: 0.6, end: 3 });
 					this.fireBullet();
 				}
-				if (state.activeItem !== "sacredgun") {
-					state.pickedItems.delete(state.activeItem);
-					state.activeItem = null;
-					this.ui.syncActiveIcon();
+				if (state.activeItem === "clues" && !this.cluesSprVisible) {
+					SoundLib.playSound("bookPage", { volume: 0.2, start: 0.5, end: 2, speed: 1.3 });
+					this.cluesSpr = Sprite.from("AH_cluesicon");
+					this.cluesSprVisible = true;
+
+					// this.drawerCloseText = new Text("C", { fill: "#fff", fontSize: 96 });
+					const drawerCloseText = Sprite.from("KeyC");
+					drawerCloseText.position.y = 350;
+					drawerCloseText.scale.set(2.5);
+					drawerCloseText.anchor.set(0.5);
+					this.cluesSpr.addChild(drawerCloseText);
+
+					this.gameContainer.addChild(this.cluesSpr);
+					this.cluesSpr.anchor.set(0.5);
 				}
 			}
 		}

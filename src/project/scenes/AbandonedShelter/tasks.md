@@ -1,12 +1,26 @@
+STREAM 5/6/2025
+
+# PENDING
+- acercar las manecillas del reloj (solo esa parte)
+- delimitar una SAFE ZONE - visible para el player 
+- revisar que no haya bugs 
+- reset - play again - retry - checkpoint
+- sonido al caer en la sala del reloj
+- agregar audio donde falte (LISTAR)
+- ending (por ahora es solo un cambio de imagenes)
+- itch.io -> video gameplay
+- jumpscare mas corto
+
+
+# DONE 
+- 
+
 STREAM 31/5/2025
 
 # PENDING
 - animated sprite al player mientras camina
 - sonido al caer en la sala del reloj
-- UI - reloj - implementar UI en todas las escenas
 - reset - play again
-- fix items to work in topdown scene, especially healthpotion
-- 
 
 # DONE 
 - escena ending leyendo ritual - llorona 
@@ -16,6 +30,8 @@ STREAM 31/5/2025
 - cambio de escena a la escena de topdown
 - agregar trigger (con letra U) en el altar para leer el ritual
 - agregar efecto de daño a la pantalla (filtro y shake en pantalla, update healtbar UI)
+- UI - reloj - implementar UI en todas las escenas
+- fix items to work in topdown scene, especially healthpotion
 
 STREAM 19/5/2025
 

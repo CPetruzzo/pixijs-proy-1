@@ -5,7 +5,7 @@ import { FadeColorTransition } from "../../../engine/scenemanager/transitions/Fa
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Keyboard } from "../../../engine/input/Keyboard";
-import type { Text } from "pixi.js";
+import { Text } from "pixi.js";
 import { Sprite, Texture, Graphics, Container, BLEND_MODES, BlurFilter, Point } from "pixi.js";
 import { ColorMatrixFilter } from "pixi.js";
 import { Manager } from "../../..";
@@ -19,12 +19,13 @@ import { AHPlayer } from "./classes/Player";
 import { Easing, Tween } from "tweedle.js";
 import { Trigger } from "./classes/Trigger";
 import Random from "../../../engine/random/Random";
-import { ProgressBar } from "@pixi/ui";
-import { PausePopUp } from "./game/PausePopUp";
+import type { ProgressBar } from "@pixi/ui";
+import type { PausePopUp } from "./game/PausePopUp";
 import { Timer } from "../../../engine/tweens/Timer";
 import { AbandonedShelterScene } from "./AbandonedShelterScene";
 import { AHGamblingScene } from "./AHGamblingScene";
-import { AHOldClockScene } from "./AHOldClockScene";
+import { UI } from "./UI";
+import { AHOldClockScene } from "./AHNewOldClockScene";
 
 export class AHAltarRoom extends PixiScene {
 	private gameContainer = new Container();
@@ -80,7 +81,9 @@ export class AHAltarRoom extends PixiScene {
 	private bullets: { sprite: Sprite; vx: number; vy: number }[] = [];
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	private BULLET_SPEED = 2500; // px/s
-
+	private cluesSpr: Sprite;
+	private cluesSprVisible: boolean;
+	private ui: UI;
 	constructor(_comingFrom?: any) {
 		super();
 		this.addChild(this.gameContainer);
@@ -106,7 +109,20 @@ export class AHAltarRoom extends PixiScene {
 		this.createEnemy();
 		this.createLightMask();
 		this.createLightCone();
-		this.createUI();
+
+		this.ui = new UI(
+			this.uiRightContainer,
+			this.batteryBars,
+			this.activeIcon,
+			this.uiCenterContainer,
+			this.pausePopUp,
+			this.pauseContainer,
+			this.hpBar,
+			this.uiLeftContainer,
+			this.state,
+			this.weaponSprite,
+			this.lightCone
+		);
 
 		this.trigger = new Trigger();
 		this.trigger.createTrigger(this.gameContainer);
@@ -128,10 +144,10 @@ export class AHAltarRoom extends PixiScene {
 
 		this.flashlightCtrl.on("changed", (state) => {
 			if (state.batteryLevel < this.previousBattery) {
-				this.animateBatteryDrain(this.previousBattery);
+				this.ui.animateBatteryDrain(this.previousBattery);
 				this.flashlightBlink();
 			} else {
-				this.syncFlashlightUI();
+				this.ui.syncFlashlightUI();
 				this.resetMasks();
 			}
 
@@ -141,7 +157,7 @@ export class AHAltarRoom extends PixiScene {
 		this.inventoryCtrl.on("picked", (id) => this.inventoryCtrl.showNewItem(id, this.gameContainer));
 
 		// initial sync
-		this.syncFlashlightUI();
+		this.ui.syncFlashlightUI();
 
 		// apply blur filter
 		this.darknessMask.filters = [new BlurFilter(8)];
@@ -313,91 +329,6 @@ export class AHAltarRoom extends PixiScene {
 		this.enemyLit.mask = this.coneMask;
 	}
 
-	private createUI(): void {
-		const batteryBG = Sprite.from("battery0");
-		batteryBG.x = -batteryBG.width - 50;
-		batteryBG.y = 50;
-
-		this.uiRightContainer.addChild(batteryBG);
-
-		const spacing = 10;
-		const texKeys = ["batteryIndicator", "batteryIndicator", "batteryIndicator"];
-		for (let i = 0; i < texKeys.length; i++) {
-			const bar = new Sprite(Texture.from(texKeys[i]));
-			bar.anchor.set(0, 0);
-			bar.x = i * (bar.width + spacing) + 23;
-			bar.y = 22;
-			batteryBG.addChild(bar);
-			this.batteryBars.push(bar);
-		}
-
-		const cellFrame = Sprite.from("cellFrame");
-		cellFrame.scale.set(0.25);
-		cellFrame.y = cellFrame.height / 2 + 5;
-		cellFrame.anchor.set(0.5);
-		this.uiCenterContainer.addChild(cellFrame);
-
-		// placeholder para el activo
-		this.activeIcon = Sprite.from(Texture.EMPTY);
-		this.activeIcon.x = cellFrame.x;
-		this.activeIcon.y = cellFrame.y;
-		this.activeIcon.anchor.set(0.5);
-		this.activeIcon.width = cellFrame.width * 0.6;
-		this.activeIcon.height = cellFrame.height * 0.6;
-
-		this.activeIcon.scale.set(0.5);
-		this.uiCenterContainer.addChild(this.activeIcon);
-
-		const backpack = Sprite.from("AH_bag");
-		backpack.x = 130;
-		backpack.y = cellFrame.y;
-		backpack.anchor.set(0.5);
-		backpack.scale.set(0.25);
-		this.uiCenterContainer.addChild(backpack);
-
-		const keyU = Sprite.from("KeyU");
-		keyU.anchor.set(0.5);
-		keyU.scale.set(0.8);
-		keyU.x = cellFrame.x + 45;
-		keyU.y = backpack.y + 55;
-		this.uiCenterContainer.addChild(keyU);
-
-		backpack.eventMode = "static";
-		backpack.on("pointerdown", () => {
-			if (!this.pausePopUp) {
-				this.pausePopUp = new PausePopUp();
-				this.pauseContainer.addChild(this.pausePopUp);
-			} else {
-				this.pausePopUp.close();
-				this.pausePopUp = null;
-			}
-		});
-		const config = Sprite.from("AH_config");
-		config.x = -120;
-		config.y = cellFrame.y + 5;
-		config.scale.set(0.25);
-		config.anchor.set(0.5);
-
-		this.uiCenterContainer.addChild(config);
-
-		this.hpBar = new ProgressBar({
-			bg: "AH_bar",
-			fill: "AH_barcenter",
-			progress: this.state.healthPoints,
-		});
-		this.hpBar.position.set(this.hpBar.width * 0.2, 50);
-		this.uiLeftContainer.addChild(this.hpBar);
-	}
-
-	private animateBatteryDrain(oldLevel: number): void {
-		const idx = oldLevel - 1;
-		const bar = this.batteryBars[idx];
-		// barra desaparece
-		new Tween(bar).to({ alpha: 0 }, 500).start();
-		// parpadeo de la luz
-		new Tween(this.lightCone).to({ alpha: 0.3 }, 100).yoyo(true).repeat(3).start();
-	}
-
 	private syncFlashlightUI(): void {
 		const { batteryLevel, flashlightOn } = this.state;
 
@@ -430,15 +361,6 @@ export class AHAltarRoom extends PixiScene {
 		this.coneMask.clear();
 		this.enemyLit.visible = false;
 		this.updateDarknessMask();
-	}
-
-	private syncActiveIcon(): void {
-		const { activeItem } = this.state;
-		if (!activeItem) {
-			this.activeIcon.texture = Texture.EMPTY;
-		} else {
-			this.activeIcon.texture = Texture.from(`AH_${activeItem}icon`);
-		}
 	}
 
 	private updateDarknessMask(): void {
@@ -550,9 +472,9 @@ export class AHAltarRoom extends PixiScene {
 			SoundLib.playSound("switch", { volume: 0.05 });
 		}
 		this.flashlightCtrl.update(dt);
-		this.syncFlashlightUI();
-		this.syncActiveIcon();
-		this.syncEquippedItem();
+		this.ui.syncFlashlightUI();
+		this.ui.syncActiveIcon();
+		this.ui.syncEquippedItem();
 
 		// player hitbox bounds
 		const pb = this.player.hitbox.getBounds();
@@ -579,7 +501,9 @@ export class AHAltarRoom extends PixiScene {
 		// DrawerTrigger overlap & input
 		const drawertb = this.altarTrigger.triggerZone.getBounds();
 		const drawerinTrig = pb.x + pb.width > drawertb.x && pb.x < drawertb.x + drawertb.width && pb.y + pb.height > drawertb.y && pb.y < drawertb.y + drawertb.height;
-		this.altarTrigger.triggerText.visible = drawerinTrig;
+		if (this.state.altarAvailable) {
+			this.altarTrigger.triggerText.visible = drawerinTrig;
+		}
 
 		if (drawerinTrig && Keyboard.shared.justPressed("KeyC") && this.drawerOpened) {
 			this.drawerOpened = false;
@@ -616,6 +540,7 @@ export class AHAltarRoom extends PixiScene {
 					SoundLib.playSound("AH_grab", { start: 0.2, end: 1, volume: 0.5 });
 					this.inventoryCtrl.pick("skull");
 					this.state.skullPicked = true;
+
 					this.altar.removeChild(this.skullIcon);
 					this.background.texture = Texture.from("AH_altarroomnoskull");
 					this.skullTrigger.triggerZone.destroy();
@@ -625,6 +550,9 @@ export class AHAltarRoom extends PixiScene {
 				// … dentro del else de “ya lo tienes” …
 				const dropTrigger = new Trigger();
 				dropTrigger.createPointerTrigger(this.altar, 0, 0, () => {
+					if (dropTrigger.triggerText instanceof Text) {
+						dropTrigger.triggerText.text = "Place skull";
+					}
 					// 1) Sacamos el ítem del inventario inmediatamente
 					this.inventoryCtrl.drop("skull", this.altar, 0, 0, () => {
 						this.state.skullPicked = false;
@@ -662,6 +590,11 @@ export class AHAltarRoom extends PixiScene {
 			this.altar.addChild(this.altarCloseText);
 		}
 
+		if (Keyboard.shared.justPressed("KeyC") && this.cluesSprVisible) {
+			this.cluesSprVisible = false;
+			this.gameContainer.removeChild(this.cluesSpr);
+		}
+
 		this.checkUsedItem();
 		this.updateBullets(dt / 1000); // dt en segundos
 
@@ -672,12 +605,6 @@ export class AHAltarRoom extends PixiScene {
 		super.update(dt);
 	}
 
-	private syncEquippedItem(): void {
-		const { activeItem } = this.state;
-		// si es la pistola sagrada, la mostramos; si no, la ocultamos
-		this.weaponSprite.visible = activeItem === "sacredgun";
-	}
-
 	private checkUsedItem(): void {
 		if (Keyboard.shared.justReleased("KeyU")) {
 			const state = this.state;
@@ -686,20 +613,37 @@ export class AHAltarRoom extends PixiScene {
 				if (state.activeItem === "battery") {
 					SoundLib.playSound("reload", { volume: 0.2 });
 					this.state.reset();
+					state.pickedItems.delete(state.activeItem);
+					state.activeItem = null;
+					this.ui.syncActiveIcon();
 				}
 				if (state.activeItem === "holywater") {
 					SoundLib.playSound("reload", { volume: 0.2 });
 					this.state.fullHealth();
+					state.pickedItems.delete(state.activeItem);
+					state.activeItem = null;
+					this.ui.syncActiveIcon();
 				}
 				if (state.activeItem === "sacredgun") {
 					SoundLib.playSound("gun", { volume: 0.2, start: 0.6, end: 3 });
 					this.fireBullet();
 				}
 
-				if (state.activeItem !== "sacredgun") {
-					state.pickedItems.delete(state.activeItem);
-					state.activeItem = null;
-					this.syncActiveIcon();
+				if (state.activeItem === "clues") {
+					console.log("clues");
+					SoundLib.playSound("reload", { volume: 0.2 });
+					this.cluesSpr = Sprite.from("AH_cluesicon");
+					this.cluesSprVisible = true;
+
+					// this.drawerCloseText = new Text("C", { fill: "#fff", fontSize: 96 });
+					const drawerCloseText = Sprite.from("KeyC");
+					drawerCloseText.position.y = 350;
+					drawerCloseText.scale.set(2.5);
+					drawerCloseText.anchor.set(0.5);
+					this.cluesSpr.addChild(drawerCloseText);
+
+					this.gameContainer.addChild(this.cluesSpr);
+					this.cluesSpr.anchor.set(0.5);
 				}
 			}
 		}
@@ -768,7 +712,7 @@ export class AHAltarRoom extends PixiScene {
 		this.uiLeftContainer.x = 0;
 		this.uiLeftContainer.y = 0;
 
-		ScaleHelper.setScaleRelativeToIdeal(this.pauseContainer, newW, newH, 1536, 1024, ScaleHelper.FILL);
+		ScaleHelper.setScaleRelativeToIdeal(this.pauseContainer, newW, newH, 1536, 1200, ScaleHelper.FIT);
 		this.pauseContainer.x = newW / 2;
 		this.pauseContainer.y = newH / 2;
 	}

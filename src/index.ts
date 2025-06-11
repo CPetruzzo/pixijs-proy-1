@@ -26,7 +26,7 @@ import { App } from "@capacitor/app";
 import { AdMob } from "@capacitor-community/admob";
 import { SoundLib } from "./engine/sound/SoundLib";
 import { Sounds } from "./project/scenes/RunFall/Managers/SoundManager";
-import { AHHintRoom } from "./project/scenes/AbandonedShelter/AHHintRoom";
+import { AuroraBaseGameScene } from "./project/scenes/Aurora/AuroraBaseGameScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -87,6 +87,9 @@ interaction.cursorStyles.hover = skullHover; // si quieres un “hover” espec�
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const Manager = new SceneManager(pixiRenderer);
+console.log("Manager", Manager);
+
+export const mousePosition = Manager.sceneRenderer.pixiRenderer.events.pointer.global;
 
 export const cameraControl = new CameraOrbitControl(pixiSettings.view);
 
@@ -130,7 +133,7 @@ window.addEventListener("contextmenu", (e) => {
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));  }
 
-	Manager.changeScene(AHHintRoom, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(AuroraBaseGameScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

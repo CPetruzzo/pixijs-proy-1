@@ -9,6 +9,7 @@ import { FadeColorTransition } from "../../../engine/scenemanager/transitions/Fa
 import { SoundLib } from "../../../engine/sound/SoundLib";
 import Random from "../../../engine/random/Random";
 import { AbandonedShelterScene } from "./AbandonedShelterScene";
+import { Keyboard } from "../../../engine/input/Keyboard";
 
 export class AHHomeScene extends PixiScene {
 	private backgroundContainer = new Container();
@@ -162,6 +163,11 @@ export class AHHomeScene extends PixiScene {
 					}
 				}, 100);
 			}
+		}
+
+		if (Keyboard.shared.justReleased("Enter")) {
+			SoundLib.stopMusic("homeBGM");
+			Manager.changeScene(AbandonedShelterScene, { transitionClass: FadeColorTransition });
 		}
 	}
 

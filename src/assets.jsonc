@@ -312,6 +312,24 @@
       }
     },
     {
+      "name": "aurora-latest",
+      "assets": {
+        "frameBlue": "./img/aurora-latest/frameBlue.jpg",
+        "frameOrange": "./img/aurora-latest/frameOrange.jpg",
+        "map1": "./img/aurora-latest/mockup-map1.png",
+        "map2raw": "./img/aurora-latest/mockup-map2.png",
+        "map2": "./img/aurora-latest/mockup-map2.jpg",
+        "map3": "./img/aurora-latest/mockup-map3.png",
+        "map4": "./img/aurora-latest/mockup-map4.png",
+        "map5": "./img/aurora-latest/mockup-map5.png",
+        "battle1": "./img/aurora-latest/mockup-battle1.png",
+        "battle2": "./img/aurora-latest/mockup-battle2.png",
+        "battle3": "./img/aurora-latest/mockup-battle3.png",
+        "colonial1": "./img/aurora-latest/colonial1.png",
+        "quilmes1": "./img/aurora-latest/quilmes1.png"
+      }
+    },
+    {
       "name": "abandonedhouse",
       "assets": {
         // ROOMS
@@ -379,12 +397,22 @@
 
         "soul": "./img/abandonedhouse/soul.png",
 
+        "5minus": "./img/abandonedhouse/5minus.png",
+        "1minus": "./img/abandonedhouse/1minus.png",
+        "5plus": "./img/abandonedhouse/5plus.png",
+        "1plus": "./img/abandonedhouse/1plus.png",
+        "confirm": "./img/abandonedhouse/confirmar.png",
         // CLOCK
         "pendulum-clock-manecilla": "./img/abandonedhouse/pendulum-clock-manecilla.png",
         "pendulum-clock-empty": "./img/abandonedhouse/pendulum-clock-empty.png",
+        "pendulum-clock-empty-close": "./img/abandonedhouse/pendulum-clock-empty-close.png",
         "pendulum-clock-needle": "./img/abandonedhouse/pendulum-clock-needle2.png",
-        "AH_pendulumClockSceneBG": "./img/abandonedhouse/AH_pendulumClockSceneBG.png",
 
+        "secondaryNeedle": "./img/abandonedhouse/secondaryNeedle.png",
+        "mainNeedle": "./img/abandonedhouse/mainNeedle.png",
+
+        "AH_pendulumClockSceneBG": "./img/abandonedhouse/AH_pendulumClockSceneBG.png",
+        "handPointer": "./img/abandonedhouse/handPointer.png",
         "AH_enemyfade2": "./img/abandonedhouse/AH_enemyfade2.png",
         "AH_enemyfade3": "./img/abandonedhouse/AH_enemyfade3.png",
         "AH_enemyfade4": "./img/abandonedhouse/AH_enemyfade4.png",
@@ -424,7 +452,7 @@
         "gun": "./sfx/AH/gun.mp3",
         "drawer": "./sfx/AH/drawer.mp3",
         "AH_grab": "./sfx/AH/AH_grab.mp3",
-        "reload": "./sfx/runfall/camera-shutter.mp3",
+        "reload": "./sfx/AH/camera-shutter.mp3",
         "abandonedhouse": "./music/abandonedhouse.mp3",
         "homeBGM": "./music/homeBGM.mp3",
         "witch-laugh": "./sfx/AH/witch-laugh.mp3",
@@ -446,8 +474,8 @@
         "wheel-bicycle": "./sfx/AH/wheel-bicycle.mp3",
         "wheel-spin": "./sfx/AH/wheel-spin.mp3",
         "clickSFX": "./sfx/AH/clickSFX.mp3",
-        "AH_Eternal_Pursuit": "./sfx/AH/AH_Eternal_Pursuit.mp3",
-        "scene": "models/horror_room/scene.gltf"
+        "AH_Eternal_Pursuit": "./sfx/AH/AH_Eternal_Pursuit.mp3"
+        // "scene": "models/horror_room/scene.gltf"
       }
     },
     {
