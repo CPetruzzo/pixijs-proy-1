@@ -314,6 +314,9 @@
     {
       "name": "aurora-latest",
       "assets": {
+        "performAtk_SFX": "./sfx/BlockBreak1.wav",
+        "miss_SFX": "./sfx/miss_SFX.mp3",
+
         "frameBlue": "./img/aurora-latest/frameBlue.jpg",
         "frameOrange": "./img/aurora-latest/frameOrange.jpg",
         "map1": "./img/aurora-latest/mockup-map1.png",
@@ -326,7 +329,8 @@
         "battle2": "./img/aurora-latest/mockup-battle2.png",
         "battle3": "./img/aurora-latest/mockup-battle3.png",
         "colonial1": "./img/aurora-latest/colonial1.png",
-        "quilmes1": "./img/aurora-latest/quilmes1.png"
+        "quilmes1": "./img/aurora-latest/quilmes1.png",
+        "zamba": "./music/zamba.mp3"
       }
     },
     {
