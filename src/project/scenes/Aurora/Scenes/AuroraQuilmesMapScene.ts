@@ -1,30 +1,33 @@
-import { PlayerFactory } from "./PlayerFactory";
+import { PlayerFactory } from "../Utils/PlayerFactory";
 /* eslint-disable @typescript-eslint/restrict-plus-operands */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { Text, TextStyle } from "pixi.js";
 import { Container, Graphics, Point, Sprite } from "pixi.js";
-import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
-import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
-import type { PlayerUnit } from "./IUnit";
-import { GamePhase, PhaseManager } from "./PhaseManager";
-import { Grid } from "./Grid";
-import { SoundLib } from "../../../engine/sound/SoundLib";
-import { AllContainers } from "./AllContainers";
-import { Animations } from "./Animations";
-import { PlayerData } from "./UnitData";
-import { PathFinder } from "./PathFinder";
-import { AttackRangeCalculator } from "./AttackRangeCalculator";
-import { TurnManager, TurnSide } from "./TurnManager";
-import { EnemyAI } from "./EnemyAI";
-import { InputHandler } from "./InputHandler";
-import { getTerrainColor, Terrain } from "./Terrain";
+import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
+import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
+import type { PlayerUnit } from "../Data/IUnit";
+import { GamePhase, PhaseManager } from "../Managers/PhaseManager";
+import { SoundLib } from "../../../../engine/sound/SoundLib";
+import { AllContainers } from "../Utils/AllContainers";
+import { Animations } from "../Utils/Animations";
+import { PlayerData } from "../Data/UnitData";
+import { PathFinder } from "../Utils/PathFinder";
+import { AttackRangeCalculator } from "../Utils/AttackRangeCalculator";
+import { TurnManager, TurnSide } from "../Managers/TurnManager";
+import { EnemyAI } from "../Utils/EnemyAI";
+import { InputHandler } from "../Utils/InputHandler";
+import { getTerrainColor, Terrain } from "../Utils/Terrain";
+import { GridKilme } from "../Grids/GridKilme";
+import { Easing, Tween } from "tweedle.js";
+import { BattleOverlay } from "./BattleOverlay";
 
 export class Node {
 	// eslint-disable-next-line prettier/prettier
 	constructor(public x: number, public y: number, public g: number = 0, public h: number = 0, public f: number = 0, public parent: Node | null = null) { }
 }
 
-export class AuroraBaseGameScene extends PixiScene {
+export class AuroraQuilmesMapScene extends PixiScene {
+	// #region VARIABLES
 	private grid: number[][] = [];
 	private tileSize = 64;
 
@@ -49,7 +52,7 @@ export class AuroraBaseGameScene extends PixiScene {
 	private tiles: Array<{ tile: Graphics; i: number; j: number }> = [];
 
 	// Selector de grilla
-	private selector: Graphics;
+	private selector: Sprite;
 	private selectorPos: Point; // coordenadas en grilla del selector
 
 	private selectedUnit: PlayerUnit | null = null;
@@ -86,11 +89,20 @@ export class AuroraBaseGameScene extends PixiScene {
 	private preMovePos: Point | null = null;
 	private unitPreviewBG: Sprite;
 
+	private menuContainer: Container | null = null;
+	private menuOptions: string[] = ["Atacar", "Mover", "Ítem", "Info", "Esperar"];
+	private menuTexts: Text[] = [];
+	private menuIndex: number = 0;
+	private inBattle: boolean = false;
+	private battleOverlay: BattleOverlay | null = null;
+
+	// #endregion VARIABLES
+
 	constructor() {
 		super();
 
 		SoundLib.playMusic("zamba", { volume: 0.2, loop: true });
-		this.grid = new Grid().createGrid();
+		this.grid = new GridKilme().createGrid();
 
 		this.addChild(this.allContainers);
 
@@ -101,25 +113,25 @@ export class AuroraBaseGameScene extends PixiScene {
 		const spr = Sprite.from("map2");
 		spr.alpha = 0.7;
 		spr.scale.set(0.5);
-		// Centrar pivot si deseas rotar/scale
-		this.allContainers.worldContainer.addChild(spr);
+
+		this.allContainers.worldContainer.addChildAt(spr, 0);
 		this.allContainers.worldContainer.pivot.set(this.allContainers.worldContainer.width / 2, this.allContainers.worldContainer.height * 0.335);
 
 		this.playerFactory = new PlayerFactory(this.allContainers.worldContainer, this.tileSize);
 
 		this.createPlayerUnits();
 
-		// Crear selector inicial en la posición de la primera unidad aliada, si existe
+		this.selector = Sprite.from("selector");
+		this.selector.anchor.set(0.5);
+		this.selector.scale.set(0.08);
+
 		if (this.allyUnits.length > 0) {
 			const firstAlly = this.allyUnits[0];
 			this.selectorPos = new Point(firstAlly.gridX, firstAlly.gridY);
 		} else {
-			// Si no hay unidades aliadas, inicializa en (0,0) o alguna posición por defecto
 			this.selectorPos = new Point(0, 0);
 		}
-		this.selector = new Graphics();
 		// Rectángulo con línea amarilla
-		this.selector.lineStyle(2, 0xffff00).drawRect(0, 0, this.tileSize, this.tileSize);
 		this.allContainers.worldContainer.addChild(this.selector);
 		this.updateSelectorPosition();
 
@@ -171,10 +183,28 @@ export class AuroraBaseGameScene extends PixiScene {
 					this.selectorPos.set(unit.gridX, unit.gridY);
 					this.updateSelectorPosition();
 					this.phaseManager.gamePhase = GamePhase.SELECT;
+
+					const tx = unit.gridX,
+						ty = unit.gridY;
+					if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
+						const terrain = Terrain.fromCode(this.grid[ty][tx]);
+						if (terrain === Terrain.FORTRESS) {
+							if (unit.healthPoints < unit.maxHealthPoints) {
+								const fixed = 3;
+								const actualHeal = Math.min(fixed, unit.maxHealthPoints - unit.healthPoints);
+								unit.healthPoints += actualHeal;
+								unit.hasHealedFortress = true;
+								this.allContainers.showFloatingText(actualHeal.toString(), unit.sprite.x, unit.sprite.y - this.tileSize * 0.3, 0xff0000);
+								console.error(`${unit.id} se cura ${actualHeal} en Fortress.`);
+							}
+						}
+					}
 				}
 			},
 			onStartEnemyTurn: () => this.startEnemySequence(),
-			onStartAllyTurn: () => this.startAllyTurn(),
+			onStartAllyTurn: () => {
+				this.startAllyTurn();
+			},
 		});
 
 		this.enemyAI = new EnemyAI(
@@ -189,12 +219,15 @@ export class AuroraBaseGameScene extends PixiScene {
 
 		this.inputHandler = new InputHandler({
 			onMoveSelector: (dx, dy) => this.onMoveSelector(dx, dy),
-			onSelect: () => this.trySelectUnit(),
+			onSelect: () => this.trySelectUnit(), // si aún la necesitas
+			onChoice: () => this.onChoice(),
+			onNavigateMenu: (delta) => this.navigateChoice(delta),
+			onConfirmMenu: () => this.confirmChoice(),
 			onConfirmMove: () => this.confirmMove(),
 			onSkipAttack: () => this.skipAttack(),
 			onAttack: () => this.doAttack(),
 			onProceedAfterAction: () => this.proceedAfterAction(),
-			onCancel: () => this.onCancelPhase(), // new
+			onCancel: () => this.onCancelPhase(),
 		});
 
 		this.turnManager.startAllyTurn();
@@ -207,8 +240,8 @@ export class AuroraBaseGameScene extends PixiScene {
 		terrainBG.x = this.allContainers.worldContainer.width - terrainBG.width * 0.5;
 		terrainBG.y = this.allContainers.worldContainer.height - terrainBG.height - 200;
 		this.allContainers.worldContainer.addChild(terrainBG);
-		this.terrainInfoText = new Text("", new TextStyle({ fill: "#ffffff", fontSize: 44, wordWrap: true, wordWrapWidth: 280 }));
-		this.terrainInfoText.anchor.set(0.5);
+		this.terrainInfoText = new Text("", new TextStyle({ fill: "#ffffff", fontSize: 64, dropShadow: true, fontFamily: "Pixelate-Regular", wordWrap: true, wordWrapWidth: 280 }));
+		this.terrainInfoText.anchor.set(0, 0.5);
 		terrainBG.addChild(this.terrainInfoText);
 		this.terrainInfoText.x = 0;
 		this.terrainInfoText.y = 0;
@@ -223,7 +256,7 @@ export class AuroraBaseGameScene extends PixiScene {
 		this.allContainers.worldContainer.addChild(this.unitPreviewBG);
 
 		// Preview unidad:
-		this.unitInfoText = new Text("", new TextStyle({ fill: "#ffffff", fontSize: 14 }));
+		this.unitInfoText = new Text("", new TextStyle({ fill: "#ffffff", dropShadow: true, dropShadowDistance: 2, fontFamily: "Pixelate-Regular", fontSize: 18 }));
 		this.unitInfoText.x = 0;
 		this.unitInfoText.y = 0;
 		this.allContainers.worldContainer.addChild(this.unitInfoText);
@@ -251,6 +284,15 @@ export class AuroraBaseGameScene extends PixiScene {
 				const terrain = Terrain.fromCode(code);
 				const color = getTerrainColor(terrain);
 
+				if (terrain === Terrain.FORTRESS) {
+					const houseSprite = Sprite.from("casa");
+					houseSprite.scale.set(0.7);
+					houseSprite.anchor.set(0.5, 1);
+					houseSprite.x = x * this.tileSize + this.tileSize / 2;
+					houseSprite.y = y * this.tileSize + this.tileSize / 2;
+
+					this.allContainers.worldContainer.addChildAt(houseSprite, 1);
+				}
 				const g = new Graphics();
 				g.beginFill(color, alphaValue).drawRect(0, 0, this.tileSize, this.tileSize).endFill();
 				g.x = x * this.tileSize;
@@ -260,6 +302,64 @@ export class AuroraBaseGameScene extends PixiScene {
 				// Optionally store reference:
 				this.tiles.push({ tile: g, i: x, j: y });
 			}
+		}
+	}
+
+	private confirmChoice(): void {
+		if (this.phaseManager.gamePhase !== GamePhase.CHOICE) {
+			return;
+		}
+		const choice = this.menuOptions[this.menuIndex];
+		// Suponemos selectedUnit está asignada
+		const unit = this.selectedUnit;
+		this.hideChoiceMenu();
+
+		SoundLib.playSound("menuconfirm", { volume: 0.3 });
+
+		switch (choice) {
+			case "Mover":
+				if (unit) {
+					// Pasar a fase MOVE: calculamos movimiento como en trySelectUnit
+					this.phaseManager.gamePhase = GamePhase.MOVE;
+					this.movementRange = this.pathFinder.computeMovementRange(unit);
+					this.showMovementHighlights();
+					// Mantener selector sobre la unidad:
+					this.selectorPos.set(unit.gridX, unit.gridY);
+					this.updateSelectorPosition();
+					this.updateDebugCellInfo();
+				}
+				break;
+			case "Atacar":
+				if (unit) {
+					// Pasar a fase ATTACK sin moverse
+					this.phaseManager.gamePhase = GamePhase.ATTACK;
+					this.attackRangeCells = this.attackCalc.computeAttackRange(unit);
+					this.showAttackRange();
+					console.log("Fase ATTACK: presiona Q para atacar o Enter para saltar");
+				}
+				break;
+			case "Esperar":
+				if (unit) {
+					// Marcar como actuado y pasar a END/next
+					unit.hasActed = true;
+					this.phaseManager.gamePhase = GamePhase.END;
+					console.log(`${unit.id} espera y termina su acción.`);
+					this.turnManager.endCurrentAction();
+				}
+				break;
+			case "Info":
+				console.log("Info: (aún no implementado)");
+				this.phaseManager.gamePhase = GamePhase.SELECT;
+				this.selectedUnit = null;
+
+				break;
+			case "Ítem":
+				// Aquí puedes abrir un submenú de ítems. Por ahora, puedes hacer un console o stub:
+				console.log("Ítem: (aún no implementado)");
+				// Quedamos de nuevo en SELECT o en CHOICE? Por ejemplo, volvemos a CHOICE o SELECT:
+				this.phaseManager.gamePhase = GamePhase.SELECT;
+				this.selectedUnit = null;
+				break;
 		}
 	}
 
@@ -279,45 +379,40 @@ export class AuroraBaseGameScene extends PixiScene {
 					this.clearAttackRange();
 
 					if (this.preMovePos) {
-						// Hubo movimiento previo: revertir posición
 						const orig = this.preMovePos;
-						// Actualizar coordenadas de grid:
 						this.selectedUnit.gridX = orig.x;
 						this.selectedUnit.gridY = orig.y;
-						// Mover sprite instantáneamente al centro de la casilla original:
-						// Suponiendo que tu sprite se posiciona con x = gridX*tileSize + tileSize/2:
 						this.selectedUnit.sprite.x = orig.x * this.tileSize + this.tileSize / 2;
 						this.selectedUnit.sprite.y = orig.y * this.tileSize + this.tileSize / 2;
-						// Limpiar preMovePos para no reusar:
 						this.preMovePos = null;
-
-						// Revertir fase a MOVE:
 						this.phaseManager.gamePhase = GamePhase.MOVE;
-						// Recalcular y mostrar highlights de movimiento desde la posición original:
 						this.movementRange = this.pathFinder.computeMovementRange(this.selectedUnit);
 						this.showMovementHighlights();
 
-						// Reposicionar selector sobre la unidad:
 						this.selectorPos.set(orig.x, orig.y);
 						this.updateSelectorPosition();
 						this.updateDebugCellInfo();
 					} else {
-						// No hubo movimiento previo: simplemente volver a MOVE
 						this.phaseManager.gamePhase = GamePhase.MOVE;
 						if (this.selectedUnit) {
-							// Recalcular highlights:
 							this.movementRange = this.pathFinder.computeMovementRange(this.selectedUnit);
 							this.showMovementHighlights();
-							// Reposicionar selector:
 							this.selectorPos.set(this.selectedUnit.gridX, this.selectedUnit.gridY);
 							this.updateSelectorPosition();
 							this.updateDebugCellInfo();
 						}
 					}
 				} else {
-					// Sin selectedUnit: ir a SELECT
 					this.phaseManager.gamePhase = GamePhase.SELECT;
 				}
+				break;
+
+			case GamePhase.CHOICE:
+				// Cerrar menú y volver a SELECT sin seleccionar unidad
+				this.hideChoiceMenu();
+				this.selectedUnit = null;
+				this.phaseManager.gamePhase = GamePhase.SELECT;
+				this.updateDebugCellInfo();
 				break;
 
 			case GamePhase.MOVE:
@@ -350,6 +445,90 @@ export class AuroraBaseGameScene extends PixiScene {
 		}
 	}
 
+	private onChoice(): void {
+		// Solo si estamos en SELECT y hay unidad bajo selector:
+		if (this.phaseManager.gamePhase !== GamePhase.SELECT) {
+			return;
+		}
+		const unit = this.getSelectableUnitAt(this.selectorPos.x, this.selectorPos.y);
+		if (!unit) {
+			console.log("No hay unidad aliada seleccionable para mostrar el menú.");
+			return;
+		}
+		this.selectedUnit = unit;
+		this.showChoiceMenu();
+		this.phaseManager.gamePhase = GamePhase.CHOICE;
+	}
+
+	private showChoiceMenu(): void {
+		if (this.menuContainer) {
+			return;
+		} // ya visible
+		// Crear un contenedor sencillo para el menú
+		this.menuContainer = new Container();
+		const bg = Sprite.from("frameBlue");
+		bg.anchor.set(0.5);
+		bg.alpha = 0.7;
+		bg.scale.set(0.25, 0.56);
+		bg.x = bg.width * 0.5;
+		bg.y = bg.height * 0.47;
+		this.menuContainer.addChild(bg);
+
+		this.menuTexts = [];
+		for (let i = 0; i < this.menuOptions.length; i++) {
+			const txt = new Text(
+				this.menuOptions[i],
+				new TextStyle({ fill: "#ffffff", fontFamily: "Pixelate-Regular", dropShadow: true, dropShadowDistance: 2, fontSize: 20, wordWrap: true, wordWrapWidth: 280 })
+			);
+			txt.x = 8;
+			txt.y = 24 + i * 32;
+			this.menuContainer.addChild(txt);
+			this.menuTexts.push(txt);
+		}
+		// Posicionar el menú cerca de la unidad/selector, p.ej. encima o en UI:
+		// Aquí puedes ajustar la posición; ejemplo simple en esquina:
+		this.menuContainer.x = 656;
+		this.menuContainer.y = 7;
+		this.allContainers.worldContainer.addChild(this.menuContainer);
+
+		this.menuIndex = 0;
+		this.updateMenuHighlight();
+	}
+
+	private hideChoiceMenu(): void {
+		if (!this.menuContainer) {
+			return;
+		}
+		this.allContainers.uiContainer.removeChild(this.menuContainer);
+		this.menuContainer.destroy({ children: true });
+		this.menuContainer = null;
+		this.menuTexts = [];
+		this.menuIndex = 0;
+	}
+
+	private navigateChoice(delta: number): void {
+		if (this.phaseManager.gamePhase !== GamePhase.CHOICE || !this.menuContainer) {
+			return;
+		}
+		SoundLib.playSound("menumove", { volume: 0.3 });
+		const n = this.menuOptions.length;
+		this.menuIndex = (this.menuIndex + delta + n) % n;
+		this.updateMenuHighlight();
+	}
+
+	private updateMenuHighlight(): void {
+		if (!this.menuTexts) {
+			return;
+		}
+		for (let i = 0; i < this.menuTexts.length; i++) {
+			if (i === this.menuIndex) {
+				this.menuTexts[i].style.fill = "#8b4915";
+			} else {
+				this.menuTexts[i].style.fill = "#ffffff";
+			}
+		}
+	}
+
 	/**
 	 * Actualiza this.debugText con info de la celda bajo el selector:
 	 * - Coordenadas
@@ -365,7 +544,7 @@ export class AuroraBaseGameScene extends PixiScene {
 		const code = this.grid[y]?.[x];
 		const terrain = Terrain.fromCode(code);
 		this.terrainInfoText.text = `${terrain.name}\n\nDEF: ${terrain.defBonus}\nAVO: ${terrain.avoBonus}`;
-		this.terrainInfoText.x = 0;
+		this.terrainInfoText.x = -95;
 		this.terrainInfoText.y = 0;
 
 		// Unidad bajo selector?
@@ -398,7 +577,13 @@ export class AuroraBaseGameScene extends PixiScene {
 			this.unitInfoText.text = "";
 			this.unitHealthBarPreview.clear();
 		} else {
-			// Lógica existente para preview lateral...
+			new Tween(this.selector)
+				.from({ scale: { x: 0.1, y: 0.1 } })
+				.to({ scale: { x: 0.08, y: 0.08 } }, 350)
+				.yoyo(true)
+				.easing(Easing.Bounce.Out)
+				.start();
+
 			if (this.unitPreviewSprite) {
 				if (this.unitPreviewSprite.texture !== unit.sprite.texture) {
 					this.unitPreviewSprite.texture = unit.sprite.texture;
@@ -412,7 +597,7 @@ export class AuroraBaseGameScene extends PixiScene {
 			this.unitPreviewSprite.x = 16;
 
 			this.unitInfoText.text = `${unit.id}`;
-			this.unitInfoText.x = this.unitPreviewSprite.x + this.previewSpriteSize + this.uiInnerMargin - 60;
+			this.unitInfoText.x = this.unitPreviewSprite.x + this.previewSpriteSize + this.uiInnerMargin - 70;
 			this.unitInfoText.y = this.unitPreviewBG.y + 20;
 
 			const pct = unit.healthPoints / unit.maxHealthPoints;
@@ -490,6 +675,30 @@ export class AuroraBaseGameScene extends PixiScene {
 
 	private async startEnemySequence(): Promise<void> {
 		console.log("----- Turno Enemigo (IA) -----");
+
+		// RESET flags de sanación: solo si quieres resetear de nuevo antes de sanar enemigos
+		for (const u of [...this.enemyUnits]) {
+			(u as any).hasHealedFortress = false;
+		}
+		// Sanar enemigos en fortress
+		for (const enemy of this.enemyUnits) {
+			const tx = enemy.gridX,
+				ty = enemy.gridY;
+			if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
+				const terrain = Terrain.fromCode(this.grid[ty][tx]);
+				if (terrain === Terrain.FORTRESS) {
+					if (enemy.healthPoints < enemy.maxHealthPoints) {
+						const fixed = 3;
+						const actualHeal = Math.min(fixed, enemy.maxHealthPoints - enemy.healthPoints);
+						enemy.healthPoints += actualHeal;
+						(enemy as any).hasHealedFortress = true;
+						this.allContainers.showFloatingText(actualHeal.toString(), enemy.sprite.x, enemy.sprite.y - this.tileSize * 0.3, 0xff0000);
+						console.error(`${enemy.id} se cura ${actualHeal} en Fortress.`);
+					}
+				}
+			}
+		}
+
 		this.allContainers.highlightContainer.removeChildren();
 		this.allContainers.attackHighlightContainer.removeChildren();
 		// Asegúrate de que enemyUnits tengan hasActed=false (TurnManager ya hace reset)
@@ -531,12 +740,17 @@ export class AuroraBaseGameScene extends PixiScene {
 		for (const cfg of PlayerData) {
 			if (cfg.isEnemy) {
 				const u = this.playerFactory.createEnemy(cfg);
+				if (cfg.isBoss) {
+					const bossIcon = Sprite.from("bossIcon");
+					bossIcon.scale.set(0.05);
+					bossIcon.x = u.sprite.width * 0.5;
+					bossIcon.y = 0;
+					u.sprite.addChild(bossIcon);
+				}
 				this.enemyUnits.push(u);
-				this.playerFactory.drawHealthBar(u);
 			} else {
 				const u = this.playerFactory.createAlly(cfg);
 				this.allyUnits.push(u);
-				this.playerFactory.drawHealthBar(u);
 			}
 		}
 	}
@@ -555,6 +769,10 @@ export class AuroraBaseGameScene extends PixiScene {
 	}
 
 	public override update(dt: number): void {
+		if (this.inBattle) {
+			return;
+		} // ya en batalla, ignorar
+
 		// Animar movimiento si hay pathQueue en curso
 		this.followPath(dt);
 
@@ -581,18 +799,13 @@ export class AuroraBaseGameScene extends PixiScene {
 			}
 		}
 
-		// Actualizar health bars:
-		for (const u of [...this.allyUnits, ...this.enemyUnits]) {
-			this.playerFactory.drawHealthBar(u);
-		}
-
 		this.allContainers.handleZoom();
 	}
 
 	/** Actualiza la posición visual del selector en el mundo según selectorPos */
 	private updateSelectorPosition(): void {
-		this.selector.x = this.selectorPos.x * this.tileSize;
-		this.selector.y = this.selectorPos.y * this.tileSize;
+		this.selector.x = this.selectorPos.x * this.tileSize + this.selector.width * 0.5;
+		this.selector.y = this.selectorPos.y * this.tileSize + this.selector.height * 0.5;
 	}
 
 	private getSelectableUnitAt(x: number, y: number): PlayerUnit | null {
@@ -658,6 +871,63 @@ export class AuroraBaseGameScene extends PixiScene {
 			}
 		}
 		console.log("Destino fuera de rango de movimiento");
+	}
+
+	public startBattleSequence(attacker: PlayerUnit, defender: PlayerUnit): void {
+		if (this.inBattle) {
+			return;
+		} // ya en batalla, ignorar
+
+		// Calcular crítico:
+		const critChance = 0.1;
+		const isCrit = Math.random() < critChance;
+
+		// Callback cuando la animación de batalla termina:
+		const onBattleComplete = (): void => {
+			// 1) Aplicar daño con tu lógica:
+			const tx = defender.gridX,
+				ty = defender.gridY;
+			let terrain = Terrain.PLAIN;
+			if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
+				terrain = Terrain.fromCode(this.grid[ty][tx]);
+			}
+			this.applyDamageWithTerrain(attacker, defender, terrain, isCrit);
+
+			// 2) Continuar flujo de turno:
+			attacker.hasActed = true;
+			this.clearAttackRange();
+			this.phaseManager.gamePhase = GamePhase.END;
+			console.log("Fase END: presiona Enter para continuar");
+			this.turnManager.endCurrentAction();
+
+			// 3) Remover overlay y volver al modo normal:
+			if (this.battleOverlay) {
+				this.removeChild(this.battleOverlay);
+				this.battleOverlay = null;
+			}
+			this.inBattle = false;
+		};
+
+		// Crear overlay:
+		const overlay = new BattleOverlay({
+			attackerTex: attacker.sprite.texture,
+			defenderTex: defender.sprite.texture,
+			isCrit,
+			onComplete: onBattleComplete,
+		});
+
+		// Posicionar overlay: asumimos que la escena principal ya centra su worldContainer o similar.
+		// Si la escena tiene un contenedor centrado (worldContainer), haz:
+		// this.worldContainer.addChild(overlay);
+		// y overlay.x = 0; overlay.y = 0; para centrar.
+		// Si la escena no usa worldContainer, puedes:
+		overlay.x = this.allContainers.worldContainer.width / 2; // o 0 dependiendo del anclaje
+		overlay.y = this.allContainers.worldContainer.height / 2;
+		// Pero normalmente tu PixiScene ya maneja un contenedor centrado: ajusta según tu estructura.
+		this.addChild(overlay);
+
+		this.battleOverlay = overlay;
+		this.inBattle = true;
 	}
 
 	/** Cuando followPath termina (pathQueue vacía), actualizar gridX, gridY de la unidad */
@@ -764,6 +1034,8 @@ export class AuroraBaseGameScene extends PixiScene {
 			this.clearAttackRange();
 			this.endAction();
 		});
+
+		// this.startBattleSequence(attacker, target);
 	}
 
 	/**
@@ -791,22 +1063,44 @@ export class AuroraBaseGameScene extends PixiScene {
 			});
 		} else {
 			// Hit:
-			SoundLib.playSound("performAtk_SFX", {});
+
+			// Determinar si es golpe crítico
+			const isCrit = Math.random() < attacker.criticalChance;
+
+			if (isCrit) {
+				SoundLib.playSound("crit_SFX", {}); // podés usar otro sonido
+				console.log(`¡GOLPE CRÍTICO de ${attacker.id} a ${target.id}!`);
+			} else {
+				SoundLib.playSound("performAtk_SFX", {});
+			}
 			this.animations.animateAttackEffect(attacker, target, () => {
-				this.applyDamageWithTerrain(attacker, target, terrain);
+				this.applyDamageWithTerrain(attacker, target, terrain, isCrit);
 				onComplete();
 			});
 		}
 	}
 
-	private applyDamageWithTerrain(attacker: PlayerUnit, target: PlayerUnit, terrain: Terrain): void {
+	private applyDamageWithTerrain(attacker: PlayerUnit, target: PlayerUnit, terrain: Terrain, isCrit: boolean): void {
 		const rawDamage = attacker.strength;
 		const totalDefense = target.defense + terrain.defBonus;
-		const damage = Math.max(0, rawDamage - totalDefense);
+		let damage = Math.max(0, rawDamage - totalDefense);
+
+		if (isCrit) {
+			damage *= 2; // o 1.5 si preferís un sistema más balanceado
+		}
+
 		target.healthPoints = Math.max(0, target.healthPoints - damage);
 		console.log(`${attacker.id} hace ${damage} a ${target.id}. (DEF base ${target.defense} + DEF terreno ${terrain.defBonus})`);
-		this.allContainers.showFloatingText(`${damage}`, target.sprite.x, target.sprite.y - this.tileSize * 0.3, 0xff0000);
-		this.playerFactory.drawHealthBar(target);
+
+		const yOffset = target.sprite.y - this.tileSize * 0.3;
+
+		if (damage !== 0) {
+			const color = isCrit ? 0xffcc00 : 0xff0000; // 💥 amarillo dorado para críticos
+			this.allContainers.showFloatingText(`${damage}`, target.sprite.x, yOffset, color);
+		} else {
+			this.allContainers.showFloatingText(`NO DAMAGE`, target.sprite.x, yOffset, 0xff0000);
+		}
+
 		if (target.healthPoints <= 0) {
 			console.log(`${target.id} ha sido derrotado.`);
 			this.handleUnitDefeat(target);
@@ -827,6 +1121,12 @@ export class AuroraBaseGameScene extends PixiScene {
 		// Remover sprite de la escena:
 		if (unit.sprite.parent) {
 			unit.sprite.parent.removeChild(unit.sprite);
+		}
+
+		// Si es jefe enemigo, mostramos victoria
+		if (unit.isBoss && unit.isEnemy) {
+			console.log("¡Ganaste!");
+			// Aquí podrías además disparar lógica adicional de fin de juego, transición, etc.
 		}
 
 		// Quitar de la lista correspondiente:
@@ -876,7 +1176,6 @@ export class AuroraBaseGameScene extends PixiScene {
 	 */
 	private animateMovePromise(unit: PlayerUnit, pathPts: Point[], targetGridX: number, targetGridY: number): Promise<void> {
 		return new Promise((resolve) => {
-			// Similar a tu confirmMove + followPath, pero sin input:
 			// 1) Ajustar selectedUnit temporalmente para que followPath lo use:
 			const prevSelected = this.selectedUnit;
 			this.selectedUnit = unit;
@@ -905,12 +1204,19 @@ export class AuroraBaseGameScene extends PixiScene {
 
 	private animateAttackAndApplyDamagePromise(attacker: PlayerUnit, target: PlayerUnit): Promise<void> {
 		return new Promise((resolve) => {
-			this.animations.animateAttackEffect(attacker, target, () => {
-				SoundLib.playSound("performAtk_SFX", {});
+			// Determinar si es golpe crítico
+			const isCrit = Math.random() < attacker.criticalChance;
 
-				// OJO: aquí debe usar applyDamageWithTerrain, no el viejo applyDamage sin terreno
+			this.animations.animateAttackEffect(attacker, target, () => {
+				if (isCrit) {
+					SoundLib.playSound("crit_SFX", {});
+					console.log(`¡GOLPE CRÍTICO de ${attacker.id} a ${target.id}!`);
+				} else {
+					SoundLib.playSound("performAtk_SFX", {});
+				}
+
 				const terrain = Terrain.fromCode(this.grid[target.gridY][target.gridX]);
-				this.applyDamageWithTerrain(attacker, target, terrain);
+				this.applyDamageWithTerrain(attacker, target, terrain, isCrit); // 🟡 Pasamos isCrit
 				resolve();
 			});
 		});
@@ -919,7 +1225,6 @@ export class AuroraBaseGameScene extends PixiScene {
 	private startAllyTurn(): void {
 		this.turnManager.startAllyTurn();
 
-		// Quizá reposicionar selector a la primer unidad aliada
 		const firstAlly = this.allyUnits[0];
 		if (firstAlly) {
 			this.selectorPos.set(firstAlly.gridX, firstAlly.gridY);
@@ -932,13 +1237,12 @@ export class AuroraBaseGameScene extends PixiScene {
 	public override onResize(w: number, h: number): void {
 		this.allContainers.viewWidth = w;
 		this.allContainers.viewHeight = h;
-		ScaleHelper.setScaleRelativeToIdeal(this.allContainers.worldContainer, w, h, 700, 520, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToIdeal(this.allContainers.worldContainer, w, h, 770, 510, ScaleHelper.FIT);
 		this.allContainers.worldContainer.x = w / 2;
 		this.allContainers.worldContainer.y = h / 2;
 		ScaleHelper.setScaleRelativeToIdeal(this.allContainers.uiContainer, w, h, 1536, 1024, ScaleHelper.FIT);
 		this.allContainers.uiContainer.x = 0;
 		this.allContainers.uiContainer.y = 0;
-		// this.worldContainer.scale.set(this.zoom, this.zoom);
 		ScaleHelper.setScaleRelativeToIdeal(this.allContainers.uiRightContainer, w, h, 1536, 1024, ScaleHelper.FIT);
 		this.allContainers.uiRightContainer.x = w;
 		this.allContainers.uiRightContainer.y = h;

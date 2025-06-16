@@ -1,7 +1,7 @@
 // PlayerFactory.ts
 import type { Container } from "pixi.js";
 import { Sprite, Graphics } from "pixi.js";
-import type { PlayerUnit, UnitConfig } from "./IUnit";
+import type { PlayerUnit, UnitConfig } from "../Data/IUnit";
 
 export class PlayerFactory {
 	private worldContainer: Container;
@@ -53,8 +53,11 @@ export class PlayerFactory {
 			avoid: config.avoid,
 			maxHealthPoints: config.maxHealthPoints,
 			healthPoints: config.maxHealthPoints,
+			criticalChance: config.criticalChance,
 
 			healthBar,
+			hasHealedFortress: false, // inicializamos aquí
+			isBoss: config.isBoss ?? false, // ✅ Valor opcional, default en false
 		};
 
 		return unit;
@@ -161,4 +164,16 @@ export class PlayerFactory {
 			.drawRect(x + (this.tileSize - w) / 2, y, w * pct, h)
 			.endFill();
 	}
+}
+
+export function criticalDamage(attacker: PlayerUnit, defender: PlayerUnit): number {
+	function isCriticalHit(attacker: PlayerUnit): boolean {
+		return Math.random() < attacker.criticalChance;
+	}
+	const baseDamage = Math.max(0, attacker.strength - defender.defense);
+	if (isCriticalHit(attacker)) {
+		console.log("¡Golpe crítico!");
+		return baseDamage * 2; // O 1.5, según quieras
+	}
+	return baseDamage;
 }

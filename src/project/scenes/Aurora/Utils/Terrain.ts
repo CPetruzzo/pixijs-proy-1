@@ -21,9 +21,12 @@ export class Terrain {
 	// Instancias estáticas:
 	public static readonly PLAIN = new Terrain(0, "Llanura", 0, 0, 1);
 	public static readonly FOREST = new Terrain(1, "Bosque", 0, 0.5, 2);
-	public static readonly MOUNTAIN = new Terrain(2, "Montaña", 5, 0.1, 3);
-	public static readonly FORTRESS = new Terrain(3, "Fortaleza", 5, 0, 1);
+	public static readonly MOUNTAIN = new Terrain(2, "Montaña", 5, 0.1, 4);
+	public static readonly FORTRESS = new Terrain(3, "Fortaleza", 3, 0, 1);
 	public static readonly OBSTACLE = new Terrain(99, "Obstáculo", 0, 0, Infinity); // no transitable
+
+	public static readonly BUILDING = new Terrain(99, "Edificio", 5, 0, 1);
+	public static readonly GATE = new Terrain(99, "Puerta", 5, 0, 1);
 
 	/** Mapear código numérico a instancia Terrain */
 	public static fromCode(code: number): Terrain {
@@ -40,7 +43,7 @@ export class Terrain {
 				return Terrain.OBSTACLE;
 			default:
 				// si hay otros códigos, podrías manejarlos; por defecto tratamos como Plain:
-				console.warn(`Unknown terrain code ${code}, usando Plain por defecto.`);
+				// console.warn(`Unknown terrain code ${code}, usando Plain por defecto.`);
 				return Terrain.PLAIN;
 		}
 	}

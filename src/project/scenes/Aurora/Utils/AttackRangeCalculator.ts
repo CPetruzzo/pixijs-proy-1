@@ -1,5 +1,5 @@
 // AttackRangeCalculator.ts
-import type { PlayerUnit } from "./IUnit";
+import type { PlayerUnit } from "../Data/IUnit";
 
 export class AttackRangeCalculator {
 	private grid: { width: number; height: number; isWalkable(x: number, y: number): boolean };

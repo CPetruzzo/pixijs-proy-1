@@ -1,7 +1,7 @@
 import type { Point } from "pixi.js";
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { Easing, Tween } from "tweedle.js";
-import { Keyboard } from "../../../engine/input/Keyboard";
+import { Keyboard } from "../../../../engine/input/Keyboard";
 
 export class AllContainers extends Container {
 	public worldContainer = new Container();
@@ -47,7 +47,7 @@ export class AllContainers extends Container {
 	 * Esto es opcional, sirve para feedback visual.
 	 */
 	public showFloatingText(text: string, worldX: number, worldY: number, color: number): void {
-		const style = new TextStyle({ fill: color.toString(16), fontSize: 16, fontWeight: "bold" });
+		const style = new TextStyle({ fill: color.toString(16), fontSize: 16, fontWeight: "bold", fontFamily: "Pixelate-Regular", dropShadow: true, dropShadowDistance: 2 });
 		const txt = new Text(text, style);
 		txt.anchor.set(0.5);
 		txt.x = worldX;

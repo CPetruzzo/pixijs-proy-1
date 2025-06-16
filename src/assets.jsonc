@@ -316,9 +316,17 @@
       "assets": {
         "performAtk_SFX": "./sfx/BlockBreak1.wav",
         "miss_SFX": "./sfx/miss_SFX.mp3",
+        "crit_SFX": "./sfx/Bosshit1.wav",
+        "menuconfirm": "./sfx/Text1.wav",
+        "menumove": "./sfx/Cancel1.wav",
 
         "frameBlue": "./img/aurora-latest/frameBlue.jpg",
         "frameOrange": "./img/aurora-latest/frameOrange.jpg",
+
+        "selector": "./img/aurora-latest/selector.png",
+        "bossIcon":  "./img/aurora-latest/bossIcon.png",
+        "casa":  "./img/aurora-latest/casa.png",
+
         "map1": "./img/aurora-latest/mockup-map1.png",
         "map2raw": "./img/aurora-latest/mockup-map2.png",
         "map2": "./img/aurora-latest/mockup-map2.jpg",
@@ -328,8 +336,11 @@
         "battle1": "./img/aurora-latest/mockup-battle1.png",
         "battle2": "./img/aurora-latest/mockup-battle2.png",
         "battle3": "./img/aurora-latest/mockup-battle3.png",
+        
         "colonial1": "./img/aurora-latest/colonial1.png",
         "quilmes1": "./img/aurora-latest/quilmes1.png",
+        "quilmes2": "./img/aurora-latest/quilmes2.png",
+                
         "zamba": "./music/zamba.mp3"
       }
     },

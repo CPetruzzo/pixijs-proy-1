@@ -1,6 +1,6 @@
 // EnemyAI.ts
 import { Point } from "pixi.js";
-import type { PlayerUnit } from "./IUnit";
+import type { PlayerUnit } from "../Data/IUnit";
 import type { PathFinder } from "./PathFinder";
 import type { AttackRangeCalculator } from "./AttackRangeCalculator";
 
@@ -30,6 +30,31 @@ export class EnemyAI {
 		// elegir objetivo
 		const aliveAllies = allyUnits.filter((a) => a.healthPoints > 0);
 		if (aliveAllies.length === 0) {
+			return;
+		}
+
+		// 2) Si es jefe, solo chequeamos ataque en posición fija
+		if (enemy.isBoss) {
+			// Encontrar el objetivo más cercano (opcional, o podrías priorizar otro criterio)
+			let bestAlly = aliveAllies[0];
+			let bestDist = Math.abs(bestAlly.gridX - enemy.gridX) + Math.abs(bestAlly.gridY - enemy.gridY);
+			for (const ally of aliveAllies) {
+				const d = Math.abs(ally.gridX - enemy.gridX) + Math.abs(ally.gridY - enemy.gridY);
+				if (d < bestDist) {
+					bestDist = d;
+					bestAlly = ally;
+				}
+			}
+			// Calcular rango de ataque desde la posición actual
+			const rangeSet = this.attackCalc.computeAttackRange(enemy);
+			const keyAlly = `${bestAlly.gridX},${bestAlly.gridY}`;
+			if (rangeSet.has(keyAlly)) {
+				// Ataca directamente
+				await this.animateAttackAndDamage(enemy, bestAlly);
+			} else {
+				// No puede atacar: se queda quieto, termina su turno sin moverse
+				console.log(`${enemy.id} (boss) no tiene objetivos en rango, permanece en su celda.`);
+			}
 			return;
 		}
 		// buscar closest

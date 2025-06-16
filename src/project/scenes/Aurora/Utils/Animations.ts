@@ -1,6 +1,6 @@
 import type { Sprite } from "pixi.js";
 import { Easing, Tween } from "tweedle.js";
-import type { PlayerUnit } from "./IUnit";
+import type { PlayerUnit } from "../Data/IUnit";
 import type { AllContainers } from "./AllContainers";
 
 export class Animations {

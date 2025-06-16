@@ -1,5 +1,5 @@
 import { Graphics, Text, TextStyle } from "pixi.js";
-import type { AllContainers } from "./AllContainers";
+import type { AllContainers } from "../Utils/AllContainers";
 
 export enum DialoguePhase {
 	DIALOG0,
@@ -10,6 +10,7 @@ export enum DialoguePhase {
 
 export enum GamePhase {
 	SELECT,
+	CHOICE,
 	MOVE,
 	MOVING,
 	ATTACK,

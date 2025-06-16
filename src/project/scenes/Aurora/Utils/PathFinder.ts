@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 // PathFinder.ts
-import type { PlayerUnit } from "./IUnit";
+import type { PlayerUnit } from "../Data/IUnit";
 
 export interface IGrid {
 	readonly width: number;

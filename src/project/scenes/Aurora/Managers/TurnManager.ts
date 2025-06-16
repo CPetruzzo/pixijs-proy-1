@@ -1,5 +1,5 @@
 // TurnManager.ts
-import type { PlayerUnit } from "./IUnit";
+import type { PlayerUnit } from "../Data/IUnit";
 
 export interface TurnCallbacks {
 	onAllySelectNext: (unit: PlayerUnit | null) => void;
@@ -29,7 +29,7 @@ export class TurnManager {
 	public startAllyTurn(): void {
 		this.currentSide = TurnSide.ALLY;
 		// reset hasActed:
-		this.allyUnits.forEach((u) => (u.hasActed = false));
+		this.allyUnits.forEach((u) => ((u.hasActed = false), (u.hasHealedFortress = false)));
 		// notificar escena para posicionar selector sobre primer aliado:
 		const next = this.allyUnits.find((u) => !u.hasActed) || null;
 		this.callbacks.onAllySelectNext(next);
