@@ -15,8 +15,8 @@ export class AuroraBattleScene extends PixiScene {
 	private onComplete: () => void;
 
 	// Ajustes de layout/animación:
-	private readonly xOffset = 75; // desplazamiento horizontal desde el centro
-	private readonly spriteScale = 0.6; // escala de los sprites en batalla
+	private readonly xOffset = 155; // desplazamiento horizontal desde el centro
+	private readonly spriteScale = 1; // escala de los sprites en batalla
 
 	/**
 	 * @param attackerTex Opcional Texture o clave de textura para atacante. Si no se provee, entra en modo debug y usa textura por defecto.
@@ -26,18 +26,17 @@ export class AuroraBattleScene extends PixiScene {
 	constructor(attackerTex?: Texture | string, defenderTex?: Texture | string, onComplete?: () => void) {
 		super();
 
-		const spr = Sprite.from("battle3");
+		const spr = Sprite.from("battle2");
 		spr.alpha = 0.7;
 		spr.anchor.set(0.5)
-		spr.scale.set(0.5);
 
 		this.worldContainer.addChildAt(spr, 0);
 		// ---------------------------------------
 		// Detectar modo debug si no se pasaron texturas ni callback
 		const debugMode = !attackerTex || !defenderTex;
 		// Texturas de prueba en modo debug (asegurate de que existan en tus bundles)
-		const DEBUG_ATTACKER_KEY = "colonial1"; // por ejemplo, textura de enemigo de prueba
-		const DEBUG_DEFENDER_KEY = "quilmes1"; // por ejemplo, textura de aliado de prueba
+		const DEBUG_ATTACKER_KEY = "battle_colonial"; // por ejemplo, textura de enemigo de prueba
+		const DEBUG_DEFENDER_KEY = "battle_quilmes"; // por ejemplo, textura de aliado de prueba
 
 		// Asignar textura atacante: si se pasó, usarla; si no, debug:
 		const atkTex: Texture | string = attackerTex ? attackerTex : DEBUG_ATTACKER_KEY;
@@ -80,9 +79,9 @@ export class AuroraBattleScene extends PixiScene {
 
 		// Posicionar relativo al centro (worldContainer estará centrado en onResize)
 		this.attackerSprite.x = -this.xOffset;
-		this.attackerSprite.y = 0;
+		this.attackerSprite.y = 50;
 		this.defenderSprite.x = this.xOffset;
-		this.defenderSprite.y = 0;
+		this.defenderSprite.y = 50;
 
 		// Iniciar animación de batalla
 		this.playBattleAnimation();
@@ -105,7 +104,7 @@ export class AuroraBattleScene extends PixiScene {
 		// Opcional: si quisieras un efecto especial en modo crítico, podrías pasar un flag isCrit y tintar aquí.
 
 		// 1) Avance del atacante hacia el defensor
-		const advanceDistance = 100; // px; ajustar según escala y tamaño de sprite
+		const advanceDistance = 200; // px; ajustar según escala y tamaño de sprite
 
 		new Tween(this.attackerSprite)
 			.to({ x: origAttX + advanceDistance }, 300)

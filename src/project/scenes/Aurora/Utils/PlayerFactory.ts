@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 // PlayerFactory.ts
 import type { Container } from "pixi.js";
-import { Sprite, Graphics } from "pixi.js";
+import { Sprite, Graphics, Texture } from "pixi.js";
 import type { PlayerUnit, UnitConfig } from "../Data/IUnit";
+import { StateMachineAnimator } from "../../../../engine/animation/StateMachineAnimation";
 
 export class PlayerFactory {
 	private worldContainer: Container;
@@ -22,22 +24,83 @@ export class PlayerFactory {
 	 * No dibuja la health bar por completo (la escena puede llamar a drawHealthBar).
 	 */
 	public createUnit(config: UnitConfig): PlayerUnit {
-		// 1. Crear sprite
+		// --- Sprite en el mapa ---
 		const sprite = Sprite.from(config.textureKey);
 		sprite.anchor.set(0.5);
 		sprite.scale.set(0.4);
-		// Posicionar en pixeles centrado en tile:
 		sprite.x = config.gridX * this.tileSize + this.tileSize / 2;
 		sprite.y = config.gridY * this.tileSize + this.tileSize / 2;
 
-		// 2. Crear healthBar (Graphics vacío, se dibujará luego)
 		const healthBar = new Graphics();
-
-		// 3. Añadir al contenedor
 		this.worldContainer.addChild(sprite);
 		this.worldContainer.addChild(healthBar);
 
-		// 4. Construir el objeto PlayerUnit
+		// faceSprite (UI preview)
+		let faceSprite: Sprite | undefined;
+		if (config.faceKey) {
+			faceSprite = Sprite.from(config.faceKey);
+			faceSprite.anchor.set(0.5);
+			faceSprite.scale.set(0.5);
+		} else {
+			faceSprite = Sprite.from(config.textureKey);
+			faceSprite.anchor.set(0.5);
+			faceSprite.scale.set(0.5);
+		}
+
+		// battleTextureKey base (clave para texturas de combate)
+		let battleTextureKey: string;
+		if (config.battleTextureKey) {
+			battleTextureKey = config.battleTextureKey;
+		} else {
+			battleTextureKey = config.isEnemy ? "battle_quilmes" : "battle_colonial";
+		}
+
+		// --- Crear StateMachineAnimator para combate ---
+		const battleAnimator = new StateMachineAnimator();
+		battleAnimator.anchor.set(0.5);
+		battleAnimator.scale.set(1.0);
+
+		// 1) Estado "idle"
+		const idleKey = `${battleTextureKey}_idle`;
+		battleAnimator.addState("idle", [Texture.from(idleKey)], 4, true);
+
+		// 2) Estado "attack": generar lista de textures de frames 1..N
+		//    y determinar fps dinámicamente según si es aliado/enemigo o según la clave.
+		// Primero, cuántos frames tiene cada tipo (ya teníamos frameCountMap):
+		const frameCountMap: Record<string, number> = {
+			battle_quilmes: 8,
+			battle_colonial: 28,
+			// si hay más, agregarlos...
+		};
+		const maxFrames = frameCountMap[battleTextureKey] ?? 0;
+		const attackTextures: Texture[] = [];
+		for (let i = 1; i <= maxFrames; i++) {
+			const key = `${battleTextureKey}_attack_${i}`;
+			// Texture.from(...) devuelve un Texture aunque no exista en cache;
+			// idealmente el loader ya cargó "battleTextureKey_attack_i".
+			attackTextures.push(Texture.from(key));
+		}
+
+		if (attackTextures.length > 0) {
+			// Definir un mapeo de fps según clave o según config.isEnemy.
+			// Por ejemplo, los aliados (colonial) más rápidos: fps mayor;
+			// enemigos (quilmes) más lentos: fps menor:
+			const attackFpsMap: Record<string, number> = {
+				battle_quilmes: 8, // animación de ataque de enemigo más lenta
+				battle_colonial: 35, // animación de ataque de aliado más rápida
+				// agregar otros si se requieren...
+			};
+			// Tomar fps según battleTextureKey; si no hay mapping, un default:
+			const fps = attackFpsMap[battleTextureKey] ?? 20;
+
+			battleAnimator.addState("attack", attackTextures, fps, false);
+		}
+		// Opcional: otros estados, p.ej. "hit", "die", etc., con lógica similar (frameCountMap y fpsMap).
+
+		// Empezar en "idle"
+		battleAnimator.playState("idle");
+		// No lo añadimos al worldContainer aquí; se usará en BattleOverlay.
+
 		const unit: PlayerUnit = {
 			id: config.id,
 			gridX: config.gridX,
@@ -45,24 +108,23 @@ export class PlayerFactory {
 			puntosDeMovimiento: config.puntosDeMovimiento,
 			attackRange: config.attackRange,
 			sprite,
+			faceSprite,
 			hasActed: false,
 			isEnemy: config.isEnemy,
-
+			isBoss: config.isBoss ?? false,
 			strength: config.strength,
 			defense: config.defense,
 			avoid: config.avoid,
 			maxHealthPoints: config.maxHealthPoints,
 			healthPoints: config.maxHealthPoints,
 			criticalChance: config.criticalChance,
-
 			healthBar,
-			hasHealedFortress: false, // inicializamos aquí
-			isBoss: config.isBoss ?? false, // ✅ Valor opcional, default en false
+			hasHealedFortress: false,
+			battleTextureKey,
+			battleAnimator,
 		};
-
 		return unit;
 	}
-
 	/** Apply gray-out effect to show unit already acted */
 	public grayOutUnit(unit: PlayerUnit): void {
 		// Option A: simple tint + alpha

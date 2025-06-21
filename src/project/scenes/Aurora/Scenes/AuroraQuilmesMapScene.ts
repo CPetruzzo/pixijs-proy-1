@@ -18,8 +18,10 @@ import { EnemyAI } from "../Utils/EnemyAI";
 import { InputHandler } from "../Utils/InputHandler";
 import { getTerrainColor, Terrain } from "../Utils/Terrain";
 import { GridKilme } from "../Grids/GridKilme";
-import { Easing, Tween } from "tweedle.js";
 import { BattleOverlay } from "./BattleOverlay";
+import { PreviewUnit } from "../PreviewUnit";
+import { ChoiceMenu } from "../Utils/ChoiceMenu";
+import { TurnDisplay } from "../Utils/TurnDisplay";
 
 export class Node {
 	// eslint-disable-next-line prettier/prettier
@@ -76,25 +78,20 @@ export class AuroraQuilmesMapScene extends PixiScene {
 	private lastDebugSelectorPos: Point | null = null;
 
 	private terrainInfoText!: Text;
-	private unitPreviewSprite: Sprite | null = null;
 	private unitInfoText!: Text;
 	private unitHealthBarPreview!: Graphics;
 
-	// Tamaños y offsets relativos dentro de uiLeftContainer / uiRightContainer:
-	private previewSpriteSize = 128; // ejemplo: 48px de ancho/alto de la miniatura
-	private healthBarPreviewWidth = 64;
-	private healthBarPreviewHeight = 6;
 	private uiInnerMargin = 8; // margen interno en containers
 
 	private preMovePos: Point | null = null;
-	private unitPreviewBG: Sprite;
 
-	private menuContainer: Container | null = null;
 	private menuOptions: string[] = ["Atacar", "Mover", "Ítem", "Info", "Esperar"];
-	private menuTexts: Text[] = [];
-	private menuIndex: number = 0;
 	private inBattle: boolean = false;
 	private battleOverlay: BattleOverlay | null = null;
+
+	private prevUnit: PreviewUnit;
+	private choiceMenu: ChoiceMenu;
+	private turnDisplay: TurnDisplay;
 
 	// #endregion VARIABLES
 
@@ -176,6 +173,14 @@ export class AuroraQuilmesMapScene extends PixiScene {
 			(x, y) => this.allyUnits.find((u) => u.gridX === x && u.gridY === y),
 			(x, y) => this.enemyUnits.find((u) => u.gridX === x && u.gridY === y)
 		);
+
+		// Dentro de tu escena, en constructor o en init UI:
+		this.turnDisplay = new TurnDisplay();
+		// Colócalo donde quieras en la UI, por ejemplo esquina superior derecha:
+		this.turnDisplay.x = 10; // o según tu layout
+		this.turnDisplay.y = 40; // debajo de phaseText si lo deseas
+		this.allContainers.uiContainer.addChild(this.turnDisplay);
+
 		this.turnManager = new TurnManager(this.allyUnits, this.enemyUnits, {
 			onAllySelectNext: (unit) => {
 				if (unit) {
@@ -201,9 +206,14 @@ export class AuroraQuilmesMapScene extends PixiScene {
 					}
 				}
 			},
-			onStartEnemyTurn: () => this.startEnemySequence(),
+			onStartEnemyTurn: () => {
+				this.startEnemySequence();
+			},
 			onStartAllyTurn: () => {
 				this.startAllyTurn();
+			},
+			onTurnChange: (side) => {
+				this.turnDisplay.update(side);
 			},
 		});
 
@@ -214,14 +224,33 @@ export class AuroraQuilmesMapScene extends PixiScene {
 				const pathPts = pathGrid.map((n) => new Point(n.x * this.tileSize + this.tileSize / 2, n.y * this.tileSize + this.tileSize / 2));
 				await this.animateMovePromise(unit, pathPts, destX, destY);
 			},
-			(att, tgt) => this.animateAttackAndApplyDamagePromise(att, tgt)
+			// callback de ataque de IA:
+			async (attacker: PlayerUnit, target: PlayerUnit) => {
+				// 1) lógica de ataque: aplicar daño, marcar hasActed
+				// Podemos reutilizar performAttack, pero adaptarlo para retorno Promise:
+				await this.enemyPerformAttack(attacker, target);
+			}
 		);
+
+		// Instanciar ChoiceMenu una sola vez:
+		this.choiceMenu = new ChoiceMenu({
+			options: this.menuOptions,
+			frameKey: "frameBlue",
+			x: 656, // posición por defecto, puedes reubicar
+			y: 7,
+			soundOnNavigate: { name: "menumove", volume: 0.3 },
+			highlightColor: "#8b4915",
+			normalColor: "#ffffff",
+			// textStyle: {...} // si deseas personalizar
+		});
+		// Añadir al contenedor apropiado:
+		this.allContainers.worldContainer.addChild(this.choiceMenu);
 
 		this.inputHandler = new InputHandler({
 			onMoveSelector: (dx, dy) => this.onMoveSelector(dx, dy),
 			onSelect: () => this.trySelectUnit(), // si aún la necesitas
 			onChoice: () => this.onChoice(),
-			onNavigateMenu: (delta) => this.navigateChoice(delta),
+			onNavigateMenu: (delta) => this.onNavigateMenu(delta),
 			onConfirmMenu: () => this.confirmChoice(),
 			onConfirmMove: () => this.confirmMove(),
 			onSkipAttack: () => this.skipAttack(),
@@ -246,15 +275,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		this.terrainInfoText.x = 0;
 		this.terrainInfoText.y = 0;
 
-		this.unitPreviewBG = Sprite.from("frameBlue");
-		// Mantén aquí la escala y la posición que ya tenías:
-		this.unitPreviewBG.scale.set(0.4, 0.3);
-		this.unitPreviewBG.alpha = 0.6;
-		// Posición fija como antes:
-		this.unitPreviewBG.x = 0;
-		this.unitPreviewBG.y = this.allContainers.worldContainer.height - this.unitPreviewBG.height - 255;
-		this.allContainers.worldContainer.addChild(this.unitPreviewBG);
-
 		// Preview unidad:
 		this.unitInfoText = new Text("", new TextStyle({ fill: "#ffffff", dropShadow: true, dropShadowDistance: 2, fontFamily: "Pixelate-Regular", fontSize: 18 }));
 		this.unitInfoText.x = 0;
@@ -274,8 +294,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 				}
 			}
 		}
-		// Llama inicialmente:
-		this.updateDebugCellInfo();
 
 		const alphaValue = 0;
 		for (let y = 0; y < this.grid.length; y++) {
@@ -303,19 +321,33 @@ export class AuroraQuilmesMapScene extends PixiScene {
 				this.tiles.push({ tile: g, i: x, j: y });
 			}
 		}
+
+		this.prevUnit = new PreviewUnit(this.tileSize, "frameBlue");
+
+		const x0 = 0;
+		const y0 = this.allContainers.worldContainer.height - /* offset */ 360;
+		this.prevUnit.position.set(x0, y0);
+		this.allContainers.worldContainer.addChild(this.prevUnit);
+
+		const x = this.selectorPos.x,
+			y = this.selectorPos.y;
+		const ally = this.allyUnits.find((u) => u.gridX === x && u.gridY === y);
+		const enemy = this.enemyUnits.find((u) => u.gridX === x && u.gridY === y);
+		const unit = ally ?? enemy ?? null;
+
+		this.prevUnit.update(unit, this.selector);
 	}
 
 	private confirmChoice(): void {
 		if (this.phaseManager.gamePhase !== GamePhase.CHOICE) {
 			return;
 		}
-		const choice = this.menuOptions[this.menuIndex];
-		// Suponemos selectedUnit está asignada
-		const unit = this.selectedUnit;
-		this.hideChoiceMenu();
+		const choice = this.choiceMenu.getSelectedOption();
+		this.choiceMenu.close();
 
 		SoundLib.playSound("menuconfirm", { volume: 0.3 });
 
+		const unit = this.selectedUnit;
 		switch (choice) {
 			case "Mover":
 				if (unit) {
@@ -409,7 +441,7 @@ export class AuroraQuilmesMapScene extends PixiScene {
 
 			case GamePhase.CHOICE:
 				// Cerrar menú y volver a SELECT sin seleccionar unidad
-				this.hideChoiceMenu();
+				this.choiceMenu.close();
 				this.selectedUnit = null;
 				this.phaseManager.gamePhase = GamePhase.SELECT;
 				this.updateDebugCellInfo();
@@ -456,85 +488,17 @@ export class AuroraQuilmesMapScene extends PixiScene {
 			return;
 		}
 		this.selectedUnit = unit;
-		this.showChoiceMenu();
+		this.choiceMenu.open();
 		this.phaseManager.gamePhase = GamePhase.CHOICE;
 	}
 
-	private showChoiceMenu(): void {
-		if (this.menuContainer) {
-			return;
-		} // ya visible
-		// Crear un contenedor sencillo para el menú
-		this.menuContainer = new Container();
-		const bg = Sprite.from("frameBlue");
-		bg.anchor.set(0.5);
-		bg.alpha = 0.7;
-		bg.scale.set(0.25, 0.56);
-		bg.x = bg.width * 0.5;
-		bg.y = bg.height * 0.47;
-		this.menuContainer.addChild(bg);
-
-		this.menuTexts = [];
-		for (let i = 0; i < this.menuOptions.length; i++) {
-			const txt = new Text(
-				this.menuOptions[i],
-				new TextStyle({ fill: "#ffffff", fontFamily: "Pixelate-Regular", dropShadow: true, dropShadowDistance: 2, fontSize: 20, wordWrap: true, wordWrapWidth: 280 })
-			);
-			txt.x = 8;
-			txt.y = 24 + i * 32;
-			this.menuContainer.addChild(txt);
-			this.menuTexts.push(txt);
-		}
-		// Posicionar el menú cerca de la unidad/selector, p.ej. encima o en UI:
-		// Aquí puedes ajustar la posición; ejemplo simple en esquina:
-		this.menuContainer.x = 656;
-		this.menuContainer.y = 7;
-		this.allContainers.worldContainer.addChild(this.menuContainer);
-
-		this.menuIndex = 0;
-		this.updateMenuHighlight();
-	}
-
-	private hideChoiceMenu(): void {
-		if (!this.menuContainer) {
+	private onNavigateMenu(delta: number): void {
+		if (this.phaseManager.gamePhase !== GamePhase.CHOICE) {
 			return;
 		}
-		this.allContainers.uiContainer.removeChild(this.menuContainer);
-		this.menuContainer.destroy({ children: true });
-		this.menuContainer = null;
-		this.menuTexts = [];
-		this.menuIndex = 0;
+		this.choiceMenu.navigate(delta);
 	}
 
-	private navigateChoice(delta: number): void {
-		if (this.phaseManager.gamePhase !== GamePhase.CHOICE || !this.menuContainer) {
-			return;
-		}
-		SoundLib.playSound("menumove", { volume: 0.3 });
-		const n = this.menuOptions.length;
-		this.menuIndex = (this.menuIndex + delta + n) % n;
-		this.updateMenuHighlight();
-	}
-
-	private updateMenuHighlight(): void {
-		if (!this.menuTexts) {
-			return;
-		}
-		for (let i = 0; i < this.menuTexts.length; i++) {
-			if (i === this.menuIndex) {
-				this.menuTexts[i].style.fill = "#8b4915";
-			} else {
-				this.menuTexts[i].style.fill = "#ffffff";
-			}
-		}
-	}
-
-	/**
-	 * Actualiza this.debugText con info de la celda bajo el selector:
-	 * - Coordenadas
-	 * - Tipo de terreno
-	 * - Si hay unidad aliada o enemiga: id y stats
-	 */
 	private updateDebugCellInfo(): void {
 		const x = this.selectorPos.x,
 			y = this.selectorPos.y;
@@ -552,75 +516,7 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		const enemy = this.enemyUnits.find((u) => u.gridX === x && u.gridY === y);
 		const unit = ally ?? enemy ?? null;
 
-		// Manejo de unitPreviewBG (frameBlue)
-		if (unit) {
-			// Crear solo la primera vez
-			if (!this.unitPreviewBG) {
-				this.unitPreviewBG.visible = true;
-			}
-			// Solo hacer visible
-			this.unitPreviewBG.visible = true;
-		} else {
-			// No hay unidad: solo ocultar
-			if (this.unitPreviewBG) {
-				this.unitPreviewBG.visible = false;
-			}
-		}
-
-		// Preview de sprite lateral, health bar, etc.
-		if (!unit) {
-			if (this.unitPreviewSprite) {
-				this.allContainers.uiLeftContainer.removeChild(this.unitPreviewSprite);
-				this.unitPreviewSprite.destroy();
-				this.unitPreviewSprite = null;
-			}
-			this.unitInfoText.text = "";
-			this.unitHealthBarPreview.clear();
-		} else {
-			new Tween(this.selector)
-				.from({ scale: { x: 0.1, y: 0.1 } })
-				.to({ scale: { x: 0.08, y: 0.08 } }, 350)
-				.yoyo(true)
-				.easing(Easing.Bounce.Out)
-				.start();
-
-			if (this.unitPreviewSprite) {
-				if (this.unitPreviewSprite.texture !== unit.sprite.texture) {
-					this.unitPreviewSprite.texture = unit.sprite.texture;
-				}
-			} else {
-				this.unitPreviewSprite = Sprite.from(unit.sprite.texture);
-				this.unitPreviewSprite.scale.set(0.5);
-				this.unitPreviewSprite.y = this.unitPreviewBG.y + 16;
-				this.allContainers.worldContainer.addChild(this.unitPreviewSprite);
-			}
-			this.unitPreviewSprite.x = 16;
-
-			this.unitInfoText.text = `${unit.id}`;
-			this.unitInfoText.x = this.unitPreviewSprite.x + this.previewSpriteSize + this.uiInnerMargin - 70;
-			this.unitInfoText.y = this.unitPreviewBG.y + 20;
-
-			const pct = unit.healthPoints / unit.maxHealthPoints;
-			this.unitHealthBarPreview.clear();
-			this.unitHealthBarPreview.beginFill(0x333333);
-			this.unitHealthBarPreview.drawRect(0, 0, this.healthBarPreviewWidth, this.healthBarPreviewHeight);
-			this.unitHealthBarPreview.endFill();
-			let color = 0x00ff00;
-			if (pct < 0.3) {
-				color = 0xff0000;
-			} else if (pct < 0.6) {
-				color = 0xffff00;
-			}
-			this.unitHealthBarPreview.beginFill(color);
-			this.unitHealthBarPreview.drawRect(1, 1, Math.max(0, (this.healthBarPreviewWidth - 2) * pct), this.healthBarPreviewHeight - 2);
-			this.unitHealthBarPreview.endFill();
-			this.unitHealthBarPreview.lineStyle(1, 0x000000);
-			this.unitHealthBarPreview.drawRect(0, 0, this.healthBarPreviewWidth, this.healthBarPreviewHeight);
-			this.unitHealthBarPreview.lineStyle(0);
-
-			this.unitHealthBarPreview.x = this.unitInfoText.x;
-			this.unitHealthBarPreview.y = this.unitInfoText.y + this.unitInfoText.height + this.uiInnerMargin;
-		}
+		this.prevUnit.update(unit, this.selector);
 	}
 
 	private onMoveSelector(dx: number, dy: number): void {
@@ -760,15 +656,29 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		this.allContainers.clearPathPreview();
 		this.allContainers.highlightContainer.removeChildren();
 		SoundLib.stopMusic("run");
-
 		this.selectedUnit = unit;
-		this.phaseManager.gamePhase = GamePhase.ATTACK;
+		// Recalcular rango:
 		this.attackRangeCells = this.attackCalc.computeAttackRange(unit);
+		if (this.attackRangeCells.size === 0) {
+			// No hay ataque posible: finalizar acción
+			unit.hasActed = true;
+			this.phaseManager.gamePhase = GamePhase.END;
+			console.log("No hay enemigos en rango; acción terminada.");
+			this.turnManager.endCurrentAction();
+			return;
+		}
+		// Si hay ataque posible:
+		this.phaseManager.gamePhase = GamePhase.ATTACK;
 		this.showAttackRange();
+		unit.hasActed = true;
+
 		console.log("Fase ATTACK: presiona Q para atacar o Enter para saltar");
 	}
 
 	public override update(dt: number): void {
+		if (this.battleOverlay) {
+			this.battleOverlay.update(dt);
+		}
 		if (this.inBattle) {
 			return;
 		} // ya en batalla, ignorar
@@ -873,61 +783,76 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		console.log("Destino fuera de rango de movimiento");
 	}
 
-	public startBattleSequence(attacker: PlayerUnit, defender: PlayerUnit): void {
-		if (this.inBattle) {
-			return;
-		} // ya en batalla, ignorar
+	/**
+	 * Muestra el BattleOverlay para attacker vs target, y retorna una Promise que se resuelve cuando termine el overlay.
+	 */
+	/**
+	 * Muestra el BattleOverlay para attacker vs defender y retorna una Promise que se resuelve cuando termine el overlay.
+	 * Calcula didMiss e isCrit, y en onHit aplica el daño (con tu applyDamageWithTerrain).
+	 */
+	private startBattleSequenceAsync(attacker: PlayerUnit, defender: PlayerUnit): Promise<void> {
+		return new Promise((resolve) => {
+			// Si ya hay overlay activo, resolvemos inmediatamente
+			if (this.battleOverlay) {
+				resolve();
+				return;
+			}
 
-		// Calcular crítico:
-		const critChance = 0.1;
-		const isCrit = Math.random() < critChance;
-
-		// Callback cuando la animación de batalla termina:
-		const onBattleComplete = (): void => {
-			// 1) Aplicar daño con tu lógica:
+			// 1) Calcular terreno y probabilidad de hit/miss/crit
 			const tx = defender.gridX,
 				ty = defender.gridY;
 			let terrain = Terrain.PLAIN;
 			if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
 				terrain = Terrain.fromCode(this.grid[ty][tx]);
 			}
-			this.applyDamageWithTerrain(attacker, defender, terrain, isCrit);
+			const avoidChance = defender.avoid + terrain.avoBonus;
+			const didMiss = Math.random() < avoidChance;
+			const isCrit = !didMiss && Math.random() < attacker.criticalChance;
 
-			// 2) Continuar flujo de turno:
-			attacker.hasActed = true;
-			this.clearAttackRange();
-			this.phaseManager.gamePhase = GamePhase.END;
-			console.log("Fase END: presiona Enter para continuar");
-			this.turnManager.endCurrentAction();
+			// 2) Preparar callback onHit: aplica daño en el momento intermedio del overlay
+			const onHit = (): void => {
+				// Usa tu función de aplicar daño: por ejemplo applyDamageWithTerrain(attacker, defender, terrain, isCrit)
+				this.applyDamageWithTerrain(attacker, defender, terrain, isCrit);
+				// Marcar que atacó:
+				attacker.hasActed = true;
+				// Si defender muere, handleUnitDefeat lo remueve de listas, etc.
+				// handleUnitDefeat(defender) se invoca en applyDamageWithTerrain si hp <=0
+			};
 
-			// 3) Remover overlay y volver al modo normal:
-			if (this.battleOverlay) {
-				this.removeChild(this.battleOverlay);
-				this.battleOverlay = null;
-			}
-			this.inBattle = false;
-		};
+			// 3) Callback al terminar overlay: quita overlay y resuelve Promise
+			const onBattleComplete = (): void => {
+				if (this.battleOverlay) {
+					this.battleOverlay.parent?.removeChild(this.battleOverlay);
+					this.battleOverlay = null;
+				}
+				resolve();
+			};
 
-		// Crear overlay:
-		const overlay = new BattleOverlay({
-			attackerTex: attacker.sprite.texture,
-			defenderTex: defender.sprite.texture,
-			isCrit,
-			onComplete: onBattleComplete,
+			// 4) Decidir posición: aliado a la izquierda, enemigo a la derecha
+			const attackerOnLeft = !attacker.isEnemy;
+			// Decide attackDuration antes de instanciar
+			const attackDuration = attackerOnLeft ? 1.9 : 1.2;
+			// 5) Crear overlay pasando todos los campos, incluyendo didMiss, onHit y SFX keys
+			const overlay = new BattleOverlay({
+				attackerAnimator: attacker.battleAnimator,
+				defenderAnimator: defender.battleAnimator,
+				isCrit,
+				didMiss,
+				attackerOnLeft,
+				attackDuration, // aquí pasas el valor según el lado
+
+				introDuration: 0.5,
+				resultDuration: 0.7,
+				onHit,
+				onComplete: onBattleComplete,
+				// SFX keys según tus assets:
+				soundHitKey: "performAtk_SFX",
+				soundCritKey: "crit_SFX",
+				soundMissKey: "miss_SFX",
+			});
+			this.battleOverlay = overlay;
+			this.allContainers.uiCenterContainer.addChild(overlay);
 		});
-
-		// Posicionar overlay: asumimos que la escena principal ya centra su worldContainer o similar.
-		// Si la escena tiene un contenedor centrado (worldContainer), haz:
-		// this.worldContainer.addChild(overlay);
-		// y overlay.x = 0; overlay.y = 0; para centrar.
-		// Si la escena no usa worldContainer, puedes:
-		overlay.x = this.allContainers.worldContainer.width / 2; // o 0 dependiendo del anclaje
-		overlay.y = this.allContainers.worldContainer.height / 2;
-		// Pero normalmente tu PixiScene ya maneja un contenedor centrado: ajusta según tu estructura.
-		this.addChild(overlay);
-
-		this.battleOverlay = overlay;
-		this.inBattle = true;
 	}
 
 	/** Cuando followPath termina (pathQueue vacía), actualizar gridX, gridY de la unidad */
@@ -990,12 +915,7 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		}
 	}
 
-	/**
-	 * Ejecuta el ataque de la unidad seleccionada (ally o enemy).
-	 * En turno aliado: usa selectorPos para elegir target.
-	 * En turno enemigo: puedes llamar directamente a performAttack(enemyUnit, chosenAlly).
-	 */
-	private doAttack(): void {
+	private async doAttack(): Promise<void> {
 		if (!this.selectedUnit) {
 			return;
 		}
@@ -1009,33 +929,43 @@ export class AuroraQuilmesMapScene extends PixiScene {
 				ty = this.selectorPos.y;
 			target = this.enemyUnits.find((u) => u.gridX === tx && u.gridY === ty);
 			if (!target) {
-				console.log("No hay enemigo en la celda para atacar");
+				console.log("No hay enemigo en la celda para atacar. Saltando ataque.");
+				// Limpieza de highlights
 				this.clearAttackRange();
-				this.endAction();
+				// Saltar ataque: marcar como actuado y avanzar turno
+				this.skipAttack();
 				return;
 			}
 		} else {
-			// Turno enemigo: idealmente este método no se llama en AI sino la IA llama a performAttack directamente.
-			// Pero si quisieras usar selectorPos en turno enemigo (raro), puedes hacer algo similar:
+			// Turno enemigo (si alguna vez se usa aquí):
 			const tx = this.selectorPos.x,
 				ty = this.selectorPos.y;
 			target = this.allyUnits.find((u) => u.gridX === tx && u.gridY === ty);
 			if (!target) {
-				console.log("No hay aliado en la celda para atacar");
+				console.log("No hay aliado en la celda para atacar. Saltando ataque.");
 				this.clearAttackRange();
-				this.endAction();
+				this.skipAttack();
 				return;
 			}
 		}
 
-		// Ahora tenemos attacker y target. Hacemos el ataque genérico:
+		// Si tenemos attacker y target válidos:
+		// 1) Limpiamos highlights y pasamos fase END (visual), pero no avanzamos turno aun aquí
+		this.clearAttackRange();
+		this.phaseManager.gamePhase = GamePhase.END;
+		console.log("Fase END: presiona Enter para continuar");
+
+		// 2) Ejecutar la animación de ataque y aplicar daño:
+		//    asumimos que performAttack marca attacker.hasActed = true y aplica daño,
+		//    pero NO avanza turno dentro de su callback.
 		this.performAttack(attacker, target, () => {
-			// callback al finalizar animaciones y aplicar daño:
-			this.clearAttackRange();
-			this.endAction();
+			// Limpieza visual tras animación (restaurar tint, etc.), si hace falta.
+			// No llamamos aquí a endAction() ni a turnManager.endCurrentAction().
 		});
 
-		// this.startBattleSequence(attacker, target);
+		// 3) Mostrar overlay de batalla. Cuando el overlay termine, en su callback
+		//    se invocará turnManager.endCurrentAction().
+		await this.startBattleSequenceAsync(attacker, target);
 	}
 
 	/**
@@ -1055,26 +985,24 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		// Chance de esquivar:
 		const avoidChance = target.avoid + terrain.avoBonus;
 		if (Math.random() < avoidChance) {
+			// Falló el ataque
 			SoundLib.playSound("miss_SFX", {});
-
 			console.log(`${target.id} esquivó el ataque de ${attacker.id}! (terreno ${terrain.name} AVO+${terrain.avoBonus})`);
 			this.animations.animateMissEffect(attacker, target, this.allContainers, this.tileSize, () => {
-				onComplete();
+				// Marcamos que el atacante actuó (aunque falló).
+				attacker.hasActed = true;
+				onComplete(); // limpieza local (por ej. quitar tint, etc.)
 			});
 		} else {
 			// Hit:
-
-			// Determinar si es golpe crítico
 			const isCrit = Math.random() < attacker.criticalChance;
-
-			if (isCrit) {
-				SoundLib.playSound("crit_SFX", {}); // podés usar otro sonido
-				console.log(`¡GOLPE CRÍTICO de ${attacker.id} a ${target.id}!`);
-			} else {
-				SoundLib.playSound("performAtk_SFX", {});
-			}
 			this.animations.animateAttackEffect(attacker, target, () => {
+				// Aplica daño al target
 				this.applyDamageWithTerrain(attacker, target, terrain, isCrit);
+				// Marcamos que el atacante actuó
+				attacker.hasActed = true;
+
+				// Ya no hay contraataque: simplemente llamamos onComplete para limpieza local
 				onComplete();
 			});
 		}
@@ -1107,9 +1035,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		}
 	}
 
-	/**
-	 * Maneja la muerte de una unidad: remover sprite, healthBar, quitarla de la lista correspondiente, etc.
-	 */
 	private handleUnitDefeat(unit: PlayerUnit): void {
 		// Remover healthBar si existe
 		if ((unit as any).healthBar) {
@@ -1168,6 +1093,50 @@ export class AuroraQuilmesMapScene extends PixiScene {
 	}
 
 	/**
+	 * Para IA: realiza el ataque de attacker a target, aplica daño, muestra overlay y marca hasActed,
+	 * espera a que el overlay termine antes de resolver.
+	 */
+	private async enemyPerformAttack(attacker: PlayerUnit, target: PlayerUnit): Promise<void> {
+		// Lógica de esquiva / hit / daño: muy similar a performAttack, pero devolviendo Promise en vez de callback.
+		// Podrías factorizar: extraer la parte de cálculo de daño en una función asíncrona.
+
+		// 1) Determinar terreno y esquiva
+		const tx = target.gridX,
+			ty = target.gridY;
+		let terrain = Terrain.PLAIN;
+		if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
+			terrain = Terrain.fromCode(this.grid[ty][tx]);
+		}
+		const avoidChance = target.avoid + terrain.avoBonus;
+		const didMiss = Math.random() < avoidChance;
+		if (didMiss) {
+			SoundLib.playSound("miss_SFX", {});
+			console.log(`${target.id} esquivó el ataque de ${attacker.id}!`);
+			// animación de miss:
+			await new Promise<void>((res) => {
+				this.animations.animateMissEffect(attacker, target, this.allContainers, this.tileSize, () => res());
+			});
+			// marcar como actuado
+			attacker.hasActed = true;
+		} else {
+			// Hit:
+			const isCrit = Math.random() < attacker.criticalChance;
+			// animación de ataque:
+			await new Promise<void>((res) => {
+				this.animations.animateAttackEffect(attacker, target, () => res());
+			});
+			// aplicar daño:
+			this.applyDamageWithTerrain(attacker, target, terrain, isCrit);
+			attacker.hasActed = true;
+		}
+
+		// 2) Mostrar overlay y esperar:
+		await this.startBattleSequenceAsync(attacker, target);
+
+		// 3) (opcional) si target muere, handleUnitDefeat ya se encarga de remover de listas, etc.
+	}
+
+	/**
 	 * Devuelve una Promise que se resuelve cuando la unidad ha completado la animación de moverse siguiendo pathPts hasta la casilla (targetX, targetY).
 	 * @param unit Unidad a mover.
 	 * @param pathPts Array de Points en coordenadas de píxel para animar.
@@ -1202,19 +1171,12 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		});
 	}
 
-	private animateAttackAndApplyDamagePromise(attacker: PlayerUnit, target: PlayerUnit): Promise<void> {
+	public animateAttackAndApplyDamagePromise(attacker: PlayerUnit, target: PlayerUnit): Promise<void> {
 		return new Promise((resolve) => {
 			// Determinar si es golpe crítico
 			const isCrit = Math.random() < attacker.criticalChance;
 
 			this.animations.animateAttackEffect(attacker, target, () => {
-				if (isCrit) {
-					SoundLib.playSound("crit_SFX", {});
-					console.log(`¡GOLPE CRÍTICO de ${attacker.id} a ${target.id}!`);
-				} else {
-					SoundLib.playSound("performAtk_SFX", {});
-				}
-
 				const terrain = Terrain.fromCode(this.grid[target.gridY][target.gridX]);
 				this.applyDamageWithTerrain(attacker, target, terrain, isCrit); // 🟡 Pasamos isCrit
 				resolve();
@@ -1248,7 +1210,7 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		this.allContainers.uiRightContainer.y = h;
 		ScaleHelper.setScaleRelativeToIdeal(this.allContainers.uiCenterContainer, w, h, 1536, 1024, ScaleHelper.FIT);
 		this.allContainers.uiCenterContainer.x = w * 0.5;
-		this.allContainers.uiCenterContainer.y = 0;
+		this.allContainers.uiCenterContainer.y = h * 0.5;
 		ScaleHelper.setScaleRelativeToIdeal(this.allContainers.uiLeftContainer, w, h, 1536, 1024, ScaleHelper.FIT);
 		this.allContainers.uiLeftContainer.x = w * 0.1;
 		this.allContainers.uiLeftContainer.y = h * 0.9;

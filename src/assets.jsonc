@@ -319,13 +319,19 @@
         "crit_SFX": "./sfx/Bosshit1.wav",
         "menuconfirm": "./sfx/Text1.wav",
         "menumove": "./sfx/Cancel1.wav",
+        "hit_SFX": "./sfx/miss_SFX.mp3",
+        "battle_end_SFX": "./sfx/miss_SFX.mp3",
+        "battle_intro_SFX": "./sfx/miss_SFX.mp3",
 
         "frameBlue": "./img/aurora-latest/frameBlue.jpg",
         "frameOrange": "./img/aurora-latest/frameOrange.jpg",
-
+                                                                                                                                   
         "selector": "./img/aurora-latest/selector.png",
-        "bossIcon":  "./img/aurora-latest/bossIcon.png",
-        "casa":  "./img/aurora-latest/casa.png",
+        "bossIcon": "./img/aurora-latest/bossIcon.png",
+        "casa": "./img/aurora-latest/casa.png",
+
+        "cara_kilme": "./img/aurora-latest/cara_kilme.png",
+        "cara_español": "./img/aurora-latest/cara_español.png",
 
         "map1": "./img/aurora-latest/mockup-map1.png",
         "map2raw": "./img/aurora-latest/mockup-map2.png",
@@ -336,12 +342,56 @@
         "battle1": "./img/aurora-latest/mockup-battle1.png",
         "battle2": "./img/aurora-latest/mockup-battle2.png",
         "battle3": "./img/aurora-latest/mockup-battle3.png",
-        
+
         "colonial1": "./img/aurora-latest/colonial1.png",
         "quilmes1": "./img/aurora-latest/quilmes1.png",
         "quilmes2": "./img/aurora-latest/quilmes2.png",
-                
-        "zamba": "./music/zamba.mp3"
+
+        "battle_colonial": "./img/aurora-latest/battle_colonial.png",
+        "battle_quilmes": "./img/aurora-latest/battle_quilmes.png",
+
+        "zamba": "./music/zamba.mp3",
+        // colonialAttack
+        "battle_colonial_idle": "./img/aurora-latest/animations/colonial_0.png",
+        "battle_colonial_attack_1": "./img/aurora-latest/animations/colonial_1.png",
+        "battle_colonial_attack_2": "./img/aurora-latest/animations/colonial_2.png",
+        "battle_colonial_attack_3": "./img/aurora-latest/animations/colonial_3.png",
+        "battle_colonial_attack_4": "./img/aurora-latest/animations/colonial_4.png",
+        "battle_colonial_attack_5": "./img/aurora-latest/animations/colonial_5.png",
+        "battle_colonial_attack_6": "./img/aurora-latest/animations/colonial_6.png",
+        "battle_colonial_attack_7": "./img/aurora-latest/animations/colonial_7.png",
+        "battle_colonial_attack_8": "./img/aurora-latest/animations/colonial_8.png",
+        "battle_colonial_attack_9": "./img/aurora-latest/animations/colonial_9.png",
+        "battle_colonial_attack_10": "./img/aurora-latest/animations/colonial_10.png",
+        "battle_colonial_attack_11": "./img/aurora-latest/animations/colonial_11.png",
+        "battle_colonial_attack_12": "./img/aurora-latest/animations/colonial_12.png",
+        "battle_colonial_attack_13": "./img/aurora-latest/animations/colonial_13.png",
+        "battle_colonial_attack_14": "./img/aurora-latest/animations/colonial_14.png",
+        "battle_colonial_attack_15": "./img/aurora-latest/animations/colonial_15.png",
+        "battle_colonial_attack_16": "./img/aurora-latest/animations/colonial_16.png",
+        "battle_colonial_attack_17": "./img/aurora-latest/animations/colonial_17.png",
+        "battle_colonial_attack_18": "./img/aurora-latest/animations/colonial_18.png",
+        "battle_colonial_attack_19": "./img/aurora-latest/animations/colonial_19.png",
+        "battle_colonial_attack_20": "./img/aurora-latest/animations/colonial_20.png",
+        "battle_colonial_attack_21": "./img/aurora-latest/animations/colonial_21.png",
+        "battle_colonial_attack_22": "./img/aurora-latest/animations/colonial_22.png",
+        "battle_colonial_attack_23": "./img/aurora-latest/animations/colonial_23.png",
+        "battle_colonial_attack_24": "./img/aurora-latest/animations/colonial_24.png",
+        "battle_colonial_attack_25": "./img/aurora-latest/animations/colonial_25.png",
+        "battle_colonial_attack_26": "./img/aurora-latest/animations/colonial_26.png",
+        "battle_colonial_attack_27": "./img/aurora-latest/animations/colonial_27.png",
+        "battle_colonial_attack_28": "./img/aurora-latest/animations/colonial_28.png",
+
+        // kilmeAttack
+        "battle_quilmes_idle": "./img/aurora-latest/animations/quilmes_0.png",
+        "battle_quilmes_attack_1": "./img/aurora-latest/animations/quilmes_1.png",
+        "battle_quilmes_attack_2": "./img/aurora-latest/animations/quilmes_2.png",
+        "battle_quilmes_attack_3": "./img/aurora-latest/animations/quilmes_3.png",
+        "battle_quilmes_attack_4": "./img/aurora-latest/animations/quilmes_4.png",
+        "battle_quilmes_attack_5": "./img/aurora-latest/animations/quilmes_5.png",
+        "battle_quilmes_attack_6": "./img/aurora-latest/animations/quilmes_6.png",
+        "battle_quilmes_attack_7": "./img/aurora-latest/animations/quilmes_7.png",
+        "battle_quilmes_attack_8": "./img/aurora-latest/animations/quilmes_8.png"
       }
     },
     {

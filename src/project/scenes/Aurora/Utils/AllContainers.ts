@@ -23,7 +23,7 @@ export class AllContainers extends Container {
 		this.uiContainer.name = "uiContainer";
 		this.uiRightContainer.name = "uiRightContainer";
 		this.uiLeftContainer.name = "uiLeftContainer";
-		this.addChild(this.worldContainer, this.uiContainer, this.highlightContainer, this.uiLeftContainer, this.uiRightContainer);
+		this.addChild(this.worldContainer, this.uiContainer, this.highlightContainer, this.uiLeftContainer, this.uiRightContainer, this.uiCenterContainer);
 		this.worldContainer.pivot.set(this.worldContainer.width / 2, this.worldContainer.height / 2);
 
 		this.worldContainer.addChild(this.highlightContainer);

@@ -5,6 +5,8 @@ export interface TurnCallbacks {
 	onAllySelectNext: (unit: PlayerUnit | null) => void;
 	onStartEnemyTurn: () => void;
 	onStartAllyTurn: () => void;
+	onTurnChange?: (side: TurnSide) => void;
+
 	// etc.
 }
 
@@ -31,6 +33,9 @@ export class TurnManager {
 		// reset hasActed:
 		this.allyUnits.forEach((u) => ((u.hasActed = false), (u.hasHealedFortress = false)));
 		// notificar escena para posicionar selector sobre primer aliado:
+		if (this.callbacks.onTurnChange) {
+			this.callbacks.onTurnChange(this.currentSide);
+		}
 		const next = this.allyUnits.find((u) => !u.hasActed) || null;
 		this.callbacks.onAllySelectNext(next);
 	}
@@ -58,6 +63,9 @@ export class TurnManager {
 	public startEnemyTurn(): void {
 		this.currentSide = TurnSide.ENEMY;
 		this.enemyUnits.forEach((u) => (u.hasActed = false));
+		if (this.callbacks.onTurnChange) {
+			this.callbacks.onTurnChange(this.currentSide);
+		}
 		this.callbacks.onStartEnemyTurn();
 		// IAController arrancará la secuencia
 	}
