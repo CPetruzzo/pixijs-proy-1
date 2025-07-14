@@ -26,7 +26,7 @@ import { App } from "@capacitor/app";
 import { AdMob } from "@capacitor-community/admob";
 import { SoundLib } from "./engine/sound/SoundLib";
 import { Sounds } from "./project/scenes/RunFall/Managers/SoundManager";
-import { AuroraQuilmesMapScene } from "./project/scenes/Aurora/Scenes/AuroraQuilmesMapScene";
+import { MultiplayerCachoWorldGameScene } from "./project/scenes/CachoWorld/Scenes/MultiplayerCachoWorldGameScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -133,7 +133,7 @@ window.addEventListener("contextmenu", (e) => {
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));  }
 
-	Manager.changeScene(AuroraQuilmesMapScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(MultiplayerCachoWorldGameScene, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

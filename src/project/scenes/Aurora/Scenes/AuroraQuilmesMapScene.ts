@@ -1,39 +1,38 @@
-import { PlayerFactory } from "../Utils/PlayerFactory";
-/* eslint-disable @typescript-eslint/restrict-plus-operands */
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
+// #region IMPORTS
 import { Text, TextStyle } from "pixi.js";
 import { Container, Graphics, Point, Sprite } from "pixi.js";
 import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
-import type { PlayerUnit } from "../Data/IUnit";
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
 import { GamePhase, PhaseManager } from "../Managers/PhaseManager";
+import { TurnManager, TurnSide } from "../Managers/TurnManager";
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { SoundLib } from "../../../../engine/sound/SoundLib";
+import { PlayerFactory } from "../Utils/PlayerFactory";
+import type { PlayerUnit } from "../Data/IUnit";
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { AllContainers } from "../Utils/AllContainers";
-import { Animations } from "../Utils/Animations";
 import { PlayerData } from "../Data/UnitData";
 import { PathFinder } from "../Utils/PathFinder";
 import { AttackRangeCalculator } from "../Utils/AttackRangeCalculator";
-import { TurnManager, TurnSide } from "../Managers/TurnManager";
+import { Animations } from "../Utils/Animations";
 import { EnemyAI } from "../Utils/EnemyAI";
 import { InputHandler } from "../Utils/InputHandler";
+import { ChoiceMenu } from "../Utils/ChoiceMenu";
+import { TurnDisplay } from "../Utils/TurnDisplay";
 import { getTerrainColor, Terrain } from "../Utils/Terrain";
+
 import { GridKilme } from "../Grids/GridKilme";
 import { BattleOverlay } from "./BattleOverlay";
 import { PreviewUnit } from "../PreviewUnit";
-import { ChoiceMenu } from "../Utils/ChoiceMenu";
-import { TurnDisplay } from "../Utils/TurnDisplay";
-
-export class Node {
-	// eslint-disable-next-line prettier/prettier
-	constructor(public x: number, public y: number, public g: number = 0, public h: number = 0, public f: number = 0, public parent: Node | null = null) { }
-}
-
+import { PhaseOverlay } from "./PhaseOverlay";
+// #endregion IMPORTS
 export class AuroraQuilmesMapScene extends PixiScene {
 	// #region VARIABLES
 	private grid: number[][] = [];
 	private tileSize = 64;
 
-	public static readonly BUNDLES = ["aurora-latest", "abandonedhouse", "sfx"];
+	public static readonly BUNDLES = ["aurora-latest", "sfx"];
 
 	// Fases de A* pathing (no confundir con GamePhase)
 	private pathQueue: Point[] = [];
@@ -64,8 +63,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 	// Movimiento: almacenamiento del área de alcance
 	private movementRange: Set<string> = new Set(); // claves "x,y"
 
-	private walkableZones: Point[] = [];
-
 	private animations: Animations;
 	private phaseManager: PhaseManager;
 	private playerFactory: PlayerFactory;
@@ -95,6 +92,7 @@ export class AuroraQuilmesMapScene extends PixiScene {
 
 	// #endregion VARIABLES
 
+	// #region CONSTRUCTOR
 	constructor() {
 		super();
 
@@ -121,20 +119,17 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		this.selector = Sprite.from("selector");
 		this.selector.anchor.set(0.5);
 		this.selector.scale.set(0.08);
-
 		if (this.allyUnits.length > 0) {
 			const firstAlly = this.allyUnits[0];
 			this.selectorPos = new Point(firstAlly.gridX, firstAlly.gridY);
 		} else {
 			this.selectorPos = new Point(0, 0);
 		}
-		// Rectángulo con línea amarilla
 		this.allContainers.worldContainer.addChild(this.selector);
 		this.updateSelectorPosition();
 
 		this.allContainers.worldContainer.addChild(this.allContainers.highlightContainer);
 
-		// Debug text
 		this.debugText = new Text("0,0", new TextStyle({ fill: "#ffffff", fontSize: 14 }));
 		this.debugText.position.set(10, 50);
 		this.allContainers.uiContainer.addChild(this.debugText);
@@ -164,7 +159,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 				return terrain.moveCost;
 			},
 		};
-		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 		const isOccupied = (x: number, y: number) => this.allyUnits.some((u) => u.gridX === x && u.gridY === y) || this.enemyUnits.some((u) => u.gridX === x && u.gridY === y);
 		this.pathFinder = new PathFinder(gridImpl, isOccupied);
 
@@ -174,43 +168,58 @@ export class AuroraQuilmesMapScene extends PixiScene {
 			(x, y) => this.enemyUnits.find((u) => u.gridX === x && u.gridY === y)
 		);
 
-		// Dentro de tu escena, en constructor o en init UI:
 		this.turnDisplay = new TurnDisplay();
-		// Colócalo donde quieras en la UI, por ejemplo esquina superior derecha:
-		this.turnDisplay.x = 10; // o según tu layout
-		this.turnDisplay.y = 40; // debajo de phaseText si lo deseas
+		this.turnDisplay.x = 10;
+		this.turnDisplay.y = 40;
 		this.allContainers.uiContainer.addChild(this.turnDisplay);
 
 		this.turnManager = new TurnManager(this.allyUnits, this.enemyUnits, {
 			onAllySelectNext: (unit) => {
+				// Igual que antes: posicionar selector al siguiente aliado
 				if (unit) {
-					this.selectedUnit = null;
 					this.selectorPos.set(unit.gridX, unit.gridY);
 					this.updateSelectorPosition();
 					this.phaseManager.gamePhase = GamePhase.SELECT;
-
-					const tx = unit.gridX,
-						ty = unit.gridY;
-					if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
-						const terrain = Terrain.fromCode(this.grid[ty][tx]);
-						if (terrain === Terrain.FORTRESS) {
-							if (unit.healthPoints < unit.maxHealthPoints) {
-								const fixed = 3;
-								const actualHeal = Math.min(fixed, unit.maxHealthPoints - unit.healthPoints);
-								unit.healthPoints += actualHeal;
-								unit.hasHealedFortress = true;
-								this.allContainers.showFloatingText(actualHeal.toString(), unit.sprite.x, unit.sprite.y - this.tileSize * 0.3, 0xff0000);
-								console.error(`${unit.id} se cura ${actualHeal} en Fortress.`);
-							}
-						}
-					}
 				}
 			},
 			onStartEnemyTurn: () => {
-				this.startEnemySequence();
+				// Primero restaurar apariencia si es necesario
+				for (const e of this.enemyUnits) {
+					this.playerFactory.restoreUnitAppearance(e);
+				}
+				for (const u of this.allyUnits) {
+					this.playerFactory.restoreUnitAppearance(u);
+				}
+				// Crear overlay de fase enemigo
+				const overlay = new PhaseOverlay(TurnSide.ENEMY);
+				// Añadir a tu contenedor de UI central (o donde desees)
+				this.allContainers.worldContainer.addChild(overlay);
+				// Llamar la animación y, al terminarla, iniciar IA
+				overlay.onChangePhase(() => {
+					this.startEnemySequence();
+				});
 			},
 			onStartAllyTurn: () => {
-				this.startAllyTurn();
+				// Primero restaurar apariencia de aliados/enemigos si es necesario
+				for (const u of this.allyUnits) {
+					this.playerFactory.restoreUnitAppearance(u);
+				}
+				for (const e of this.enemyUnits) {
+					this.playerFactory.restoreUnitAppearance(e);
+				}
+				// Crear overlay de fase aliado
+				const overlay = new PhaseOverlay(TurnSide.ALLY);
+				this.allContainers.worldContainer.addChild(overlay);
+				overlay.onChangePhase(() => {
+					// Al acabar animación, habilitar input aliado
+					const first = this.allyUnits.find((u) => !u.hasActed) || null;
+					if (first) {
+						this.selectorPos.set(first.gridX, first.gridY);
+						this.updateSelectorPosition();
+						this.updateDebugCellInfo();
+					}
+					this.phaseManager.gamePhase = GamePhase.SELECT;
+				});
 			},
 			onTurnChange: (side) => {
 				this.turnDisplay.update(side);
@@ -226,13 +235,10 @@ export class AuroraQuilmesMapScene extends PixiScene {
 			},
 			// callback de ataque de IA:
 			async (attacker: PlayerUnit, target: PlayerUnit) => {
-				// 1) lógica de ataque: aplicar daño, marcar hasActed
-				// Podemos reutilizar performAttack, pero adaptarlo para retorno Promise:
 				await this.enemyPerformAttack(attacker, target);
 			}
 		);
 
-		// Instanciar ChoiceMenu una sola vez:
 		this.choiceMenu = new ChoiceMenu({
 			options: this.menuOptions,
 			frameKey: "frameBlue",
@@ -243,7 +249,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 			normalColor: "#ffffff",
 			// textStyle: {...} // si deseas personalizar
 		});
-		// Añadir al contenedor apropiado:
 		this.allContainers.worldContainer.addChild(this.choiceMenu);
 
 		this.inputHandler = new InputHandler({
@@ -261,7 +266,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 
 		this.turnManager.startAllyTurn();
 
-		// Info terreno:
 		const terrainBG = Sprite.from("frameOrange");
 		terrainBG.anchor.set(0.5);
 		terrainBG.scale.set(0.3);
@@ -275,7 +279,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		this.terrainInfoText.x = 0;
 		this.terrainInfoText.y = 0;
 
-		// Preview unidad:
 		this.unitInfoText = new Text("", new TextStyle({ fill: "#ffffff", dropShadow: true, dropShadowDistance: 2, fontFamily: "Pixelate-Regular", fontSize: 18 }));
 		this.unitInfoText.x = 0;
 		this.unitInfoText.y = 0;
@@ -285,15 +288,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		this.allContainers.worldContainer.addChild(this.unitHealthBarPreview);
 		this.unitHealthBarPreview.x = 0;
 		this.unitHealthBarPreview.y = this.unitInfoText.y + this.unitInfoText.height + this.uiInnerMargin;
-
-		for (let y = 0; y < this.grid.length; y++) {
-			for (let x = 0; x < this.grid[0].length; x++) {
-				const terrain = Terrain.fromCode(this.grid[y][x]);
-				if (terrain.moveCost < Infinity) {
-					this.walkableZones.push(new Point(x, y));
-				}
-			}
-		}
 
 		const alphaValue = 0;
 		for (let y = 0; y < this.grid.length; y++) {
@@ -337,7 +331,8 @@ export class AuroraQuilmesMapScene extends PixiScene {
 
 		this.prevUnit.update(unit, this.selector);
 	}
-
+	// #endregion CONSTRUCTOR
+	// #region CHOICES
 	private confirmChoice(): void {
 		if (this.phaseManager.gamePhase !== GamePhase.CHOICE) {
 			return;
@@ -372,8 +367,9 @@ export class AuroraQuilmesMapScene extends PixiScene {
 				break;
 			case "Esperar":
 				if (unit) {
-					// Marcar como actuado y pasar a END/next
 					unit.hasActed = true;
+					this.playerFactory.grayOutUnit(unit);
+
 					this.phaseManager.gamePhase = GamePhase.END;
 					console.log(`${unit.id} espera y termina su acción.`);
 					this.turnManager.endCurrentAction();
@@ -386,9 +382,7 @@ export class AuroraQuilmesMapScene extends PixiScene {
 
 				break;
 			case "Ítem":
-				// Aquí puedes abrir un submenú de ítems. Por ahora, puedes hacer un console o stub:
 				console.log("Ítem: (aún no implementado)");
-				// Quedamos de nuevo en SELECT o en CHOICE? Por ejemplo, volvemos a CHOICE o SELECT:
 				this.phaseManager.gamePhase = GamePhase.SELECT;
 				this.selectedUnit = null;
 				break;
@@ -407,7 +401,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		switch (phase) {
 			case GamePhase.ATTACK:
 				if (this.selectedUnit) {
-					// Clear attack highlights:
 					this.clearAttackRange();
 
 					if (this.preMovePos) {
@@ -440,7 +433,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 				break;
 
 			case GamePhase.CHOICE:
-				// Cerrar menú y volver a SELECT sin seleccionar unidad
 				this.choiceMenu.close();
 				this.selectedUnit = null;
 				this.phaseManager.gamePhase = GamePhase.SELECT;
@@ -456,7 +448,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 					// Reposicionar selector sobre la unidad:
 					this.selectorPos.set(this.selectedUnit.gridX, this.selectedUnit.gridY);
 					this.updateSelectorPosition();
-					// Deseleccionar:
 					this.selectedUnit = null;
 				}
 				this.phaseManager.gamePhase = GamePhase.SELECT;
@@ -498,27 +489,51 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		}
 		this.choiceMenu.navigate(delta);
 	}
+	// #endregion CHOICES
+
+	private createPlayerUnits(): void {
+		for (const cfg of PlayerData) {
+			if (cfg.isEnemy) {
+				const u = this.playerFactory.createEnemy(cfg);
+				if (cfg.isBoss) {
+					const bossIcon = Sprite.from("bossIcon");
+					bossIcon.scale.set(0.05);
+					bossIcon.x = u.sprite.width * 0.5;
+					bossIcon.y = 0;
+					u.sprite.addChild(bossIcon);
+				}
+				this.enemyUnits.push(u);
+			} else {
+				const u = this.playerFactory.createAlly(cfg);
+				this.allyUnits.push(u);
+			}
+		}
+	}
 
 	private updateDebugCellInfo(): void {
 		const x = this.selectorPos.x,
 			y = this.selectorPos.y;
 		// Terreno:
-		this.debugText.text = `Sel: ${x},${y}`;
-
-		const code = this.grid[y]?.[x];
-		const terrain = Terrain.fromCode(code);
-		this.terrainInfoText.text = `${terrain.name}\n\nDEF: ${terrain.defBonus}\nAVO: ${terrain.avoBonus}`;
-		this.terrainInfoText.x = -95;
-		this.terrainInfoText.y = 0;
-
+		if (this.debugText) {
+			this.debugText.text = `Sel: ${x},${y}`;
+		}
+		if (this.terrainInfoText) {
+			const code = this.grid[y]?.[x];
+			const terrain = Terrain.fromCode(code);
+			this.terrainInfoText.text = `${terrain.name}\n\nDEF: ${terrain.defBonus}\nAVO: ${terrain.avoBonus}`;
+			this.terrainInfoText.x = -95;
+			this.terrainInfoText.y = 0;
+		}
 		// Unidad bajo selector?
 		const ally = this.allyUnits.find((u) => u.gridX === x && u.gridY === y);
 		const enemy = this.enemyUnits.find((u) => u.gridX === x && u.gridY === y);
 		const unit = ally ?? enemy ?? null;
-
-		this.prevUnit.update(unit, this.selector);
+		if (this.prevUnit) {
+			this.prevUnit.update(unit, this.selector);
+		}
 	}
 
+	// #region SELECTOR
 	private onMoveSelector(dx: number, dy: number): void {
 		const oldPos = this.selectorPos.clone();
 		this.allContainers.clearPathPreview();
@@ -547,18 +562,128 @@ export class AuroraQuilmesMapScene extends PixiScene {
 				// obtener pathGrid de pathFinder y dibujar preview
 				const pathGrid = this.pathFinder.findPath(this.selectedUnit, this.selectorPos.x, this.selectorPos.y);
 				if (pathGrid) {
-					// dibujar previsualización
 					this.allContainers.clearPathPreview();
 					const container = new Container();
-					for (const node of pathGrid) {
-						if (node.x === this.selectedUnit.gridX && node.y === this.selectedUnit.gridY) {
+					// Índices:
+					for (let i = 0; i < pathGrid.length; i++) {
+						const node = pathGrid[i];
+						if (i === 0) {
+							// Omitir origen, o dibujar un indicador de origen si deseas.
 							continue;
 						}
-						const dot = new Graphics()
-							.beginFill(0xff0000, 0.5)
-							.drawCircle(node.x * this.tileSize + this.tileSize / 2, node.y * this.tileSize + this.tileSize / 2, 3)
-							.endFill();
-						container.addChild(dot);
+						const prev = pathGrid[i - 1];
+						const px = node.x * this.tileSize + this.tileSize / 2;
+						const py = node.y * this.tileSize + this.tileSize / 2;
+						if (i === pathGrid.length - 1) {
+							// Punta final
+							const dx = node.x - prev.x;
+							const dy = node.y - prev.y;
+							const tip = Sprite.from("tipTexture");
+							tip.anchor.set(0.5);
+							tip.x = px;
+							tip.y = py;
+							tip.rotation = Math.atan2(dy, dx) + Math.PI / 2;
+
+							// Después de crear seg:
+							const debugCross = new Graphics();
+							debugCross.lineStyle(1, 0xff0000);
+							debugCross.drawCircle(0, 0, 4);
+							tip.addChild(debugCross);
+							// Luego verás un círculo rojo en el punto de anclaje del sprite.
+
+							// ajustar escala si es necesario:
+							const scaleTip = (this.tileSize * 0.8) / tip.width;
+							tip.scale.set(scaleTip);
+							container.addChild(tip);
+						} else {
+							// Intermedio: determinar recto o curva
+							const next = pathGrid[i + 1];
+							const dx1 = node.x - prev.x;
+							const dy1 = node.y - prev.y;
+							const dx2 = next.x - node.x;
+							const dy2 = next.y - node.y;
+
+							// Si misma dirección (o ambas horizontales o ambas verticales): tramo recto
+							if ((dx1 === dx2 && dy1 === dy2) || (dx1 === -dx2 && dy1 === -dy2)) {
+								// Recto
+								// Posición: medio entre prev y node:
+								const seg = Sprite.from("straightTexture");
+								seg.anchor.set(0.5);
+								seg.x = px;
+								seg.y = py;
+								seg.rotation = Math.atan2(dy1, dx1) + Math.PI / 2;
+								const scaleSeg = (this.tileSize * 0.8) / seg.width;
+								seg.scale.set(scaleSeg);
+								container.addChild(seg);
+
+								// Después de crear seg:
+								const debugCross = new Graphics();
+								debugCross.lineStyle(1, 0xff0000);
+								debugCross.drawCircle(0, 0, 4);
+								seg.addChild(debugCross);
+								// Luego verás un círculo rojo en el punto de anclaje del sprite.
+							} else {
+								// Después de haber calculado dx1,dy1 y dx2,dy2:
+								const midX = node.x * this.tileSize + this.tileSize / 2;
+								const midY = node.y * this.tileSize + this.tileSize / 2;
+								const curve = Sprite.from("curveTexture");
+
+								// Centrar pivot en la parte visible, por si la textura no tiene anchor perfectamente centrado:
+								{
+									const b = curve.getLocalBounds();
+									curve.pivot.set(b.x + b.width / 2, b.y + b.height / 2);
+								}
+
+								curve.x = midX;
+								curve.y = midY;
+
+								// Suponiendo que ‘curveTexture’ base conecta up (0,-1) → right (1,0):
+								let rotation = 0;
+								if (dx1 === 0 && dy1 === -1 && dx2 === 1 && dy2 === 0) {
+									// up → right: caso base, no rotar
+									rotation = -Math.PI / 2; // DONE
+								} else if (dx1 === 1 && dy1 === 0 && dx2 === 0 && dy2 === 1) {
+									// right → down: rota +90° (π/2) si la textura base es up→right
+									rotation = 0;
+								} else if (dx1 === 0 && dy1 === 1 && dx2 === -1 && dy2 === 0) {
+									// down → left: rota π (180°)
+									rotation = Math.PI / 2;
+								} else if (dx1 === -1 && dy1 === 0 && dx2 === 0 && dy2 === -1) {
+									// left → up: rota -π/2 (o +3π/2)
+									rotation = -Math.PI; // DONE
+								} else if (dx1 === 0 && dy1 === -1 && dx2 === -1 && dy2 === 0) {
+									// up → left: curva “espejo” de base: rotar -90° desde base up→right
+									rotation = 0; // DONE
+								} else if (dx1 === -1 && dy1 === 0 && dx2 === 0 && dy2 === 1) {
+									// left → down: rotar +90° desde up→right? Depende de base;
+									// de up→right a left→down es una curva simétrica: sería +Math.PI/2 desde base?
+									// Pero más consistente es cubrir con las cuatro combos “canónicas”:
+									// Ya tratamos left→up; up→right; right→down; down→left.
+									// Si ves left→down u otro orden, revisa si tu pathfinder puede generar ese caso
+									// (puede ser parte de un U-turn). Si aparece, trátalo según tu asset.
+									rotation = -Math.PI / 2; // DONE
+								} else if (dx1 === 1 && dy1 === 0 && dx2 === 0 && dy2 === -1) {
+									// right → up: curva inversa de base up→right: rotar π (o 180°)?
+									rotation = Math.PI / 2; // ajustar tras probar
+								} else if (dx1 === 0 && dy1 === 1 && dx2 === 1 && dy2 === 0) {
+									// down → right: esto a veces no aparece en path normal sin retroceder,
+									// pero si aparece, rota ???
+									rotation = -Math.PI; // o según sea necesario
+								} else {
+									// Caso no contemplado explícitamente: como fallback, no dibujar o dibujar straight o log
+									console.warn(`Curva no contemplada dx1,dy1 = ${dx1},${dy1}, dx2,dy2 = ${dx2},${dy2}`);
+									// Podrías omitir: continue;
+								}
+
+								curve.rotation = rotation;
+
+								// Escala para ajustar al tile:
+								const scaleCurve = (this.tileSize * 0.8) / curve.width; // o /curve.height según orientación base
+								curve.scale.set(scaleCurve);
+
+								container.addChild(curve);
+							}
+						}
 					}
 					this.allContainers.worldContainer.addChild(container);
 					this.allContainers.pathPreviewContainer = container;
@@ -569,150 +694,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		}
 	}
 
-	private async startEnemySequence(): Promise<void> {
-		console.log("----- Turno Enemigo (IA) -----");
-
-		// RESET flags de sanación: solo si quieres resetear de nuevo antes de sanar enemigos
-		for (const u of [...this.enemyUnits]) {
-			(u as any).hasHealedFortress = false;
-		}
-		// Sanar enemigos en fortress
-		for (const enemy of this.enemyUnits) {
-			const tx = enemy.gridX,
-				ty = enemy.gridY;
-			if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
-				const terrain = Terrain.fromCode(this.grid[ty][tx]);
-				if (terrain === Terrain.FORTRESS) {
-					if (enemy.healthPoints < enemy.maxHealthPoints) {
-						const fixed = 3;
-						const actualHeal = Math.min(fixed, enemy.maxHealthPoints - enemy.healthPoints);
-						enemy.healthPoints += actualHeal;
-						(enemy as any).hasHealedFortress = true;
-						this.allContainers.showFloatingText(actualHeal.toString(), enemy.sprite.x, enemy.sprite.y - this.tileSize * 0.3, 0xff0000);
-						console.error(`${enemy.id} se cura ${actualHeal} en Fortress.`);
-					}
-				}
-			}
-		}
-
-		this.allContainers.highlightContainer.removeChildren();
-		this.allContainers.attackHighlightContainer.removeChildren();
-		// Asegúrate de que enemyUnits tengan hasActed=false (TurnManager ya hace reset)
-		for (const enemy of this.enemyUnits) {
-			if (enemy.hasActed) {
-				continue;
-			}
-			// animar IA para esta unidad:
-			await this.enemyAI.processEnemyAction(enemy, this.allyUnits);
-			enemy.hasActed = true;
-			// opcional: podrías esperar un pequeño delay entre acciones
-		}
-		// Al terminar IA de todos:
-		this.turnManager.startAllyTurn();
-	}
-
-	/** Dibuja highlights de ataque en attackRangeCells, ocupando 90% del tile centrado */
-	private showAttackRange(): void {
-		this.allContainers.attackHighlightContainer.removeChildren();
-		const pad = this.tileSize * 0.05;
-		const size = this.tileSize * 0.9;
-		for (const key of this.attackRangeCells) {
-			const [xs, ys] = key.split(",").map((s) => parseInt(s, 10));
-			const g = new Graphics();
-			g.beginFill(0x800000, 0.3)
-				.drawRect(xs * this.tileSize + pad, ys * this.tileSize + pad, size, size)
-				.endFill();
-			this.allContainers.attackHighlightContainer.addChild(g);
-		}
-	}
-
-	/** Limpia highlights de ataque */
-	private clearAttackRange(): void {
-		this.allContainers.attackHighlightContainer.removeChildren();
-		this.attackRangeCells.clear();
-	}
-
-	private createPlayerUnits(): void {
-		for (const cfg of PlayerData) {
-			if (cfg.isEnemy) {
-				const u = this.playerFactory.createEnemy(cfg);
-				if (cfg.isBoss) {
-					const bossIcon = Sprite.from("bossIcon");
-					bossIcon.scale.set(0.05);
-					bossIcon.x = u.sprite.width * 0.5;
-					bossIcon.y = 0;
-					u.sprite.addChild(bossIcon);
-				}
-				this.enemyUnits.push(u);
-			} else {
-				const u = this.playerFactory.createAlly(cfg);
-				this.allyUnits.push(u);
-			}
-		}
-	}
-
-	/** Transición a fase ATTACK para la unidad dada: calcula rango y dibuja highlights */
-	private enterAttackPhase(unit: PlayerUnit): void {
-		this.allContainers.clearPathPreview();
-		this.allContainers.highlightContainer.removeChildren();
-		SoundLib.stopMusic("run");
-		this.selectedUnit = unit;
-		// Recalcular rango:
-		this.attackRangeCells = this.attackCalc.computeAttackRange(unit);
-		if (this.attackRangeCells.size === 0) {
-			// No hay ataque posible: finalizar acción
-			unit.hasActed = true;
-			this.phaseManager.gamePhase = GamePhase.END;
-			console.log("No hay enemigos en rango; acción terminada.");
-			this.turnManager.endCurrentAction();
-			return;
-		}
-		// Si hay ataque posible:
-		this.phaseManager.gamePhase = GamePhase.ATTACK;
-		this.showAttackRange();
-		unit.hasActed = true;
-
-		console.log("Fase ATTACK: presiona Q para atacar o Enter para saltar");
-	}
-
-	public override update(dt: number): void {
-		if (this.battleOverlay) {
-			this.battleOverlay.update(dt);
-		}
-		if (this.inBattle) {
-			return;
-		} // ya en batalla, ignorar
-
-		// Animar movimiento si hay pathQueue en curso
-		this.followPath(dt);
-
-		// Input solo si es turno aliado
-		if (this.turnManager.getCurrentSide() === TurnSide.ALLY) {
-			this.inputHandler.update(this.phaseManager.gamePhase);
-		}
-
-		// Actualizar texto de fase si turno aliado:
-		if (this.turnManager.getCurrentSide() === TurnSide.ALLY) {
-			this.phaseManager.updatePhaseText();
-		} else {
-			this.phaseManager.phaseText.text = `Turno Enemigo`;
-		}
-
-		// Si la posición del selector cambió desde el último frame (o desde la última vez que actualizamos debug):
-		if (!this.lastDebugSelectorPos || this.lastDebugSelectorPos.x !== this.selectorPos.x || this.lastDebugSelectorPos.y !== this.selectorPos.y) {
-			this.updateDebugCellInfo();
-			// Actualiza el registro de la última posición
-			if (!this.lastDebugSelectorPos) {
-				this.lastDebugSelectorPos = new Point(this.selectorPos.x, this.selectorPos.y);
-			} else {
-				this.lastDebugSelectorPos.set(this.selectorPos.x, this.selectorPos.y);
-			}
-		}
-
-		this.allContainers.handleZoom();
-	}
-
-	/** Actualiza la posición visual del selector en el mundo según selectorPos */
 	private updateSelectorPosition(): void {
 		this.selector.x = this.selectorPos.x * this.tileSize + this.selector.width * 0.5;
 		this.selector.y = this.selectorPos.y * this.tileSize + this.selector.height * 0.5;
@@ -736,7 +717,25 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		}
 	}
 
-	/** Dibuja highlights semitransparentes en movementRange, ocupando 90% del tile centrado */
+	private showAttackRange(): void {
+		this.allContainers.attackHighlightContainer.removeChildren();
+		const pad = this.tileSize * 0.05;
+		const size = this.tileSize * 0.9;
+		for (const key of this.attackRangeCells) {
+			const [xs, ys] = key.split(",").map((s) => parseInt(s, 10));
+			const g = new Graphics();
+			g.beginFill(0x800000, 0.3)
+				.drawRect(xs * this.tileSize + pad, ys * this.tileSize + pad, size, size)
+				.endFill();
+			this.allContainers.attackHighlightContainer.addChild(g);
+		}
+	}
+
+	private clearAttackRange(): void {
+		this.allContainers.attackHighlightContainer.removeChildren();
+		this.attackRangeCells.clear();
+	}
+
 	private showMovementHighlights(): void {
 		this.allContainers.highlightContainer.removeChildren();
 		const pad = this.tileSize * 0.05; // 5% de tileSize
@@ -752,110 +751,6 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		}
 	}
 
-	private confirmMove(): void {
-		if (!this.selectedUnit) {
-			return;
-		}
-		const key = `${this.selectorPos.x},${this.selectorPos.y}`;
-		// Si no se mueve (selector en la misma posición), entramos a ATTACK sin animar:
-		if (this.selectorPos.x === this.selectedUnit.gridX && this.selectorPos.y === this.selectedUnit.gridY) {
-			// No hay movimiento; no necesitamos almacenar preMovePos
-			this.preMovePos = null;
-			this.enterAttackPhase(this.selectedUnit);
-			return;
-		}
-		if (this.movementRange.has(key)) {
-			const pathGrid = this.pathFinder.findPath(this.selectedUnit, this.selectorPos.x, this.selectorPos.y);
-			if (pathGrid) {
-				// **Guardar posición previa antes de animar movimiento**
-				this.preMovePos = new Point(this.selectedUnit.gridX, this.selectedUnit.gridY);
-
-				// Convertir a puntos de píxel para animar:
-				this.pathQueue = pathGrid.map((n) => new Point(n.x * this.tileSize + this.tileSize / 2, n.y * this.tileSize + this.tileSize / 2));
-				this.stepStart = this.stepEnd = null;
-				this.phaseManager.gamePhase = GamePhase.MOVING;
-				console.log("Animando movimiento, fase MOVING...");
-				this.allContainers.clearMovementHighlights();
-				this.allContainers.clearPathPreview();
-				return;
-			}
-		}
-		console.log("Destino fuera de rango de movimiento");
-	}
-
-	/**
-	 * Muestra el BattleOverlay para attacker vs target, y retorna una Promise que se resuelve cuando termine el overlay.
-	 */
-	/**
-	 * Muestra el BattleOverlay para attacker vs defender y retorna una Promise que se resuelve cuando termine el overlay.
-	 * Calcula didMiss e isCrit, y en onHit aplica el daño (con tu applyDamageWithTerrain).
-	 */
-	private startBattleSequenceAsync(attacker: PlayerUnit, defender: PlayerUnit): Promise<void> {
-		return new Promise((resolve) => {
-			// Si ya hay overlay activo, resolvemos inmediatamente
-			if (this.battleOverlay) {
-				resolve();
-				return;
-			}
-
-			// 1) Calcular terreno y probabilidad de hit/miss/crit
-			const tx = defender.gridX,
-				ty = defender.gridY;
-			let terrain = Terrain.PLAIN;
-			if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
-				terrain = Terrain.fromCode(this.grid[ty][tx]);
-			}
-			const avoidChance = defender.avoid + terrain.avoBonus;
-			const didMiss = Math.random() < avoidChance;
-			const isCrit = !didMiss && Math.random() < attacker.criticalChance;
-
-			// 2) Preparar callback onHit: aplica daño en el momento intermedio del overlay
-			const onHit = (): void => {
-				// Usa tu función de aplicar daño: por ejemplo applyDamageWithTerrain(attacker, defender, terrain, isCrit)
-				this.applyDamageWithTerrain(attacker, defender, terrain, isCrit);
-				// Marcar que atacó:
-				attacker.hasActed = true;
-				// Si defender muere, handleUnitDefeat lo remueve de listas, etc.
-				// handleUnitDefeat(defender) se invoca en applyDamageWithTerrain si hp <=0
-			};
-
-			// 3) Callback al terminar overlay: quita overlay y resuelve Promise
-			const onBattleComplete = (): void => {
-				if (this.battleOverlay) {
-					this.battleOverlay.parent?.removeChild(this.battleOverlay);
-					this.battleOverlay = null;
-				}
-				resolve();
-			};
-
-			// 4) Decidir posición: aliado a la izquierda, enemigo a la derecha
-			const attackerOnLeft = !attacker.isEnemy;
-			// Decide attackDuration antes de instanciar
-			const attackDuration = attackerOnLeft ? 1.9 : 1.2;
-			// 5) Crear overlay pasando todos los campos, incluyendo didMiss, onHit y SFX keys
-			const overlay = new BattleOverlay({
-				attackerAnimator: attacker.battleAnimator,
-				defenderAnimator: defender.battleAnimator,
-				isCrit,
-				didMiss,
-				attackerOnLeft,
-				attackDuration, // aquí pasas el valor según el lado
-
-				introDuration: 0.5,
-				resultDuration: 0.7,
-				onHit,
-				onComplete: onBattleComplete,
-				// SFX keys según tus assets:
-				soundHitKey: "performAtk_SFX",
-				soundCritKey: "crit_SFX",
-				soundMissKey: "miss_SFX",
-			});
-			this.battleOverlay = overlay;
-			this.allContainers.uiCenterContainer.addChild(overlay);
-		});
-	}
-
-	/** Cuando followPath termina (pathQueue vacía), actualizar gridX, gridY de la unidad */
 	private followPath(dt: number): void {
 		if (!this.selectedUnit) {
 			return;
@@ -913,6 +808,166 @@ export class AuroraQuilmesMapScene extends PixiScene {
 				}
 			}
 		}
+	}
+
+	// #endregion SELECTOR
+
+	private confirmMove(): void {
+		if (!this.selectedUnit) {
+			return;
+		}
+		const key = `${this.selectorPos.x},${this.selectorPos.y}`;
+		// Si no se mueve (selector en la misma posición), entramos a ATTACK sin animar:
+		if (this.selectorPos.x === this.selectedUnit.gridX && this.selectorPos.y === this.selectedUnit.gridY) {
+			// No hay movimiento; no necesitamos almacenar preMovePos
+			this.preMovePos = null;
+			this.enterAttackPhase(this.selectedUnit);
+			return;
+		}
+		if (this.movementRange.has(key)) {
+			const pathGrid = this.pathFinder.findPath(this.selectedUnit, this.selectorPos.x, this.selectorPos.y);
+			if (pathGrid) {
+				// **Guardar posición previa antes de animar movimiento**
+				this.preMovePos = new Point(this.selectedUnit.gridX, this.selectedUnit.gridY);
+
+				// Convertir a puntos de píxel para animar:
+				this.pathQueue = pathGrid.map((n) => new Point(n.x * this.tileSize + this.tileSize / 2, n.y * this.tileSize + this.tileSize / 2));
+				this.stepStart = this.stepEnd = null;
+				this.phaseManager.gamePhase = GamePhase.MOVING;
+				console.log("Animando movimiento, fase MOVING...");
+				this.allContainers.clearMovementHighlights();
+				this.allContainers.clearPathPreview();
+				return;
+			}
+		}
+		console.log("Destino fuera de rango de movimiento");
+	}
+
+	/**
+	 * Muestra el BattleOverlay para attacker vs defender y retorna una Promise que se resuelve cuando termine el overlay.
+	 * Calcula didMiss e isCrit, y en onHit aplica el daño (con tu applyDamageWithTerrain).
+	 */
+	private startBattleSequenceAsync(attacker: PlayerUnit, defender: PlayerUnit): Promise<void> {
+		return new Promise((resolve) => {
+			if (this.battleOverlay) {
+				resolve();
+				return;
+			}
+			// Calcular hit/miss/crit como ya hacías...
+			const tx = defender.gridX,
+				ty = defender.gridY;
+			let terrain = Terrain.PLAIN;
+			if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
+				terrain = Terrain.fromCode(this.grid[ty][tx]);
+			}
+			const avoidChance = defender.avoid + terrain.avoBonus;
+			const didMiss = Math.random() < avoidChance;
+			const isCrit = !didMiss && Math.random() < attacker.criticalChance;
+
+			const onHit = (): void => {
+				this.applyDamageWithTerrain(attacker, defender, terrain, isCrit);
+				attacker.hasActed = true;
+				this.playerFactory.grayOutUnit(attacker);
+			};
+			const onBattleComplete = (): void => {
+				if (this.battleOverlay) {
+					this.battleOverlay.parent?.removeChild(this.battleOverlay);
+					this.battleOverlay = null;
+				}
+				resolve();
+			};
+			const attackerOnLeft = !attacker.isEnemy;
+			const attackDuration = attackerOnLeft ? 1.5 : 0.5;
+			const overlay = new BattleOverlay({
+				attackerAnimator: attacker.battleAnimator,
+				defenderAnimator: defender.battleAnimator,
+				attackerUnit: attacker,
+				defenderUnit: defender,
+				isCrit,
+				didMiss,
+				attackerOnLeft,
+				attackDuration,
+				introDuration: 0.5,
+				resultDuration: 0.7,
+				onHit,
+				onComplete: onBattleComplete,
+				// SFX keys según tus assets:
+				soundHitKey: "performAtk_SFX",
+				soundCritKey: "crit_SFX",
+				soundMissKey: "miss_SFX",
+			});
+			this.battleOverlay = overlay;
+			this.allContainers.uiCenterContainer.addChild(overlay);
+		});
+	}
+
+	private async startEnemySequence(): Promise<void> {
+		console.log("----- Turno Enemigo (IA) -----");
+
+		// RESET flags de sanación: solo si quieres resetear de nuevo antes de sanar enemigos
+		for (const u of [...this.enemyUnits]) {
+			(u as any).hasHealedFortress = false;
+		}
+		// Sanar enemigos en fortress
+		for (const enemy of this.enemyUnits) {
+			const tx = enemy.gridX,
+				ty = enemy.gridY;
+			if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
+				const terrain = Terrain.fromCode(this.grid[ty][tx]);
+				if (terrain === Terrain.FORTRESS) {
+					if (enemy.healthPoints < enemy.maxHealthPoints) {
+						const fixed = 3;
+						const actualHeal = Math.min(fixed, enemy.maxHealthPoints - enemy.healthPoints);
+						enemy.healthPoints += actualHeal;
+						(enemy as any).hasHealedFortress = true;
+						this.allContainers.showFloatingText(actualHeal.toString(), enemy.sprite.x, enemy.sprite.y - this.tileSize * 0.3, 0xff0000);
+						console.error(`${enemy.id} se cura ${actualHeal} en Fortress.`);
+					}
+				}
+			}
+		}
+
+		this.allContainers.highlightContainer.removeChildren();
+		this.allContainers.attackHighlightContainer.removeChildren();
+		// Asegúrate de que enemyUnits tengan hasActed=false (TurnManager ya hace reset)
+		for (const enemy of this.enemyUnits) {
+			if (enemy.hasActed) {
+				continue;
+			}
+			// animar IA para esta unidad:
+			await this.enemyAI.processEnemyAction(enemy, this.allyUnits);
+			enemy.hasActed = true;
+			this.playerFactory.grayOutUnit(enemy);
+
+			// opcional: podrías esperar un pequeño delay entre acciones
+		}
+		// Al terminar IA de todos:
+		this.turnManager.startAllyTurn();
+	}
+
+	private enterAttackPhase(unit: PlayerUnit): void {
+		this.allContainers.clearPathPreview();
+		this.allContainers.highlightContainer.removeChildren();
+		SoundLib.stopMusic("run");
+		this.selectedUnit = unit;
+		// Recalcular rango:
+		this.attackRangeCells = this.attackCalc.computeAttackRange(unit);
+		if (this.attackRangeCells.size === 0) {
+			// No hay ataque posible: finalizar acción
+			unit.hasActed = true;
+			this.playerFactory.grayOutUnit(unit);
+
+			this.phaseManager.gamePhase = GamePhase.END;
+			console.log("No hay enemigos en rango; acción terminada.");
+			this.turnManager.endCurrentAction();
+			return;
+		}
+		// Si hay ataque posible:
+		this.phaseManager.gamePhase = GamePhase.ATTACK;
+		this.showAttackRange();
+		unit.hasActed = true;
+
+		console.log("Fase ATTACK: presiona Q para atacar o Enter para saltar");
 	}
 
 	private async doAttack(): Promise<void> {
@@ -991,6 +1046,8 @@ export class AuroraQuilmesMapScene extends PixiScene {
 			this.animations.animateMissEffect(attacker, target, this.allContainers, this.tileSize, () => {
 				// Marcamos que el atacante actuó (aunque falló).
 				attacker.hasActed = true;
+				this.playerFactory.grayOutUnit(attacker);
+
 				onComplete(); // limpieza local (por ej. quitar tint, etc.)
 			});
 		} else {
@@ -1001,6 +1058,7 @@ export class AuroraQuilmesMapScene extends PixiScene {
 				this.applyDamageWithTerrain(attacker, target, terrain, isCrit);
 				// Marcamos que el atacante actuó
 				attacker.hasActed = true;
+				this.playerFactory.grayOutUnit(attacker);
 
 				// Ya no hay contraataque: simplemente llamamos onComplete para limpieza local
 				onComplete();
@@ -1033,6 +1091,52 @@ export class AuroraQuilmesMapScene extends PixiScene {
 			console.log(`${target.id} ha sido derrotado.`);
 			this.handleUnitDefeat(target);
 		}
+	}
+
+	/**
+	 * Para IA: realiza el ataque de attacker a target, aplica daño, muestra overlay y marca hasActed,
+	 * espera a que el overlay termine antes de resolver.
+	 */
+	private async enemyPerformAttack(attacker: PlayerUnit, target: PlayerUnit): Promise<void> {
+		// Lógica de esquiva / hit / daño: muy similar a performAttack, pero devolviendo Promise en vez de callback.
+		// Podrías factorizar: extraer la parte de cálculo de daño en una función asíncrona.
+
+		// 1) Determinar terreno y esquiva
+		const tx = target.gridX,
+			ty = target.gridY;
+		let terrain = Terrain.PLAIN;
+		if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
+			terrain = Terrain.fromCode(this.grid[ty][tx]);
+		}
+		const avoidChance = target.avoid + terrain.avoBonus;
+		const didMiss = Math.random() < avoidChance;
+		if (didMiss) {
+			SoundLib.playSound("miss_SFX", {});
+			console.log(`${target.id} esquivó el ataque de ${attacker.id}!`);
+			// animación de miss:
+			await new Promise<void>((res) => {
+				this.animations.animateMissEffect(attacker, target, this.allContainers, this.tileSize, () => res());
+			});
+			// marcar como actuado
+			attacker.hasActed = true;
+			this.playerFactory.grayOutUnit(attacker);
+		} else {
+			// Hit:
+			const isCrit = Math.random() < attacker.criticalChance;
+			// animación de ataque:
+			await new Promise<void>((res) => {
+				this.animations.animateAttackEffect(attacker, target, () => res());
+			});
+			// aplicar daño:
+			this.applyDamageWithTerrain(attacker, target, terrain, isCrit);
+			attacker.hasActed = true;
+			this.playerFactory.grayOutUnit(attacker);
+		}
+
+		// 2) Mostrar overlay y esperar:
+		await this.startBattleSequenceAsync(attacker, target);
+
+		// 3) (opcional) si target muere, handleUnitDefeat ya se encarga de remover de listas, etc.
 	}
 
 	private handleUnitDefeat(unit: PlayerUnit): void {
@@ -1074,66 +1178,21 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		// Aquí podrías reproducir animación de muerte, SFX, etc.
 	}
 
-	/** Saltar ataque */
 	private skipAttack(): void {
 		console.log("Salto fase de ataque");
 		this.endAction();
 	}
 
-	/** Finaliza acción de la unidad: marca hasActed y pasa a END */
 	private endAction(): void {
 		if (this.selectedUnit) {
 			this.selectedUnit.hasActed = true;
+			this.playerFactory.grayOutUnit(this.selectedUnit);
 		}
 		this.clearAttackRange();
 		this.phaseManager.gamePhase = GamePhase.END;
 		console.log("Fase END: presiona Enter para continuar");
 
 		this.turnManager.endCurrentAction();
-	}
-
-	/**
-	 * Para IA: realiza el ataque de attacker a target, aplica daño, muestra overlay y marca hasActed,
-	 * espera a que el overlay termine antes de resolver.
-	 */
-	private async enemyPerformAttack(attacker: PlayerUnit, target: PlayerUnit): Promise<void> {
-		// Lógica de esquiva / hit / daño: muy similar a performAttack, pero devolviendo Promise en vez de callback.
-		// Podrías factorizar: extraer la parte de cálculo de daño en una función asíncrona.
-
-		// 1) Determinar terreno y esquiva
-		const tx = target.gridX,
-			ty = target.gridY;
-		let terrain = Terrain.PLAIN;
-		if (ty >= 0 && ty < this.grid.length && tx >= 0 && tx < this.grid[0].length) {
-			terrain = Terrain.fromCode(this.grid[ty][tx]);
-		}
-		const avoidChance = target.avoid + terrain.avoBonus;
-		const didMiss = Math.random() < avoidChance;
-		if (didMiss) {
-			SoundLib.playSound("miss_SFX", {});
-			console.log(`${target.id} esquivó el ataque de ${attacker.id}!`);
-			// animación de miss:
-			await new Promise<void>((res) => {
-				this.animations.animateMissEffect(attacker, target, this.allContainers, this.tileSize, () => res());
-			});
-			// marcar como actuado
-			attacker.hasActed = true;
-		} else {
-			// Hit:
-			const isCrit = Math.random() < attacker.criticalChance;
-			// animación de ataque:
-			await new Promise<void>((res) => {
-				this.animations.animateAttackEffect(attacker, target, () => res());
-			});
-			// aplicar daño:
-			this.applyDamageWithTerrain(attacker, target, terrain, isCrit);
-			attacker.hasActed = true;
-		}
-
-		// 2) Mostrar overlay y esperar:
-		await this.startBattleSequenceAsync(attacker, target);
-
-		// 3) (opcional) si target muere, handleUnitDefeat ya se encarga de remover de listas, etc.
 	}
 
 	/**
@@ -1184,18 +1243,38 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		});
 	}
 
-	private startAllyTurn(): void {
-		this.turnManager.startAllyTurn();
-
-		const firstAlly = this.allyUnits[0];
-		if (firstAlly) {
-			this.selectorPos.set(firstAlly.gridX, firstAlly.gridY);
-			this.updateSelectorPosition();
-			this.updateDebugCellInfo();
+	public override update(dt: number): void {
+		if (this.battleOverlay) {
+			this.battleOverlay.update(dt);
 		}
-		this.phaseManager.gamePhase = GamePhase.SELECT;
+		if (this.inBattle) {
+			return;
+		}
+
+		this.followPath(dt);
+
+		if (this.turnManager.getCurrentSide() === TurnSide.ALLY) {
+			this.inputHandler.update(this.phaseManager.gamePhase);
+			this.phaseManager.updatePhaseText();
+		} else {
+			this.phaseManager.phaseText.text = `Turno Enemigo`;
+		}
+
+		// Si la posición del selector cambió desde el último frame (o desde la última vez que actualizamos debug):
+		if (!this.lastDebugSelectorPos || this.lastDebugSelectorPos.x !== this.selectorPos.x || this.lastDebugSelectorPos.y !== this.selectorPos.y) {
+			this.updateDebugCellInfo();
+			// Actualiza el registro de la última posición
+			if (!this.lastDebugSelectorPos) {
+				this.lastDebugSelectorPos = new Point(this.selectorPos.x, this.selectorPos.y);
+			} else {
+				this.lastDebugSelectorPos.set(this.selectorPos.x, this.selectorPos.y);
+			}
+		}
+
+		this.allContainers.handleZoom();
 	}
 
+	// #region RESIZE
 	public override onResize(w: number, h: number): void {
 		this.allContainers.viewWidth = w;
 		this.allContainers.viewHeight = h;
@@ -1218,4 +1297,5 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		this.allContainers.pauseContainer.x = w / 2;
 		this.allContainers.pauseContainer.y = h / 2;
 	}
+	// #endregion RESIZE
 }

@@ -204,5 +204,4 @@ export const PlayerData: UnitConfig[] = [
 		criticalChance: 0.3,
 		// battleTextureKey: "battle_quilmes",
 	},
-	// ...
 ];

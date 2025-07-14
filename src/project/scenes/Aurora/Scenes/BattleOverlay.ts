@@ -3,10 +3,13 @@ import { Graphics, Sprite, Text, TextStyle, Ticker } from "pixi.js";
 import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import type { StateMachineAnimator } from "../../../../engine/animation/StateMachineAnimation";
 import { SoundLib } from "../../../../engine/sound/SoundLib";
+import type { PlayerUnit } from "../Data/IUnit";
 
 export interface BattleOverlayOptions {
 	attackerAnimator?: StateMachineAnimator;
 	defenderAnimator?: StateMachineAnimator;
+	attackerUnit?: PlayerUnit; // agregamos
+	defenderUnit?: PlayerUnit; // agregamos
 	isCrit?: boolean;
 	didMiss?: boolean;
 	attackerOnLeft?: boolean;
@@ -67,12 +70,20 @@ export class BattleOverlay extends PixiScene {
 	private defenderOriginalX = 0;
 	private defenderOriginalY = 0;
 
+	// Textos:
+	private attackerNameText?: Text;
+	private defenderNameText?: Text;
+	private attackerStatsText?: Text;
+	private defenderStatsText?: Text;
+
 	constructor(options: BattleOverlayOptions) {
 		super();
 
 		const {
 			attackerAnimator,
 			defenderAnimator,
+			attackerUnit,
+			defenderUnit,
 			isCrit = false,
 			didMiss = false,
 			attackerOnLeft = true,
@@ -105,28 +116,26 @@ export class BattleOverlay extends PixiScene {
 		this.soundMissKey = soundMissKey;
 		this.soundResultKey = soundResultKey;
 
-		// Fondo semitransparente
+		// Fondo semitransparente y decorativo...
 		const bg = new Graphics();
 		bg.beginFill(0x000000, 0.5).drawRect(-800, -600, 1600, 1200).endFill();
 		this.addChild(bg);
 
-		// Fondo decorativo
 		const sprBg = Sprite.from("battle2");
 		sprBg.alpha = 0.7;
 		sprBg.anchor.set(0.5);
 		this.addChild(sprBg);
 
-		// Offset para posicionar animators
+		// Offset base para posicionar animators
 		const offsetX = 150;
 		const offsetY = 30;
 
-		// Configurar attackerAnimator
+		// --- Configurar attackerAnimator ---
 		if (attackerAnimator) {
 			this.attackerAnim = attackerAnimator;
 			this.attackerAnim.scale.set(0.5);
 			this.attackerAnim.playState("idle");
 
-			// Decidir posición inicial y final para el tween
 			if (this.attackerOnLeft) {
 				this.attackerStartX = -offsetX;
 				this.attackerEndX = this.attackerStartX + this.attackMoveDistance;
@@ -142,7 +151,7 @@ export class BattleOverlay extends PixiScene {
 			this.addChild(this.attackerAnim);
 		}
 
-		// Configurar defenderAnimator
+		// --- Configurar defenderAnimator ---
 		if (defenderAnimator) {
 			this.defenderAnim = defenderAnimator;
 			this.defenderAnim.scale.set(0.5);
@@ -162,7 +171,84 @@ export class BattleOverlay extends PixiScene {
 			this.defenderOriginalY = this.defenderAnim.y;
 		}
 
-		// Texto crítico si aplica
+		// --- Crear textos de nombre y stats si hay unidades ---
+		const textStyleName = new TextStyle({
+			fontFamily: "Pixelate-Regular",
+			fill: "#ffffff",
+			fontSize: 50,
+			stroke: "#000000",
+			strokeThickness: 3,
+		});
+		const textStyleStats = new TextStyle({
+			fontFamily: "Pixelate-Regular",
+			fill: "#ffff88",
+			fontSize: 40,
+			stroke: "#000000",
+			strokeThickness: 2,
+			lineHeight: 50,
+		});
+
+		// Definir posiciones fijas en UI para textos de atacante y defensor, según attackerOnLeft.
+		// Ajusta estos valores (x, y) según tu layout de UI.
+		// Ejemplo: si tu UI es de 1600px ancho centrada en 0, puedes usar:
+		const fixedYName = -450; // altura en UI para mostrar nombres
+		const fixedYStats = 230; // altura en UI para mostrar stats (debajo o encima del nombre)
+		// Para X, elegimos una posición a la izquierda o derecha:
+		// Por ejemplo, si attackerOnLeft, ponemos atacante en -400 y defensor en +400; si no, viceversa.
+		const attackerNameX = this.attackerOnLeft ? -650 : 650;
+		const attackerStatsX = attackerNameX;
+		const defenderNameX = this.attackerOnLeft ? 650 : -650;
+		const defenderStatsX = defenderNameX;
+
+		if (attackerUnit) {
+			const name = attackerUnit.id;
+			const strength = attackerUnit.strength;
+			const critPct = Math.round(attackerUnit.criticalChance * 100);
+			const avoidPct = Math.round(attackerUnit.avoid * 100);
+
+			this.attackerNameText = new Text(name, textStyleName);
+			this.attackerStatsText = new Text(`STR: ${strength}\nCRIT: ${critPct}%\nAVO: ${avoidPct}%`, textStyleStats);
+			// Anchor centrado horizontal, verticalmente podemos anclar arriba (0) o centro (0.5). Aquí anclamos (0.5, 0) para que la posición sea su punto medio superior.
+			this.attackerNameText.anchor.set(0.5, 0);
+			this.attackerStatsText.anchor.set(0.5, 0);
+
+			// Asignar posición fija según attackerOnLeft:
+			this.attackerNameText.x = attackerNameX;
+			this.attackerNameText.y = fixedYName;
+			this.attackerStatsText.x = attackerStatsX;
+			this.attackerStatsText.y = fixedYStats;
+
+			// Inicialmente alpha 0 (para fade-in)
+			this.attackerNameText.alpha = 0;
+			this.attackerStatsText.alpha = 0;
+			this.addChild(this.attackerNameText);
+			this.addChild(this.attackerStatsText);
+		}
+
+		if (defenderUnit) {
+			const name = defenderUnit.id;
+			const strength = defenderUnit.strength;
+			const critPct = Math.round(defenderUnit.criticalChance * 100);
+			const avoidPct = Math.round(defenderUnit.avoid * 100);
+
+			this.defenderNameText = new Text(name, textStyleName);
+			this.defenderStatsText = new Text(`STR: ${strength}\nCRIT: ${critPct}%\nAVO: ${avoidPct}%`, textStyleStats);
+			this.defenderNameText.anchor.set(0.5, 0);
+			this.defenderStatsText.anchor.set(0.5, 0);
+
+			// Posición fija según attackerOnLeft (inversa a la del atacante)
+			this.defenderNameText.x = defenderNameX;
+			this.defenderNameText.y = fixedYName;
+			this.defenderStatsText.x = defenderStatsX;
+			this.defenderStatsText.y = fixedYStats;
+
+			this.defenderNameText.alpha = 0;
+			this.defenderStatsText.alpha = 0;
+			this.addChild(this.defenderNameText);
+			this.addChild(this.defenderStatsText);
+		}
+
+		// Texto crítico si aplica...
 		if (this.isCrit) {
 			const critText = new Text(
 				"CRÍTICO!",
@@ -175,11 +261,12 @@ export class BattleOverlay extends PixiScene {
 				})
 			);
 			critText.anchor.set(0.5);
+			// Ubicar el texto crítico en un lugar fijo de UI (por ejemplo arriba-centro):
 			critText.x = 0;
-			critText.y = -100;
+			critText.y = -250;
 			critText.alpha = 0;
 			this.critText = critText;
-			this.addChild(critText);
+			this.addChild(this.critText);
 		}
 
 		// Registrar update en ticker
@@ -192,7 +279,6 @@ export class BattleOverlay extends PixiScene {
 
 		switch (this.phase) {
 			case "intro":
-				// Reproducir SFX intro solo una vez al inicio
 				if (!this.introPlayed) {
 					this.introPlayed = true;
 					if (this.soundIntroKey) {
@@ -207,16 +293,40 @@ export class BattleOverlay extends PixiScene {
 					if (this.defenderAnim) {
 						this.defenderAnim.alpha = t;
 					}
+					if (this.attackerNameText) {
+						this.attackerNameText.alpha = t;
+					}
+					if (this.attackerStatsText) {
+						this.attackerStatsText.alpha = t;
+					}
+					if (this.defenderNameText) {
+						this.defenderNameText.alpha = t;
+					}
+					if (this.defenderStatsText) {
+						this.defenderStatsText.alpha = t;
+					}
 					if (this.critText) {
 						this.critText.alpha = t;
 					}
 				} else {
-					// Pasar a fase ataque
+					// Al completar intro, fijar alpha=1 y pasar a attack
 					if (this.attackerAnim) {
 						this.attackerAnim.alpha = 1;
 					}
 					if (this.defenderAnim) {
 						this.defenderAnim.alpha = 1;
+					}
+					if (this.attackerNameText) {
+						this.attackerNameText.alpha = 1;
+					}
+					if (this.attackerStatsText) {
+						this.attackerStatsText.alpha = 1;
+					}
+					if (this.defenderNameText) {
+						this.defenderNameText.alpha = 1;
+					}
+					if (this.defenderStatsText) {
+						this.defenderStatsText.alpha = 1;
 					}
 					if (this.critText) {
 						this.critText.alpha = 1;
@@ -228,11 +338,11 @@ export class BattleOverlay extends PixiScene {
 					this.inHitStop = false;
 					this.shakeElapsed = 0;
 
-					// Reproducir SFX de inicio de ataque
+					// SFX inicio de ataque
 					if (this.soundAttackKey) {
 						SoundLib.playSound(this.soundAttackKey, {});
 					}
-					// Si crítico, reproducir SFX de crítico
+					// SFX crítico
 					if (this.isCrit && this.soundCritKey) {
 						SoundLib.playSound(this.soundCritKey, {});
 					}
@@ -253,47 +363,40 @@ export class BattleOverlay extends PixiScene {
 				break;
 
 			case "attack":
-				// Si estamos en hitstop, contamos su tiempo y no avanzamos tween
+				// Hitstop
 				if (this.inHitStop) {
 					this.hitStopElapsed += dt;
 					if (this.hitStopElapsed >= this.hitStopDuration) {
 						this.inHitStop = false;
-						// reanudar movimiento: no reseteamos elapsed, pero en siguientes frames permitimos tween
 					}
 				} else {
-					// Tween de movimiento del atacante
+					// Tween de movimiento atacante
 					if (this.attackerAnim) {
-						// Solo si no en hitstop
 						const t = this.elapsed / this.attackDuration;
-						// Easing in-out: 0 → 1
 						const easedT = Math.min(1, (1 - Math.cos(Math.PI * t)) / 2);
 						this.attackerAnim.x = this.attackerStartX + easedT * (this.attackerEndX - this.attackerStartX);
 					}
 				}
 
-				// En el momento medio, disparar hit/miss anim, sonido, onHit, hitstop y shake, solo una vez
+				// Momento medio: onHit, shake y anim defensor
 				const half = this.attackDuration / 2;
 				if (this.elapsed >= half && !this.hitPlayed) {
 					this.hitPlayed = true;
-					// 1) Llamar callback onHit para aplicar daño o miss text
+					// Llamar onHit para aplicar daño
 					if (this.onHit) {
 						this.onHit();
 					}
-
-					// 2) Iniciar hitstop
+					// Iniciar hitstop
 					this.inHitStop = true;
 					this.hitStopElapsed = 0;
-
-					// 3) Iniciar shake en defensor
+					// Iniciar shake defensor
 					this.shakeElapsed = 0;
-
-					// 4) Anim defensor: hit o miss
+					// Anim defensor: hit o miss
 					if (this.defenderAnim) {
 						if (this.didMiss) {
 							if (this.defenderAnim.hasState("miss")) {
 								this.defenderAnim.playState("miss");
 							} else {
-								// tint o gris momentáneo
 								this.defenderAnim.tint = 0xaaaaaa;
 							}
 						} else {
@@ -304,45 +407,38 @@ export class BattleOverlay extends PixiScene {
 							}
 						}
 					}
-					// 5) Reproducir sonido de impacto o miss
+					// SFX impacto o miss
 					if (this.didMiss) {
 						if (this.soundMissKey) {
 							SoundLib.playSound(this.soundMissKey, {});
 						}
 					} else {
-						if (this.isCrit) {
-							// opcional reproducir extra en impacto
-						} else {
-							if (this.soundHitKey) {
-								SoundLib.playSound(this.soundHitKey, {});
-							}
+						if (!this.isCrit && this.soundHitKey) {
+							SoundLib.playSound(this.soundHitKey, {});
 						}
 					}
 				}
 
-				// Mientras dure shake, aplicamos offsets aleatorios pequeños
+				// Shake defensor
 				if (this.shakeElapsed < this.shakeDuration) {
 					this.shakeElapsed += dt;
 					if (this.defenderAnim) {
-						const magnitude = 5; // píxeles de desplazamiento máximo
+						const magnitude = 5;
 						const dx = (Math.random() * 2 - 1) * magnitude * (1 - this.shakeElapsed / this.shakeDuration);
 						const dy = (Math.random() * 2 - 1) * magnitude * (1 - this.shakeElapsed / this.shakeDuration);
 						this.defenderAnim.x = this.defenderOriginalX + dx;
 						this.defenderAnim.y = this.defenderOriginalY + dy;
 					}
 				} else {
-					// Al terminar shake, restauramos posición original
 					if (this.defenderAnim) {
 						this.defenderAnim.x = this.defenderOriginalX;
 						this.defenderAnim.y = this.defenderOriginalY;
-						// Si usamos tint momentáneo, restaurar:
 						this.defenderAnim.tint = 0xffffff;
 					}
 				}
 
-				// Finalmente, si la fase ataque completa:
+				// Fin de fase ataque
 				if (this.elapsed >= this.attackDuration) {
-					// Reset y transición a fase final
 					if (this.attackerAnim) {
 						this.attackerAnim.x = this.attackerStartX;
 						if (this.attackerAnim.hasState("idle")) {
@@ -350,18 +446,15 @@ export class BattleOverlay extends PixiScene {
 						}
 					}
 					if (this.defenderAnim) {
-						// Asegurar restaurar tint en caso que no lo haya hecho:
 						this.defenderAnim.tint = 0xffffff;
 						if (this.defenderAnim.hasState("idle")) {
 							this.defenderAnim.playState("idle");
 						}
-						// Restaurar posición final tras shake
 						this.defenderAnim.x = this.defenderOriginalX;
 						this.defenderAnim.y = this.defenderOriginalY;
 					}
 					this.phase = "result";
 					this.elapsed = 0;
-					// Sonido de resultado
 					if (this.soundResultKey) {
 						SoundLib.playSound(this.soundResultKey, {});
 					}

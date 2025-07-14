@@ -32,5 +32,7 @@ declare namespace GlobalMixins {
 
 		winAHSlot: any;
 		curse: any;
+		served: any;
+		orderComplete: any;
 	}
 }

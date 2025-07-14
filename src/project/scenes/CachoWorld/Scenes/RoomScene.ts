@@ -55,21 +55,48 @@ export class RoomScene extends PixiScene {
 	// eslint-disable-next-line @typescript-eslint/require-await
 	private async listenForPlayersUpdates(): Promise<void> {
 		const playersRef = ref(db, "players");
+		onValue(
+			playersRef,
+			(snap) => {
+				const serverPlayers = snap.exists() ? (snap.val() as Record<string, { x: number; y: number } | null>) : {};
 
-		onValue(playersRef, (snapshot) => {
-			const serverPlayers = snapshot.exists() ? snapshot.val() : {};
+				// a) Remove any local sprite whose ID no longer appears (or is null)
+				Object.keys(this.players)
+					.filter((id) => !(id in serverPlayers) || serverPlayers[id] === null)
+					.forEach((id) => {
+						const p = this.players[id];
+						if (p) {
+							this.worldContainer.removeChild(p);
+							delete this.players[id];
+						}
+					});
 
-			Object.keys(serverPlayers).forEach((id) => {
-				const playerData = serverPlayers[id];
-				if (!this.players[id]) {
-					this.createPlayer(id, playerData.x, playerData.y);
-				} else {
-					// Actualizar posición
-					this.players[id].x = playerData.x;
-					this.players[id].y = playerData.y;
+				// b) Update existing or create new ones
+				for (const [id, data] of Object.entries(serverPlayers)) {
+					if (!data) {
+						// a `null` value means Firebase removed that key
+						continue;
+					}
+					if (id === this.playerId) {
+						// skip the local player
+						continue;
+					}
+
+					const existing = this.players[id];
+					if (existing) {
+						// only update when sprite is present
+						existing.x = data.x;
+						existing.y = data.y;
+					} else {
+						// create if it didn’t exist
+						this.createPlayer(id, data.x, data.y);
+					}
 				}
-			});
-		});
+			},
+			(err) => {
+				console.error("Firebase onValue error:", err);
+			}
+		);
 	}
 
 	private createPlayer(id: string, x: number, y: number): void {
@@ -161,32 +188,37 @@ export class RoomScene extends PixiScene {
 	}
 
 	public override update(_dt: number): void {
+		// joystick & local position push
 		if (this.joystick) {
 			this.joystick.updateJoystick();
 			this.updatePlayerPositionInFirebase();
 		}
 
-		if (this.players[this.playerId]) {
+		// input + portal only if local exists
+		const local = this.players[this.playerId];
+		if (local) {
 			this.setupInputHandling();
-			this.portal.checkCollision(this.players[this.playerId], this.worldContainer);
+			this.portal.checkCollision(local, this.worldContainer);
 		}
 
-		// Actualizar todos los jugadores en la escena
-		for (const playerId in this.players) {
-			const player = this.players[playerId];
-			if (player instanceof CachoWorldPlayer) {
-				// Centrar la cámara en el jugador local
-				if (playerId === this.playerId) {
-					const scale = this.worldTransform.a; // Factor de escala
-					const targetX = -player.x * scale + window.innerWidth * 0.5;
-					const targetY = -player.y * scale + window.innerHeight * 0.5;
-
-					// Aplicar interpolación suave para evitar desfase
-					this.worldContainer.x += (targetX - this.worldContainer.x) * 0.1; // Ajusta el factor para suavizar
-					this.worldContainer.y += (targetY - this.worldContainer.y) * 0.1;
-				}
-				player.update(_dt); // Llama al método `update` de cada jugador
+		// update all players safely
+		for (const id in this.players) {
+			const player = this.players[id];
+			if (!player) {
+				continue; // skip null/deleted entries
 			}
+
+			// center camera on local
+			if (id === this.playerId) {
+				const scale = this.worldTransform.a;
+				const targetX = -player.x * scale + window.innerWidth * 0.5;
+				const targetY = -player.y * scale + window.innerHeight * 0.5;
+				this.worldContainer.x += (targetX - this.worldContainer.x) * 0.1;
+				this.worldContainer.y += (targetY - this.worldContainer.y) * 0.1;
+			}
+
+			// call each player’s own update
+			player.update(_dt);
 		}
 	}
 

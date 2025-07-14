@@ -6,13 +6,11 @@ export interface TurnCallbacks {
 	onStartEnemyTurn: () => void;
 	onStartAllyTurn: () => void;
 	onTurnChange?: (side: TurnSide) => void;
-
-	// etc.
 }
 
 export enum TurnSide {
-	ALLY,
-	ENEMY,
+	ALLY = "CONQUISTADOR",
+	ENEMY = "QUILMES",
 }
 
 export class TurnManager {
@@ -30,12 +28,20 @@ export class TurnManager {
 
 	public startAllyTurn(): void {
 		this.currentSide = TurnSide.ALLY;
-		// reset hasActed:
-		this.allyUnits.forEach((u) => ((u.hasActed = false), (u.hasHealedFortress = false)));
-		// notificar escena para posicionar selector sobre primer aliado:
+		// reset flags:
+		this.allyUnits.forEach((u) => {
+			u.hasActed = false;
+			u.hasHealedFortress = false;
+		});
+		// notificar cambio de turno
 		if (this.callbacks.onTurnChange) {
 			this.callbacks.onTurnChange(this.currentSide);
 		}
+		// notificar inicio de turno aliado
+		if (this.callbacks.onStartAllyTurn) {
+			this.callbacks.onStartAllyTurn();
+		}
+		// seleccionar siguiente aliado
 		const next = this.allyUnits.find((u) => !u.hasActed) || null;
 		this.callbacks.onAllySelectNext(next);
 	}

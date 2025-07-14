@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 // PlayerFactory.ts
 import type { Container } from "pixi.js";
-import { Sprite, Graphics, Texture } from "pixi.js";
+import { Sprite, Graphics, Texture, ColorMatrixFilter } from "pixi.js";
 import type { PlayerUnit, UnitConfig } from "../Data/IUnit";
 import { StateMachineAnimator } from "../../../../engine/animation/StateMachineAnimation";
 
@@ -125,22 +125,45 @@ export class PlayerFactory {
 		};
 		return unit;
 	}
-	/** Apply gray-out effect to show unit already acted */
+	/** Aplica un tono gris (desaturado) a la unidad */
 	public grayOutUnit(unit: PlayerUnit): void {
-		// Option A: simple tint + alpha
-		unit.sprite.alpha = 0.6; // slightly faded
+		// Crear un filtro de matriz de color y desaturar
+		const cmf = new ColorMatrixFilter();
+		cmf.desaturate(); // método desaturate() invierte la saturación al mínimo
+		// También puedes ajustar contraste o brillo si lo deseas:
+		// cmf.brightness(0.8, false);
 
-		// Option B: for stronger desaturation, you can use ColorMatrixFilter:
-		// const cmf = new PIXI.filters.ColorMatrixFilter();
-		// cmf.desaturate(); // or cmf.saturate(-1) depending on PIXI version
-		// unit.sprite.filters = [cmf];
+		// Aplicar solo si no está aplicado ya
+		unit.sprite.filters = unit.sprite.filters || [];
+		// Evitar duplicar el filtro: chequear existencia
+		const hasFilter = (unit.sprite.filters as any[]).some((f) => f instanceof ColorMatrixFilter);
+		if (!hasFilter) {
+			unit.sprite.filters = [...unit.sprite.filters, cmf];
+		}
+		// Opcionalmente, también desaturar la cara o healthBar, si tienen sprite aparte:
+		if (unit.faceSprite) {
+			unit.faceSprite.filters = unit.faceSprite.filters || [];
+			const hasFilterFace = (unit.faceSprite.filters as any[]).some((f) => f instanceof ColorMatrixFilter);
+			if (!hasFilterFace) {
+				unit.faceSprite.filters = [...unit.faceSprite.filters, cmf];
+			}
+		}
 	}
 
-	/** Remove gray-out effect so unit looks normal again */
+	/** Quita el efecto de gris (restaura apariencia) */
 	public restoreUnitAppearance(unit: PlayerUnit): void {
-		unit.sprite.alpha = 1; // fully opaque
-		// If you used filters:
-		// unit.sprite.filters = [];
+		if (unit.sprite.filters) {
+			unit.sprite.filters = unit.sprite.filters.filter((f) => !(f instanceof ColorMatrixFilter));
+			if (unit.sprite.filters.length === 0) {
+				unit.sprite.filters = [];
+			}
+		}
+		if (unit.faceSprite && unit.faceSprite.filters) {
+			unit.faceSprite.filters = unit.faceSprite.filters.filter((f) => !(f instanceof ColorMatrixFilter));
+			if (unit.faceSprite.filters.length === 0) {
+				unit.faceSprite.filters = [];
+			}
+		}
 	}
 
 	/**

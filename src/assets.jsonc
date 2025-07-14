@@ -312,6 +312,28 @@
       }
     },
     {
+      "name": "coffee",
+      "assets": {
+        "mock-up": "./img/coffee/mock-up.png",
+        "mock-up2": "./img/coffee/mock-up2.png",
+
+        "char1": "./img/coffee/char1.png",
+        "char2": "./img/coffee/char2.png",
+        "blob": "./img/coffee/blob.png",
+        "card": "./img/coffee/card.png",
+
+        "check": "./img/coffee/check.png",
+        "ready": "./img/coffee/ready.png",
+
+        "ing-granos": "./img/coffee/ing-granos.png",
+        "ing-agua": "./img/coffee/ing-agua.png",
+        "ing-pan": "./img/coffee/ing-pan.png",
+        "ing-jamon": "./img/coffee/ing-jamon.png",
+        "station-sandwich": "./img/coffee/station-sandwich.png",
+        "station-café": "./img/coffee/station-cafe.png"
+      }
+    },
+    {
       "name": "aurora-latest",
       "assets": {
         "performAtk_SFX": "./sfx/BlockBreak1.wav",
@@ -325,7 +347,7 @@
 
         "frameBlue": "./img/aurora-latest/frameBlue.jpg",
         "frameOrange": "./img/aurora-latest/frameOrange.jpg",
-                                                                                                                                   
+
         "selector": "./img/aurora-latest/selector.png",
         "bossIcon": "./img/aurora-latest/bossIcon.png",
         "casa": "./img/aurora-latest/casa.png",
@@ -349,6 +371,10 @@
 
         "battle_colonial": "./img/aurora-latest/battle_colonial.png",
         "battle_quilmes": "./img/aurora-latest/battle_quilmes.png",
+
+        "straightTexture": "./img/aurora-latest/straightTexture.png",
+        "curveTexture": "./img/aurora-latest/curveTexture.png",
+        "tipTexture": "./img/aurora-latest/tipTexture.png",
 
         "zamba": "./music/zamba.mp3",
         // colonialAttack
