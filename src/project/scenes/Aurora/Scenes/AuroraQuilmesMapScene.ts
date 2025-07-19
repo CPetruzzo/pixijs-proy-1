@@ -267,17 +267,19 @@ export class AuroraQuilmesMapScene extends PixiScene {
 		this.turnManager.startAllyTurn();
 
 		const terrainBG = Sprite.from("frameOrange");
+
 		terrainBG.anchor.set(0.5);
 		terrainBG.scale.set(0.3);
 		terrainBG.alpha = 0.6;
 		terrainBG.x = this.allContainers.worldContainer.width - terrainBG.width * 0.5;
 		terrainBG.y = this.allContainers.worldContainer.height - terrainBG.height - 200;
 		this.allContainers.worldContainer.addChild(terrainBG);
+
 		this.terrainInfoText = new Text("", new TextStyle({ fill: "#ffffff", fontSize: 64, dropShadow: true, fontFamily: "Pixelate-Regular", wordWrap: true, wordWrapWidth: 280 }));
 		this.terrainInfoText.anchor.set(0, 0.5);
 		terrainBG.addChild(this.terrainInfoText);
-		this.terrainInfoText.x = 0;
-		this.terrainInfoText.y = 0;
+		terrainBG.x = 708;
+		terrainBG.y = 460;
 
 		this.unitInfoText = new Text("", new TextStyle({ fill: "#ffffff", dropShadow: true, dropShadowDistance: 2, fontFamily: "Pixelate-Regular", fontSize: 18 }));
 		this.unitInfoText.x = 0;
