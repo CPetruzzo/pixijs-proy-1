@@ -334,6 +334,28 @@
       }
     },
     {
+      "name": "myfriend",
+      "assets": {
+        "char": "./img/myfriend/char.png",
+        "forest": "./img/myfriend/forest.png",
+                "forestFront": "./img/myfriend/forestFront.png",
+
+        "chat-myfriend": "./img/myfriend/chat-myfriend.png",
+        "mapframe-myfriend": "./img/myfriend/mapframe-myfriend.png",
+        "mockup-myfriend": "./img/myfriend/mockup-myfriend.png",
+        "cuba": "./img/myfriend/cuba.png",
+
+        "arrows1": "./img/myfriend/arrows1.png",
+        "arrows2": "./img/myfriend/arrows2.png",
+        "arrows3": "./img/myfriend/arrows3.png",
+        "arrows4": "./img/myfriend/arrows4.png",
+        "arrows5": "./img/myfriend/arrows5.png",
+        "arrows6": "./img/myfriend/arrows6.png",
+
+        "bgm": "./sfx/myfriend/bgm.mp3"
+      }
+    },
+    {
       "name": "aurora-latest",
       "assets": {
         "performAtk_SFX": "./sfx/BlockBreak1.wav",

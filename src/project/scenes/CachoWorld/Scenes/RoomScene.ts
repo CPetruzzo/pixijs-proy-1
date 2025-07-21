@@ -27,8 +27,14 @@ export class RoomScene extends PixiScene {
 		this.addChild(this.worldContainer);
 
 		this.playerId = playerEnteringID;
-		this.room = new Room(roomId, RoomScene, this.playerId); // Crear una instancia de la sala
-
+		// ---- HERE is the fix:
+		// Pass the *game* scene as destination, not RoomScene.
+		this.room = new Room(
+			roomId, // e.g. "1" or "Lobby"
+			MultiplayerCachoWorldGameScene, // <— the actual game scene class
+			this.playerId,
+			/* isMainScene= */ false
+		);
 		// Crear mapa de la nueva escena
 		this.createMap();
 
@@ -39,8 +45,14 @@ export class RoomScene extends PixiScene {
 		// Configurar controles de teclado u otras funcionalidades
 		this.setupInputHandling();
 
-		const lobby = new Room("Lobby", MultiplayerCachoWorldGameScene, this.playerId, true);
-		this.portal = new PortalToMenu(lobby, 200, 300, 50, 100, this.playerId); // Destino: room2, posición y tamaño
+		const lobbyRoom = new Room(
+			roomId,
+			MultiplayerCachoWorldGameScene, // <— when you go through portal, switch into the game
+			this.playerId,
+			false
+		); // 3) Create a portal that points into the game scene
+		this.portal = new PortalToMenu(lobbyRoom, 200, 300, 50, 100, this.playerId);
+		this.worldContainer.addChild(this.portal);
 		this.worldContainer.addChild(this.portal); // Agregar el portal al contenedor principal
 
 		console.log("players", this.players);

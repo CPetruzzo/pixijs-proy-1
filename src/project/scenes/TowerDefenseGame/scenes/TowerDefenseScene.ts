@@ -13,6 +13,8 @@ import { Manager } from "../../../..";
 import { TowerDefenseNameInputPopUp } from "./TowerDefenseNameInputPopUp";
 import { Tween } from "tweedle.js";
 import { RestartButton } from "../ui/RestartButton";
+import { addGoToMenuButton } from "../../../../utils/GoToMenuButton";
+import { DEBUG } from "../../../../flags";
 
 export class TowerDefenseScene extends PixiScene {
 	public static readonly BUNDLES = ["towerdefense"];
@@ -48,6 +50,10 @@ export class TowerDefenseScene extends PixiScene {
 		this.setupClickListener();
 
 		RestartButton.createRestartButton(this.uiRightContainer, () => this.cleanupBeforeRestart());
+
+		if (DEBUG) {
+			addGoToMenuButton(this);
+		}
 	}
 
 	private cleanupBeforeRestart(): void {

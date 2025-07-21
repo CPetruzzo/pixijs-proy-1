@@ -4,7 +4,8 @@ import { TransitionBase } from "./TransitionBase";
 import { ScaleHelper } from "../../utils/ScaleHelper";
 import type { ResolveOverride } from "../ITransition";
 import { TweenUtils } from "../../tweens/tweenUtils";
-import { CircularGradientProgress, CircularGradientProgressOptions } from "../../progressbar/CircularGradientProgress";
+import type { CircularGradientProgressOptions } from "../../progressbar/CircularGradientProgress";
+import { CircularGradientProgress } from "../../progressbar/CircularGradientProgress";
 
 export class LoadingTransition extends TransitionBase {
 	private readonly color: number;

@@ -4,6 +4,8 @@ import { Ingredient } from "./Ingredient";
 import { OrderManager } from "./OrderManager";
 import { Station } from "./Station";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
+import { addGoToMenuButton } from "../../../utils/GoToMenuButton";
+import { DEBUG } from "../../../flags";
 
 export class CoffeeShopScene extends PixiScene {
 	private gameContainer = new Container();
@@ -102,6 +104,10 @@ export class CoffeeShopScene extends PixiScene {
 			this.orderMgr.deliverReady(); // este método debe llamar internamente a removeOrder(0) y emitir orderComplete
 		});
 		this.uiTopRightContainer.addChild(this.deliverBtn);
+
+		if (DEBUG) {
+			addGoToMenuButton(this);
+		}
 	}
 
 	private score = 0;

@@ -26,7 +26,8 @@
         "game",
         "background",
         "changes fit screen and background",
-        "newgames"
+        "newgames",
+        "soul"
     ],
     "conventionalCommits.autoCommit": false,
     "conventionalCommits.emojiFormat": "emoji",

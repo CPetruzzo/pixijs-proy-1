@@ -245,7 +245,7 @@ export class Scene3D extends PixiScene {
 		// Generamos el laberinto
 		this.maze.generate();
 		// Agregamos las paredes del laberinto a la escena
-		this.addWallsFromMaze(this.maze);
+		// this.addWallsFromMaze(this.maze);
 
 		this.ui = new UI(this.uiContainer);
 	}
@@ -665,7 +665,7 @@ export class Scene3D extends PixiScene {
 		this.uiContainer.y = newH * 0.05;
 	}
 
-	private addWallsFromMaze(maze: MazeFixed): void {
+	public addWallsFromMaze(maze: MazeFixed): void {
 		const wallSize = 10; // Tamaño de cada celda del laberinto en la escena
 
 		for (let row = 0; row < maze.rows; row++) {
