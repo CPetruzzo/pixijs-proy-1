@@ -338,7 +338,9 @@
       "assets": {
         "char": "./img/myfriend/char.png",
         "forest": "./img/myfriend/forest.png",
-                "forestFront": "./img/myfriend/forestFront.png",
+        "forestNight": "./img/myfriend/forestNight.png",
+
+        "forestFront": "./img/myfriend/forestFront.png",
 
         "chat-myfriend": "./img/myfriend/chat-myfriend.png",
         "mapframe-myfriend": "./img/myfriend/mapframe-myfriend.png",
@@ -351,6 +353,8 @@
         "arrows4": "./img/myfriend/arrows4.png",
         "arrows5": "./img/myfriend/arrows5.png",
         "arrows6": "./img/myfriend/arrows6.png",
+        "arrows7": "./img/myfriend/arrows7.png",
+        "arrows8": "./img/myfriend/arrows8.png",
 
         "bgm": "./sfx/myfriend/bgm.mp3"
       }

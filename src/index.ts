@@ -27,6 +27,7 @@ import { AdMob } from "@capacitor-community/admob";
 import { SoundLib } from "./engine/sound/SoundLib";
 import { Sounds } from "./project/scenes/RunFall/Managers/SoundManager";
 import { MyFriendGameScene } from "./project/scenes/MyFriend/MyFriendGameScene";
+import { SlotMonster } from "./project/scenes/GamblingGame/SlotMonster";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -133,7 +134,7 @@ window.addEventListener("contextmenu", (e) => {
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));  }
 
-	Manager.changeScene(MyFriendGameScene, { transitionClass: CircularLoadingTransition });
+	Manager.changeScene(SlotMonster, { transitionClass: CircularLoadingTransition });
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

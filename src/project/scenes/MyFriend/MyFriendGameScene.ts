@@ -92,7 +92,7 @@ export class MyFriendGameScene extends PixiScene {
 		// crear la mascota “cuba” y añadirla al mundo
 		this.cubaSprite = Sprite.from("cuba");
 		this.cubaSprite.anchor.set(0.5, 1); // centra base en el jugador
-		this.cubaSprite.scale.set(0.125); // ajústalo a tu gusto
+		this.cubaSprite.scale.set(0.1); // ajústalo a tu gusto
 		this.worldContainer.addChild(this.cubaSprite);
 
 		this.glow = new GlowFilter({
@@ -427,7 +427,7 @@ export class MyFriendGameScene extends PixiScene {
 
 		this.playerSprite = Sprite.from("char");
 		this.playerSprite.anchor.set(0.5, 1);
-		this.playerSprite.scale.set(0.1);
+		this.playerSprite.scale.set(0.07);
 		this.playerSprite.position.x = this.tileSize / 2;
 		this.playerSprite.position.y = this.tileSize / 2;
 
@@ -672,6 +672,8 @@ export class MyFriendGameScene extends PixiScene {
 			Texture.from("arrows4"),
 			Texture.from("arrows5"),
 			Texture.from("arrows6"),
+			Texture.from("arrows7"),
+			Texture.from("arrows8"),
 		]);
 		// no reproducimos aquí todavía
 		this.targetTileOutline.loop = false;
