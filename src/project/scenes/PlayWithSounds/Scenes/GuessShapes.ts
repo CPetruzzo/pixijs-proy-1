@@ -1,4 +1,3 @@
-
 import { Container } from "@pixi/display";
 import { Sprite } from "@pixi/sprite";
 import { Text } from "@pixi/text";
@@ -39,8 +38,8 @@ export class GuessShapes extends PixiScene {
 	private progress: ProgressBar;
 	private maxPoints: number = 600;
 	private win: boolean = false;
-	start: boolean = false;
-	pause: boolean = false;
+	public start: boolean = false;
+	public pause: boolean = false;
 
 	constructor() {
 		super();
@@ -53,7 +52,7 @@ export class GuessShapes extends PixiScene {
 
 		this.ui = new HudGuess();
 		this.ui.position.set(1680, 160);
-		this.ui.scale.set(0.8)
+		this.ui.scale.set(0.8);
 		this.ui.on("ButtonStart" as any, () => {
 			this.start = true;
 			this.pause = false;
@@ -62,18 +61,14 @@ export class GuessShapes extends PixiScene {
 		this.ui.on("ButtonPause" as any, () => {
 			this.pause = true;
 			this.animalButtons.interactiveNo();
-		})
+		});
 
 		this.animalButtons = new AnimalButtonsGuess();
 		this.animalButtons.position.set(1100, 750);
 		this.animalButtons.on("CLICKED_ANIMAL" as any, (clicked: string) => {
-			console.log('this.currentAnimal', this.currentAnimal)
-			console.log('clicked', clicked)
 			if (!this.alreadyClicked) {
 				if (clicked == this.currentAnimal) {
-
 					this.gameSpeed -= 500;
-					console.log("bien ahí");
 					this.alreadyClicked = true;
 					this.currentPoints += 50;
 					if (this.currentPoints >= this.maxPoints) {
@@ -82,30 +77,24 @@ export class GuessShapes extends PixiScene {
 					}
 					this.pointsOnScreen.text = `${this.currentPoints}` + "Points";
 					this.animalButtons.interactiveNo();
-					SoundLib.playSound("success-sfx", { loop: false })
+					SoundLib.playSound("success-sfx", { loop: false });
 					Timer.delay(this.leftTime, () => {
 						this.alreadyClicked = false;
 						this.animalButtons.interactiveYes();
-					})
+					});
 				} else {
 					this.gameSpeed = 6500;
-					SoundLib.playSound("beep", { loop: false })
-					// this.currentPoints -= 50;
-					// if (this.currentPoints <= 0) {
-					// 	this.currentPoints = 0;
-					// }
+					SoundLib.playSound("beep", { loop: false });
 					this.alreadyClicked = true;
 					this.pointsOnScreen.text = `${this.currentPoints}` + "Points";
 					this.animalButtons.interactiveNo();
-					// t.from({ x: 980 }).to({ x: 1100 }, 200).yoyo(true).repeat(4).start();
-					// t.to({ alpha: 0 }, 500).start();
 					Timer.delay(this.leftTime, () => {
 						this.alreadyClicked = false;
 						this.animalButtons.interactiveYes();
-					})
+					});
 				}
 			}
-		})
+		});
 
 		this.progress = new ProgressBar({
 			background: "bar_1",
@@ -114,69 +103,56 @@ export class GuessShapes extends PixiScene {
 			initialValue: this.currentPoints,
 			maxValue: this.maxPoints,
 			minValue: 0,
-		}
-		);
+		});
 		this.progress.scale.set(0.3);
 		this.progress.position.set(1000, 100);
 
 		this.sceneContainer = new Container();
-		this.sceneContainer.addChild(
-			this.bg,
-			this.ui,
-			this.animalButtons,
-			this.progress
-		);
+		this.sceneContainer.addChild(this.bg, this.ui, this.animalButtons, this.progress);
 		this.sceneContainer.pivot.set(this.sceneContainer.width / 2, this.sceneContainer.height / 2);
 
-		this.addChild(
-			this.sceneContainer,
-			this.movingContainer
-		);
+		this.addChild(this.sceneContainer, this.movingContainer);
 
 		this.nubes = [];
 
-		this.shapes = [
-			"chooserSheep",
-			"horseCloud",
-			"cowCloud",
-			"duckCloud",
-			"rooster",
-			"pig"
-		];
+		this.shapes = ["chooserSheep", "horseCloud", "cowCloud", "duckCloud", "rooster", "pig"];
 
 		let currentPoints: number;
-		this.pointsOnScreen = new Text(`${currentPoints}` + "Points", { fontSize: 40, fontFamily: ("Arial") });
+		this.pointsOnScreen = new Text(`${currentPoints}` + "Points", { fontSize: 40, fontFamily: "Arial" });
 		this.pointsOnScreen.text = `${this.currentPoints}` + "Points";
-		this.pointsOnScreen.position.set(this.sceneContainer.width / 2, 50)
+		this.pointsOnScreen.position.set(this.sceneContainer.width / 2, 50);
 		// this.sceneContainer.addChild(this.pointsOnScreen)
 	}
 
 	public override update(dt: number): void {
+		// Si ya ganaste, hacer la transición una sola vez
+		if (this.win && !this.gameOver) {
+			this.gameOver = true;
+			// guardo tiempo en DataManager (milisegundos)
+			DataManager.setValue("timeTaken", this.globalTimePassed);
+			// FinalPoints ya lo venía seteando; por si acaso lo guardo otra vez
+			DataManager.setValue("FinalPoints", this.currentPoints);
 
-		if (this.win) {
-			Manager.changeScene(FinishGuessScene
-				// , [], Intermission
-			);
+			Manager.changeScene(FinishGuessScene);
+			return;
 		}
 
 		if (this.pause) {
-			return
+			return;
 		}
 
 		this.leftTime = this.gameSpeed - this.timePassed;
 
 		this.timePassed += dt;
 		this.globalTimePassed += dt;
-		// console.log(this.globalTimePassed);
 
 		this.progress.updateValue(this.currentPoints, 200);
 		DataManager.setValue("FinalPoints", this.currentPoints);
 
-		if (this.timePassed > this.gameSpeed && (this.start)) {
-
+		if (this.timePassed > this.gameSpeed && this.start) {
 			this.globalTimePassed += dt;
 			this.timePassed = 0;
-			let newCloud = this.shapes[Math.floor(Math.random() * this.shapes.length)]
+			const newCloud = this.shapes[Math.floor(Math.random() * this.shapes.length)];
 
 			const cloud = new Nubes(newCloud);
 			cloud.alpha = 0.8;
@@ -187,21 +163,20 @@ export class GuessShapes extends PixiScene {
 
 			this.moveUp(cloud);
 
-			this.nubes.push(cloud)
+			this.nubes.push(cloud);
 			this.movingContainer.addChild(cloud);
 
 			if (this.globalTimePassed > 1000) {
-				this.globalTimePassed = 0
+				this.globalTimePassed = 0;
 			}
 		}
 
-		this.currentAnimal = DataManager.getValue("animal")
+		this.currentAnimal = DataManager.getValue("animal");
 
-		for (let nube of this.nubes) {
+		for (const nube of this.nubes) {
 			nube.speed.x = -0.2;
 			nube.update(dt);
 		}
-		// console.log(this.nubes.length)
 	}
 
 	public override onResize(newW: number, newH: number): void {
@@ -209,29 +184,11 @@ export class GuessShapes extends PixiScene {
 		ScaleHelper.setScaleRelativeToScreen(this.sceneContainer, newW, newH, 1, 1, ScaleHelper.FIT);
 	}
 
-	private moveUp(cloud: Nubes) {
-		new Tween(cloud)
-			.from({ y: 400 })
-			.to({ y: 300 }, 1000)
-			.easing(Easing.Sinusoidal.In)
-			.start()
-			.onComplete(this.moveDown.bind(this))
+	private moveUp(cloud: Nubes): void {
+		new Tween(cloud).from({ y: 400 }).to({ y: 300 }, 1000).easing(Easing.Sinusoidal.In).start().onComplete(this.moveDown.bind(this));
 	}
 
-	private moveDown(cloud: Nubes) {
-		new Tween(cloud)
-			.from({ y: 300 })
-			.to({ y: 400 }, 1000)
-			.easing(Easing.Sinusoidal.In)
-			.start()
-			.onComplete(this.moveUp.bind(this))
+	private moveDown(cloud: Nubes): void {
+		new Tween(cloud).from({ y: 300 }).to({ y: 400 }, 1000).easing(Easing.Sinusoidal.In).start().onComplete(this.moveUp.bind(this));
 	}
-
-	// private divisiblePor5000(numero: number): boolean {
-	// 	let resto = numero % 5000;
-	// 	if (resto = 0) {
-	// 		return true
-	// 	}
-	// }
-
 }

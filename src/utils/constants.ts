@@ -3,6 +3,7 @@ import { Texture } from "pixi.js";
 export const RIVER_TEXTURE: Texture = Texture.from("./img/water.png");
 export const GRASS_TEXTURE: Texture = Texture.from("./img/grass.png");
 export const HILL_TEXTURE: Texture = Texture.from("./img/mountain.png");
+export const ROTATE: Texture = Texture.from("./preloader/rotate.jpg");
 
 // LOLI GAME
 export const HAND_MOVEMENT_AMPLITUDE = 0.05;

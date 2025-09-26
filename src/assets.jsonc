@@ -45,6 +45,10 @@
         // 	"srcs": "./preloader/initialvideo.mp4" // Aquí se agrega el archivo de video
         // },
         {
+          "name": "rotateScreen",
+          "srcs": "./preloader/rotate.jpg" // Aquí se agrega el archivo de video
+        },
+        {
           "name": "defaultFont",
           "srcs": "./fonts/Rounded_Elegance.{woff2,woff,ttf}",
           "data": {
@@ -73,6 +77,14 @@
           "srcs": "./fonts/Pixelate-Regular.ttf",
           "data": {
             "family": "Pixelate-Regular",
+            "weight": ["normal", "bold"]
+          }
+        },
+        {
+          "name": "Spirituality",
+          "srcs": "./fonts/Spirituality.ttf",
+          "data": {
+            "family": "Spirituality",
             "weight": ["normal", "bold"]
           }
         },
@@ -174,6 +186,7 @@
         "player3": "./img/player3.png"
       }
     },
+    // BUBBLE
     {
       "name": "bubble",
       "assets": {
@@ -201,6 +214,7 @@
         "sfxWhoosh": "./sfx/ggj/woosh.wav"
       }
     },
+    // TOWERDEFENSE
     {
       "name": "towerdefense",
       "assets": {
@@ -268,6 +282,7 @@
         "package 2 background": "./img/big_placeholder/background-2.jpg"
       }
     },
+    // STORAGE
     {
       "name": "storagescene",
       "assets": {
@@ -275,6 +290,7 @@
         "shield": "./img/player2.png"
       }
     },
+    // CACHOWORLD
     {
       "name": "cachoworld",
       "assets": {
@@ -298,6 +314,7 @@
         "idle5": "./img/cachoworld/IdleSpritesheet/5.png"
       }
     },
+    // SKYSTAR
     {
       "name": "skystar",
       "assets": {
@@ -311,6 +328,7 @@
         "mountain": "./img/daynight/mountain.png"
       }
     },
+    // COFFEE
     {
       "name": "coffee",
       "assets": {
@@ -333,6 +351,7 @@
         "station-café": "./img/coffee/station-cafe.png"
       }
     },
+    // SOUL
     {
       "name": "myfriend",
       "assets": {
@@ -346,6 +365,13 @@
         "mapframe-myfriend": "./img/myfriend/mapframe-myfriend.png",
         "mockup-myfriend": "./img/myfriend/mockup-myfriend.png",
         "cuba": "./img/myfriend/cuba.png",
+        "blackcat": "./img/myfriend/cat.png",
+        "pidgeon": "./img/myfriend/pidgeon.png",
+
+        "backlayer": "./img/myfriend/bglayer.jpg",
+        "charlayer": "./img/myfriend/layer.png",
+        "doglayer": "./img/myfriend/cuba2.png",
+        "start": "./img/myfriend/start.png",
 
         "arrows1": "./img/myfriend/arrows1.png",
         "arrows2": "./img/myfriend/arrows2.png",
@@ -356,9 +382,12 @@
         "arrows7": "./img/myfriend/arrows7.png",
         "arrows8": "./img/myfriend/arrows8.png",
 
+        "hello": "./music/soul/hello.wav",
+        "introSoul": "./music/soul/introSoul.mp3",
         "bgm": "./sfx/myfriend/bgm.mp3"
       }
     },
+    // AURORA
     {
       "name": "aurora-latest",
       "assets": {
@@ -446,6 +475,7 @@
         "battle_quilmes_attack_8": "./img/aurora-latest/animations/quilmes_8.png"
       }
     },
+    // TPWYD
     {
       "name": "abandonedhouse",
       "assets": {
@@ -595,6 +625,45 @@
         // "scene": "models/horror_room/scene.gltf"
       }
     },
+    // ESPERT
+    {
+      "name": "espert",
+      "assets": {
+        // "espert": "./sfx/slots/casinoBGM.mp3",
+        "mockup": "./img/espert/mockup.jpg",
+        "money": "./img/espert/money.jpg",
+        "helmet": "./img/espert/helmet.jpg",
+        "sfxWhoosh": "./sfx/ggj/woosh.wav",
+        "rotate": "./img/espert/rotate.jpg",
+
+        "altaCoimera": "./music/espert/altaCoimera.mp3",
+        "moto-idle": "./music/espert/moto-idle.mp3",
+        "arranque": "./music/espert/arranque.mp3",
+        "andando": "./music/espert/andando.mp3",
+
+        "sound_collectable": "./sfx/uiCollectable.mp3",
+        "streetBG": "./img/espert/streetBG.png",
+
+        "streetLayer1": "./img/espert/streetLayer1.png",
+        "streetLayer2": "./img/espert/streetLayer2.jpg",
+
+        "uiBar": "./img/espert/mockup2.png",
+        "beep": "./sfx/farm/beep.mp3",
+
+        "espertBG": "./img/espert/espertBG.png",
+        "espert": "./img/espert/espert.png",
+        "milei": "./img/espert/milei.png",
+        "espertCar": "./img/espert/espertCar.png",
+        "espertSpeedUp": "./img/espert/espertSpeedUp.png",
+
+        "cristina": "./img/espert/cristina.png",
+        "lilita": "./img/espert/lilita.png",
+        "karina": "./img/espert/karina.png",
+        "bullrich": "./img/espert/bullrich.png",
+        "toto": "./img/espert/toto.png"
+      }
+    },
+    // SLOTS
     {
       "name": "slots",
       "assets": {
@@ -608,6 +677,7 @@
         "lever": "./img/slots/slot_lever.png"
       }
     },
+    // RUNFALL
     {
       "name": "fallrungame",
       "assets": {
@@ -721,6 +791,7 @@
         "return": "./img/runfall/return.png"
       }
     },
+    // BASQUET
     {
       "name": "basquet",
       "assets": {
@@ -759,12 +830,14 @@
         "courtBGM": "./sfx/basketballBGM.wav"
       }
     },
+    // TOPDOWN
     {
       "name": "topdown",
       "assets": {
         "package 1 background": "./img/image.jpg"
       }
     },
+    // PLAYWITHSOUNDS
     {
       "name": "playWithSounds",
       "assets": {
@@ -785,12 +858,15 @@
 
         "BG0": "./img/BG/BG0.jpg",
         "BG9": "./img/BG/BG9.png",
+        "BG10": "./img/BG/BG10.png",
 
         "frame1": "./img/farmAnimals/frame1.png",
         "frame2": "./img/farmAnimals/frame2.png",
 
         "TutorialBody2": "./img/farmAnimals/TutorialBody2.png",
         "TutorialButton": "./img/farmAnimals/TutorialButton.png",
+
+        "Highlight03@2x": "./img/farmAnimals/Highlight03@2x.png",
 
         "button_plus": "./img/farmAnimals/button_plus.png",
         "button_minus": "./img/farmAnimals/button_minus.png",
@@ -831,6 +907,7 @@
         "bar_2": "./img/farmAnimals/bar_2.png"
       }
     },
+    // 3D
     {
       "name": "3d",
       "assets": {
@@ -854,6 +931,7 @@
         "loli": "./models/cheers1.png"
       }
     },
+    // 3D SHOOTER
     {
       "name": "3dshooter",
       "assets": {
@@ -877,6 +955,7 @@
         "futurecoprunforward": "./models/futurecoprunforward.glb"
       }
     },
+    // DAGER
     {
       "name": "dager",
       "assets": {
@@ -884,6 +963,7 @@
         "blackboard": "./img/engine/blackboard2.png"
       }
     },
+    // JUBILPOSTOR
     {
       "name": "jubilpostor",
       "assets": {
@@ -906,6 +986,7 @@
         "marcha": "./sfx/jubilpostor/marcha.wav"
       }
     },
+    // TETRIS
     {
       "name": "tetris",
       "assets": {
@@ -919,6 +1000,7 @@
         "sound_block": "./sfx/BlockBreak1.wav"
       }
     },
+    // CONSTRUCTION
     {
       "name": "construction",
       "assets": {
@@ -929,6 +1011,7 @@
         "player": "./img/player1.png"
       }
     },
+    // ENGINE
     {
       "name": "engine",
       "assets": {
@@ -936,6 +1019,7 @@
         "blackboard": "./img/engine/blackboard2.png"
       }
     },
+    // JOYSTICK
     {
       "name": "joystick",
       "assets": {
@@ -945,6 +1029,7 @@
         "collectable": "./img/joystick/Collectable.png"
       }
     },
+    // GGJ
     {
       "name": "ggj",
       "assets": {

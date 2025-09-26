@@ -41,9 +41,10 @@ export class Chooser extends PixiScene {
 		SoundLib.playMusic("chooserMusic", { loop: true, volume: 0.5 });
 
 		this.cont = new Container();
+		this.cont.pivot.set(this.cont.width * 0.5, this.cont.height * 0.5);
 
 		this.soundContainer = new Container();
-		this.soundContainer.position.set(500, 550);
+		this.soundContainer.position.set(-370, 0);
 		this.soundContainer.pivot.set(this.soundContainer.width / 2, this.soundContainer.height / 2);
 
 		// const auxZero = new Graphics();
@@ -52,7 +53,7 @@ export class Chooser extends PixiScene {
 		// auxZero.endFill();
 
 		this.guessContainer = new Container();
-		this.guessContainer.position.set(1400, 550);
+		this.guessContainer.position.set(370, 0);
 		this.guessContainer.pivot.set(0.5);
 
 		// const auxZero2 = new Graphics();
@@ -95,7 +96,7 @@ export class Chooser extends PixiScene {
 			"pointerover",
 			() => {
 				SoundLib.playMusic("birds-sfx", { volume: 2, loop: false });
-				this.soundContainer.scale.set(1.2);
+				this.soundContainer.scale.set(1.1);
 			},
 			this
 		);
@@ -103,7 +104,7 @@ export class Chooser extends PixiScene {
 			"pointerdown",
 			() => {
 				SoundLib.playMusic("birds-sfx", { volume: 2, loop: false });
-				this.soundContainer.scale.set(1.2);
+				this.soundContainer.scale.set(1.1);
 			},
 			this
 		);
@@ -169,27 +170,27 @@ export class Chooser extends PixiScene {
 		);
 
 		this.frame1 = Sprite.from("frame1");
-		this.frame1.scale.set(0.6);
+		this.frame1.scale.set(0.5);
 		this.frame1.position.set(this.sounds.position.x - this.frame1.width / 2, this.sounds.position.y - this.frame1.height);
 		this.frame1.alpha = 0.8;
 
 		this.frame2 = Sprite.from("frame1");
-		this.frame2.scale.set(0.6);
+		this.frame2.scale.set(0.5);
 		this.frame2.position.set(this.guess.position.x - this.frame2.width / 2, this.guess.position.y - this.frame2.height);
 		this.frame2.alpha = 0.8;
 
 		this.sheep = Sprite.from("chooserSheep");
-		this.sheep.scale.set(0.6);
+		this.sheep.scale.set(0.5);
 		this.sheep.anchor.set(0.5);
 		this.sheep.position.set(this.guess.position.x, this.guess.position.y - this.sheep.height / 1.5);
 
 		this.birds = Sprite.from("chooserBirds");
-		this.birds.scale.set(0.6);
+		this.birds.scale.set(0.5);
 		this.birds.anchor.set(0.5);
 		this.birds.position.set(this.sounds.position.x, this.sounds.position.y - this.birds.height / 1.5);
 
-		this.bg = Sprite.from("BG0");
-		this.bg.scale.set(1, 1.46);
+		this.bg = Sprite.from("BG10");
+		this.bg.anchor.set(0.5);
 
 		this.soundContainer.addChild(
 			this.frame1,
@@ -211,10 +212,17 @@ export class Chooser extends PixiScene {
 			this.guessContainer
 			// auxZero3
 		);
-		this.cont.pivot.set(this.cont.width / 2, this.cont.height / 2);
 
 		this.addChild(this.cont);
 
+		new Tween(this.soundContainer)
+			.from({ scale: { x: 0, y: 0 } })
+			.to({ scale: { x: 1, y: 1 } }, 500)
+			.start();
+		new Tween(this.guessContainer)
+			.from({ scale: { x: 0, y: 0 } })
+			.to({ scale: { x: 1, y: 1 } }, 500)
+			.start();
 		new Tween(this.soundContainer).from({ angle: -1 }).to({ angle: 1 }, 1000).yoyo().repeat(Infinity).start();
 
 		new Tween(this.guessContainer).from({ angle: -1 }).to({ angle: 1 }, 1000).yoyo().repeat(Infinity).start();
@@ -235,7 +243,7 @@ export class Chooser extends PixiScene {
 			},
 			startingValue: false,
 		});
-		this.mute.position.set(this.cont.width / 2 - 100, 10);
+		this.mute.position.set(-120, -400);
 		this.mute.scale.set(0.4);
 
 		// this.soundPlus = new SimpleButton(
@@ -253,17 +261,12 @@ export class Chooser extends PixiScene {
 		// )
 		// this.soundMinus.scale.set(0.2);
 		// this.soundMinus.position.set(this.mute.position.x - 100, this.mute.position.y + 65)
-
-		this.cont.addChild(
-			this.mute
-			// this.soundPlus,
-			// this.soundMinus
-		);
 	}
 
 	public override onResize(newW: number, newH: number): void {
-		this.position.set(newW / 2, newH / 2);
-		ScaleHelper.setScaleRelativeToScreen(this.cont, newW, newH, 1, 1, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToScreen(this.cont, newW, newH, 1, 1, ScaleHelper.FILL);
+		this.cont.x = newW * 0.5;
+		this.cont.y = newH * 0.5;
 	}
 
 	// private openPopup(): void {

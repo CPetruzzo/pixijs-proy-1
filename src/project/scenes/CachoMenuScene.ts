@@ -15,6 +15,7 @@ import { AStarScene } from "./AStarAlgorithm/AStarScene";
 import { MultiplayerCachoWorldGameScene } from "./CachoWorld/Scenes/MultiplayerCachoWorldGameScene";
 import { Scene3D } from "./3dgame/Scene3D";
 import { LoadingTransition } from "../../engine/scenemanager/transitions/LoadingTransition";
+import { IntroScene } from "./Soul/IntroScene";
 
 interface ButtonConfig {
 	label: string;
@@ -26,6 +27,7 @@ export class CachoMenuScene extends PixiScene {
 	private content!: Container;
 	private buttons: ButtonConfig[] = [
 		{ label: "RunFall", scene: MenuScene },
+		{ label: "Soul", scene: IntroScene },
 		{ label: "Horror", scene: AHHomeScene },
 		{ label: "Aurora", scene: AuroraQuilmesMapScene },
 		{ label: "TowerDefense", scene: TowerDefenseScene },

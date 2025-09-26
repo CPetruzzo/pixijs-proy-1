@@ -11,7 +11,6 @@ import { settings } from "pixi.js";
 import { DEFAULTS } from "tweedle.js";
 import { Box2DHelper } from "./engine/utils/Box2DHelper";
 import { CameraOrbitControl } from "pixi3d/pixi7";
-import { CircularLoadingTransition } from "./engine/scenemanager/transitions/CircularLoadingTransition";
 import { JoystickEmits } from "./utils/Joystick";
 
 import { initializeApp } from "firebase/app";
@@ -26,7 +25,9 @@ import { App } from "@capacitor/app";
 import { AdMob } from "@capacitor-community/admob";
 import { SoundLib } from "./engine/sound/SoundLib";
 import { Sounds } from "./project/scenes/RunFall/Managers/SoundManager";
-import { MyFriendGameScene } from "./project/scenes/MyFriend/MyFriendGameScene";
+import { SimpleLockScene } from "./engine/scenemanager/scenes/SimpleLockScene";
+import { ROTATE } from "./utils/constants";
+import { setInitialScene } from "./project/scenes/InitialScene";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -70,24 +71,9 @@ forceFocus();
 
 export const pixiRenderer = new PixiRenderer(pixiSettings);
 
-// asegúrate de que la ruta al .png sea accesible desde el CSS
-// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-const skullCursor = `url('/skull.png}') 0 0, auto`;
-// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-const skullHover = `url('/skull.png}') 0 0, auto`;
-
-// 1) asigna tu cursor por defecto (fuera de cualquier escena)
-pixiRenderer.pixiRenderer.view.style.cursor = skullCursor;
-
-// 2) registra los estilos de cursor en el InteractionPlugin de PIXI
-const interaction = pixiRenderer.pixiRenderer.plugins.interaction;
-interaction.cursorStyles.default = skullCursor;
-interaction.cursorStyles.pointer = skullCursor; // cuándo devuelva "pointer"
-interaction.cursorStyles.hover = skullHover; // si quieres un “hover” específico
-
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const Manager = new SceneManager(pixiRenderer);
-console.log("Manager", Manager);
+Manager.setRotateScene("portrait", SimpleLockScene, [ROTATE]);
 
 export const mousePosition = Manager.sceneRenderer.pixiRenderer.events.pointer.global;
 
@@ -116,7 +102,6 @@ if (DEBUG) {
 	}
 	console.groupEnd();
 }
-// Manager.setRotateScene("portrait", SimpleLockScene, ["rotateDevice"]);
 
 window.addEventListener("resize", () => {
 	const w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
@@ -133,7 +118,7 @@ window.addEventListener("contextmenu", (e) => {
 const initializeCb = function (): void {
 	// Manager.changeScene(import(/* webpackPrefetch: true */ "./project/scenes/LoaderScene"));  }
 
-	Manager.changeScene(MyFriendGameScene, { transitionClass: CircularLoadingTransition });
+	setInitialScene();
 };
 
 if (ALL_FLAGS.USE_BOX2D) {

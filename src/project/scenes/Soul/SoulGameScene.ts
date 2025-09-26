@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { AnimatedSprite, Text, TextStyle, Texture } from "pixi.js";
 import { Container, Graphics, Point, Sprite } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
@@ -5,16 +6,21 @@ import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { Easing, Tween } from "tweedle.js";
 import { SoundLib } from "../../../engine/sound/SoundLib";
-import { GameStateManager } from "../AbandonedShelter/game/GameStateManager";
-import { Manager } from "../../..";
-import { FadeColorTransition } from "../../../engine/scenemanager/transitions/FadeColorTransition";
-import { LoseGameOverScene } from "../AbandonedShelter/LoseGameOverScene";
 import { GlowFilter } from "@pixi/filter-glow";
 import Random from "../../../engine/random/Random";
 
 class Node {
 	// eslint-disable-next-line prettier/prettier
 	constructor(public x: number, public y: number, public g: number = 0, public h: number = 0, public f: number = 0, public parent: Node | null = null) { }
+}
+// Ahora:
+interface Animal {
+	sprite: Sprite;
+	originalTexture: Texture;
+	originalX: number;
+	originalY: number;
+	name: string;
+	skill: string; // e.g. "fly", "stealth", "climb"
 }
 
 export class MyFriendGameScene extends PixiScene {
@@ -54,8 +60,6 @@ export class MyFriendGameScene extends PixiScene {
 	private playerSprite!: Sprite;
 
 	// --- NUEVO: overlay rojo para el “flash” al chocar ---
-	private state = GameStateManager.instance;
-	private gameOverTriggered = false; // ← guard para no disparar FadeColorTransition más de una vez
 	private minimapGfx!: Graphics;
 	private minimapScale = 0.3;
 	private minimapOffset = { x: 55, y: 55 }; // padding dentro del frame
@@ -71,6 +75,19 @@ export class MyFriendGameScene extends PixiScene {
 	private glow: GlowFilter;
 	private glowSpark: GlowFilter;
 
+	private animals: Animal[] = [];
+	private interactButton!: Text;
+
+	// añade después de `private interactButton!: Text;`
+	private currentPossession: { animal: Animal; timer: number } | null = null;
+	private possessionDuration = 15000; // ms
+	private timerBarBg!: Graphics;
+	private timerBarFg!: Graphics;
+
+	private controlButton!: Text;
+	private controlledAnimal: Animal | null = null;
+	private exitControlButton: Text;
+
 	constructor() {
 		super();
 		this.grid = this.createGrid();
@@ -82,6 +99,7 @@ export class MyFriendGameScene extends PixiScene {
 
 		this.createBackground();
 
+		SoundLib.stopAllMusic();
 		SoundLib.playMusic("bgm", { volume: 0.08, loop: true });
 
 		const spr = Sprite.from("forest");
@@ -106,6 +124,7 @@ export class MyFriendGameScene extends PixiScene {
 			outerStrength: 1, // fuerza inicial
 			color: 0xffffff, // color del resplandor
 		});
+		this.createAnimals();
 
 		this.cubaSprite.filters = [this.glow];
 		new Tween(this.glow)
@@ -140,6 +159,40 @@ export class MyFriendGameScene extends PixiScene {
 
 		this.enableTilesInteraction();
 		this.uiContainer.sortableChildren = true;
+
+		// En constructor o método init:
+		this.createInteractButton();
+
+		// Crear botón para cambiar al animal
+		this.controlButton = new Text("Controlar", new TextStyle({
+			fill: "#00ff00", fontSize: 16, fontWeight: "bold"
+		}));
+		this.controlButton.anchor.set(0.5, 1);
+		this.controlButton.visible = false;
+		this.controlButton.interactive = true;
+		this.controlButton.eventMode = "static";
+		this.controlButton.on("pointerdown", () => this.onControlAnimal());
+		this.uiContainer.addChild(this.controlButton);
+
+		// Botón para salir del control
+		this.exitControlButton = new Text("Regresar", new TextStyle({
+			fill: "#ff0000", fontSize: 16, fontWeight: "bold"
+		}));
+		this.exitControlButton.anchor.set(0.5, 1);
+		this.exitControlButton.visible = false;
+		this.exitControlButton.interactive = true;
+		this.exitControlButton.on("pointerdown", () => this.exitControl());
+		this.uiContainer.addChild(this.exitControlButton);
+
+
+		// Barra de 200×16 en la parte superior
+		this.timerBarBg = new Graphics().beginFill(0x000000, 0.5).drawRect(-100, 0, 200, 16).endFill();
+		this.timerBarFg = new Graphics().beginFill(0xffaa00, 1).drawRect(-100, 0, 200, 16).endFill();
+		[this.timerBarBg, this.timerBarFg].forEach((g) => {
+			g.position.set(this.viewWidth / 2, 20);
+			g.visible = false;
+			this.uiContainer.addChild(g);
+		});
 
 		// 2) Creamos máscara y minimapa como hijos directos de uiContainer
 		this.minimapGfx = new Graphics();
@@ -178,6 +231,54 @@ export class MyFriendGameScene extends PixiScene {
 		// contenedor sobre Cuba
 		this.particleContainer = new Container();
 		this.worldContainer.addChild(this.particleContainer);
+	}
+
+	private createInteractButton(): void {
+		this.interactButton = new Text(
+			"¡Poseer!",
+			new TextStyle({
+				fill: "#ffff00",
+				fontSize: 18,
+				fontWeight: "bold",
+			})
+		);
+		this.interactButton.anchor.set(0.5, 1);
+		this.interactButton.visible = true;
+		this.interactButton.eventMode = "static";
+		this.interactButton.interactive = true;
+		this.interactButton.on("pointerdown", () => this.onPossess());
+		this.uiContainer.addChild(this.interactButton);
+	}
+
+	private createAnimals(): void {
+		const animalsData: Array<{
+			x: number;
+			y: number;
+			texture: string;
+			name: string;
+			skill: string;
+		}> = [
+				// eslint-disable-next-line prettier/prettier
+				{ x: 5, y: 8, texture: "pidgeon", name: "Pidgeon", skill: "fly" },
+				{ x: 12, y: 15, texture: "blackcat", name: "Black Cat", skill: "stealth" },
+			];
+
+		for (const data of animalsData) {
+			const ani = Sprite.from(data.texture);
+			ani.anchor.set(0.5, 1);
+			ani.scale.set(0.07);
+			ani.x = data.x * this.tileSize + this.tileSize / 2;
+			ani.y = data.y * this.tileSize + this.tileSize;
+			this.worldContainer.addChild(ani);
+			this.animals.push({
+				sprite: ani,
+				originalTexture: ani.texture,
+				originalX: ani.x,
+				originalY: ani.y,
+				name: data.name,
+				skill: data.skill,
+			});
+		}
 	}
 
 	private spawnParticle(): void {
@@ -227,14 +328,21 @@ export class MyFriendGameScene extends PixiScene {
 	}
 
 	public override update(dt: number): void {
-		if (this.state.healthPoints <= 0 && !this.gameOverTriggered) {
-			this.gameOverTriggered = true;
-
-			// Si la salud es 0, cambio a la escena de Game Over
-			Manager.changeScene(LoseGameOverScene, { transitionClass: FadeColorTransition });
-			return;
+		// detecto Escape para salir del control
+		if (this.controlledAnimal && Keyboard.shared.justPressed("Escape")) {
+			this.exitControl();
 		}
-		this.followPath(dt);
+		// 2) movimiento: O CONTROL o PATHFOLLOW, nunca ambos
+		if (this.controlledAnimal) {
+			// estoy controlando al animal
+			this.handleAnimalMovement(dt, this.controlledAnimal);
+		} else if (this.currentPossession) {
+			// estoy poseyendo, pero no he entrado a “control”
+			// aquí puedes querer bloquear input para que sólo se agote el timer
+		} else {
+			// soy fantasma libre, sigo el path
+			this.followPath(dt);
+		}
 		this.updateCamera(dt);
 
 		// Actualizo el texto con row,col
@@ -267,7 +375,6 @@ export class MyFriendGameScene extends PixiScene {
 
 			// ---- aquí giramos según velocidad en X ----
 			const velaX = targetX - this.cubaSprite.x;
-			console.log("velaX", velaX);
 			if (velaX < 0) {
 				this.cubaSprite.scale.x = -Math.abs(this.cubaSprite.scale.x);
 			} else if (velaX > 0) {
@@ -306,6 +413,37 @@ export class MyFriendGameScene extends PixiScene {
 			}
 		}
 
+		// cada frame, comprobamos proximidad
+		let nearAnimal: { sprite: Sprite; originalTexture: Texture } | null = null;
+		for (const a of this.animals) {
+			const dx = a.sprite.x - this.player.x;
+			const dy = a.sprite.y - this.player.y;
+			const dist = Math.hypot(dx, dy);
+			if (dist < this.tileSize * 1.5) {
+				nearAnimal = a;
+				break;
+			}
+		}
+
+		// si hay posesión activa, actualizo timer y barra
+		if (this.currentPossession) {
+			const p = this.currentPossession;
+			p.timer += dt;
+			// ancho proporcional:
+			const frac = 1 - Math.min(p.timer / this.possessionDuration, 1);
+			this.timerBarFg.width = 200 * frac;
+			// fin de posesión al agotarse:
+			if (p.timer >= this.possessionDuration) {
+				this.endPossession();
+			}
+		}
+
+
+		// mostrar/ocultar botón
+		this.interactButton.visible = Boolean(nearAnimal);
+
+		(this.interactButton as any).targetAnimal = nearAnimal;
+
 		// jugador en el centro
 		this.minimapGfx
 			.beginFill(0x00ff00)
@@ -319,6 +457,72 @@ export class MyFriendGameScene extends PixiScene {
 			this.setZoom(this.zoom - 1);
 		}
 	}
+
+	private endPossession(): void {
+		if (!this.currentPossession) { return; }
+		const { animal } = this.currentPossession;
+		// 1) restauro textura de Cuba (por ej. "cuba")
+		this.cubaSprite.texture = Texture.from("cuba");
+		// 2) devuelvo al animal su sprite y posición
+		animal.sprite.visible = true;
+		animal.sprite.x = animal.originalX;
+		animal.sprite.y = animal.originalY;
+		// 3) limpio timer y oculto barra
+		this.currentPossession = null;
+		this.timerBarBg.visible = this.timerBarFg.visible = false;
+	}
+
+
+	private onPossess(): void {
+		const target = (this.interactButton as any).targetAnimal as Animal;
+		if (!target) { return; }
+
+		// 1) intercambio de textura
+		this.cubaSprite.texture = target.originalTexture;
+
+
+		// 2) Efecto partícula en el animal “dejado”
+		const soul = new Graphics();
+		soul.beginFill(0xffaa00, 1)
+			.drawCircle(0, 0, this.tileSize * 0.6)
+			.endFill();
+		soul.x = target.sprite.x;
+		soul.y = target.sprite.y - this.tileSize / 2;
+		this.worldContainer.addChild(soul);
+
+		new Tween(soul)
+			.to({ y: soul.y - 30, alpha: 0 }, 1000)
+			.easing(Easing.Quadratic.Out)
+			.onComplete(() => this.worldContainer.removeChild(soul))
+			.start();
+
+		// 3) (Opcional) desactivar interacciones posteriores con ese animal
+		// target.sprite.visible = false;
+		// this.animals = this.animals.filter((a) => a !== target);
+		this.interactButton.visible = false;
+
+		// 4) empieza el timer de posesión
+		this.currentPossession = { animal: target, timer: 0 };
+		this.timerBarBg.visible = this.timerBarFg.visible = true;
+		this.timerBarFg.width = 200; // ancho completo
+		// … código existente …
+		this.currentPossession = { animal: target, timer: 0 };
+		// muestra los botones
+		this.controlButton.visible = true;
+		this.interactButton.visible = false;
+
+	}
+
+	private onControlAnimal(): void {
+		if (!this.currentPossession) { return; }
+		this.controlledAnimal = this.currentPossession.animal;
+		// oculta barra y botón de control
+		this.controlButton.visible = false;
+		this.exitControlButton.visible = true;
+
+		this.timerBarBg.visible = this.timerBarFg.visible = false;
+	}
+
 
 	private createGrid(): number[][] {
 		const rows = 51,
@@ -507,10 +711,45 @@ export class MyFriendGameScene extends PixiScene {
 		}
 	}
 
-	private updateCamera(_dt: number): void {
-		if (!this.player) {
-			return;
+	private handleAnimalMovement(dt: number, animal: Animal): void {
+		const sprite = animal.sprite;
+		const speed = 100; // px por segundo
+
+		let dx = 0;
+		let dy = 0;
+
+		if (Keyboard.shared.isDown("ArrowUp") || Keyboard.shared.isDown("KeyW")) {
+			dy -= 1;
 		}
+		if (Keyboard.shared.isDown("ArrowDown") || Keyboard.shared.isDown("KeyS")) {
+			dy += 1;
+		}
+		if (Keyboard.shared.isDown("ArrowLeft") || Keyboard.shared.isDown("KeyA")) {
+			dx -= 1;
+			sprite.scale.x = -Math.abs(sprite.scale.x); // girar sprite
+		}
+		if (Keyboard.shared.isDown("ArrowRight") || Keyboard.shared.isDown("KeyD")) {
+			dx += 1;
+			sprite.scale.x = Math.abs(sprite.scale.x);
+		}
+
+		// Normalizar diagonal
+		const len = Math.hypot(dx, dy) || 1;
+		dx /= len;
+		dy /= len;
+
+		// Mover
+		sprite.x += dx * speed * (dt / 1000);
+		sprite.y += dy * speed * (dt / 1000);
+
+		// Actualizar cualquier lógica extra (p.ej. colisiones) aquí...
+	}
+
+
+	private updateCamera(_dt: number): void {
+		// Determino a quién sigo: o al animal controlado, o al player
+		const focus = this.controlledAnimal?.sprite || this.player;
+		if (!focus) { return; }
 
 		// 1) Datos básicos
 		const offsetX = this.viewWidth / 2;
@@ -520,23 +759,23 @@ export class MyFriendGameScene extends PixiScene {
 		const worldW = this.grid[0].length * this.tileSize * scaleX;
 		const worldH = this.grid.length * this.tileSize * scaleY;
 
-		// 2) Centro del jugador en mundo
-		const playerCenterX = (this.player.x + this.tileSize / 2) * scaleX;
-		const playerCenterY = (this.player.y + this.tileSize / 2) * scaleY;
+		// 2) Centro del focus en mundo
+		const centerX = (focus.x + this.tileSize / 2) * scaleX;
+		const centerY = (focus.y + this.tileSize / 2) * scaleY;
 
 		// 3) Cámara ideal (sin clamping)
-		let targetX = offsetX - playerCenterX;
-		let targetY = offsetY - playerCenterY + this.playerSprite.height;
+		let targetX = offsetX - centerX;
+		let targetY = offsetY - centerY + (focus === this.player ? this.playerSprite.height : focus.height);
 
-		// 4) Bordes en píxeles (10 celdas horizontal, 5 vertical)
+		// 4) Bordes (10 celdas horizontal, 5 vertical)
 		const borderX = 10 * this.tileSize * scaleX;
 		const borderY = 5 * this.tileSize * scaleY;
 
 		// 5) Límites para targetX/Y
 		const minX = offsetX - worldW + borderX;
 		const maxX = offsetX - borderX;
-		const minY = offsetY - worldH + borderY + this.playerSprite.height;
-		const maxY = offsetY - borderY + this.playerSprite.height;
+		const minY = offsetY - worldH + borderY + (focus === this.player ? this.playerSprite.height : focus.height);
+		const maxY = offsetY - borderY + (focus === this.player ? this.playerSprite.height : focus.height);
 
 		// 6) Clamp
 		targetX = Math.min(Math.max(targetX, minX), maxX);
@@ -548,6 +787,7 @@ export class MyFriendGameScene extends PixiScene {
 		this.worldContainer.x += (targetX - this.worldContainer.x) * lerp;
 		this.worldContainer.y += (targetY - this.worldContainer.y) * lerp;
 	}
+
 
 	private enableTilesInteraction(): void {
 		if (this.tilesInteractive) {
@@ -679,8 +919,8 @@ export class MyFriendGameScene extends PixiScene {
 		this.targetTileOutline.loop = false;
 		this.targetTileOutline.animationSpeed = 0.2;
 		this.targetTileOutline.anchor.set(0.5, 0.5);
-		this.targetTileOutline.width = this.tileSize * 5;
-		this.targetTileOutline.height = this.tileSize * 5;
+		this.targetTileOutline.width = this.tileSize * 3;
+		this.targetTileOutline.height = this.tileSize * 3;
 		this.targetTileOutline.visible = false;
 		this.worldContainer.addChild(this.targetTileOutline);
 	}
@@ -725,6 +965,20 @@ export class MyFriendGameScene extends PixiScene {
 			.start();
 	}
 
+	private exitControl(): void {
+		// simplemente desactiva el animal controlado
+		this.controlledAnimal = null;
+
+		// oculta botones
+		this.exitControlButton.visible = false;
+
+		// si quieres, volver a mostrar el botón de “Controlar” para la misma posesión
+		if (this.currentPossession) {
+			this.controlButton.visible = true;
+		}
+	}
+
+
 	public override onResize(w: number, h: number): void {
 		// Guardamos el tamaño real de la vista
 		this.viewWidth = w;
@@ -763,5 +1017,15 @@ export class MyFriendGameScene extends PixiScene {
 		ScaleHelper.setScaleRelativeToIdeal(this.pauseContainer, w, h, 1536, 1200, ScaleHelper.FIT);
 		this.pauseContainer.x = w / 2;
 		this.pauseContainer.y = h / 2;
+
+		this.interactButton.position.set(w / 2, h - 50);
+
+		// reposiciona también la barra:
+		this.timerBarBg.position.set(w / 2, 20);
+		this.timerBarFg.position.set(w / 2, 20);
+
+		this.controlButton.position.set(w / 2, h - 80);
+		this.exitControlButton.position.set(w / 2, h - 110);
+
 	}
 }

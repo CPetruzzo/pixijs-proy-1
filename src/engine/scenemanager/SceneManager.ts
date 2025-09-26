@@ -332,7 +332,8 @@ export class SceneManager<R extends IRenderer> {
 
 	private isOrientationCorect(): boolean {
 		if (this.lockScene) {
-			this.currentOrientation = this.width > this.height ? "landscape" : "portrait";
+			// CHANGE: cambié esto
+			this.currentOrientation = this.width < this.height ? "landscape" : "portrait";
 
 			return this.currentOrientation == this.preferredOrientation;
 		}
