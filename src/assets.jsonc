@@ -259,6 +259,14 @@
         "bg": "./img/towerdefense/bg.jpg",
         "grass": "./img/towerdefense/grass.jpg",
         "mainBG": "./img/towerdefense/mainBG.jpg",
+        "mainBG2": "./img/towerdefense/mainBG.png",
+        "TD_gameover": "./img/towerdefense/TD_gameover.png",
+        "TD_settings": "./img/towerdefense/TD_settings.png",
+        "TD_settingsBTN": "./img/towerdefense/TD_settingsBTN.png",
+        "TD_play": "./img/towerdefense/TD_play.png",
+        "TD_menuBG": "./img/towerdefense/TD_menuBG.png",
+        "TD_menu": "./img/towerdefense/TD_menu.png",
+        "TD_resetBTN": "./img/towerdefense/TD_resetBTN.png",
         "tdBG": "./img/towerdefense/tdframe.png",
         "uiFrame": "./img/towerdefense/tdframe2.png",
         "wood": "./img/towerdefense/block.png",
@@ -271,7 +279,8 @@
         "3": "./img/towerdefense/3.png",
         "4": "./img/towerdefense/4.png",
         "5": "./img/towerdefense/5.png",
-        "6": "./img/towerdefense/6.png"
+        "6": "./img/towerdefense/6.png",
+        "TD_MAIN_BGM": "./music/towerdefense/Defend The Towers.mp3"
       }
     },
     {
@@ -290,13 +299,30 @@
         "shield": "./img/player2.png"
       }
     },
+    // MUSIC
+    {
+      "name": "music",
+      "assets": {
+        "pianoBG": "./img/music/pianoBG.png",
+        "emptyScroll": "./img/music/emptyScroll.png",
+        "pianoSapuris": "./img/music/pianoSapuris.png",
+        "pianoGT": "./img/music/pianoGT.png",
+        "pianoGTold": "./img/music/pianoGTold.png",
+        "pianoBG2": "./img/music/pianoBG2.png"
+      }
+    },
     // CACHOWORLD
     {
       "name": "cachoworld",
       "assets": {
         "viking": "./img/cachoworld/viking.png",
         "player": "./img/player1.png",
-        "background": "./img/cachoworld/map1.png",
+        "background2": "./img/cachoworld/map1.png",
+        "background": "./img/cachoworld/map.jpg",
+        "house": "./img/cachoworld/house.jpg",
+
+        "pokecenter": "./img/cachoworld/pokecenter.png",
+        "office": "./img/cachoworld/office.jpg",
 
         "bouncing0": "./img/cachoworld/BouncingSpritesheet/0.png",
         "bouncing1": "./img/cachoworld/BouncingSpritesheet/1.png",
@@ -334,6 +360,7 @@
       "assets": {
         "mock-up": "./img/coffee/mock-up.png",
         "mock-up2": "./img/coffee/mock-up2.png",
+        "mock-up4": "./img/coffee/mock-up4.png",
 
         "char1": "./img/coffee/char1.png",
         "char2": "./img/coffee/char2.png",
@@ -347,8 +374,11 @@
         "ing-agua": "./img/coffee/ing-agua.png",
         "ing-pan": "./img/coffee/ing-pan.png",
         "ing-jamon": "./img/coffee/ing-jamon.png",
-        "station-sandwich": "./img/coffee/station-sandwich.png",
-        "station-café": "./img/coffee/station-cafe.png"
+        "station-sandwich2": "./img/coffee/station-sandwich.png",
+        "station-café2": "./img/coffee/station-cafe.png",
+
+        "station-sandwich": "./img/coffee/sandwich-station2.png",
+        "station-café": "./img/coffee/coffeestation.png"
       }
     },
     // SOUL
@@ -358,21 +388,25 @@
         "char": "./img/myfriend/char.png",
         "forest": "./img/myfriend/forest.png",
         "forestNight": "./img/myfriend/forestNight.png",
-
         "forestFront": "./img/myfriend/forestFront.png",
+
+        "buttondog": "./img/myfriend/buttondog.png",
 
         "chat-myfriend": "./img/myfriend/chat-myfriend.png",
         "mapframe-myfriend": "./img/myfriend/mapframe-myfriend.png",
         "mockup-myfriend": "./img/myfriend/mockup-myfriend.png",
         "cuba": "./img/myfriend/cuba.png",
         "blackcat": "./img/myfriend/cat.png",
+        "blackcatface": "./img/myfriend/catface.png",
         "pidgeon": "./img/myfriend/pidgeon.png",
 
         "backlayer": "./img/myfriend/bglayer.jpg",
+        "fullWidthBacklayer": "./img/myfriend/fullWidthSoulBG.png",
         "charlayer": "./img/myfriend/layer.png",
         "doglayer": "./img/myfriend/cuba2.png",
         "start": "./img/myfriend/start.png",
-
+        "leaf": "./img/myfriend/leaf.png",
+        "treehouse": "./img/myfriend/treehouse1.png",
         "arrows1": "./img/myfriend/arrows1.png",
         "arrows2": "./img/myfriend/arrows2.png",
         "arrows3": "./img/myfriend/arrows3.png",
@@ -382,8 +416,44 @@
         "arrows7": "./img/myfriend/arrows7.png",
         "arrows8": "./img/myfriend/arrows8.png",
 
+        "soul_map2": "./img/myfriend/soul_map2.png",
+        "soul_map3": "./img/myfriend/soul_map3.png",
+        "soul_map4": "./img/myfriend/soul_map4.png",
+        "soul_map4_walkablezone": "./img/myfriend/soul_map4_walkablezone.png",
+
+        "playerface": "./img/myfriend/playerface.png",
+        "NPC_monkface": "./img/myfriend/NPC_monkface.png",
+        "NPC_monk": "./img/myfriend/NPC_monk.png",
+
+        "trees_day": "./img/myfriend/trees_day.png",
+        "trees_afternoon": "./img/myfriend/trees_afternoon.png",
+        "trees_night": "./img/myfriend/trees_night1.png",
+        // player
+        "soul_walk0": "./img/myfriend/player/soul_walk0.png",
+        "soul_walk1": "./img/myfriend/player/soul_walk1.png",
+        "soul_walk2": "./img/myfriend/player/soul_walk2.png",
+        "soul_walk3": "./img/myfriend/player/soul_walk3.png",
+        "soul_walk4": "./img/myfriend/player/soul_walk4.png",
+        "soul_walk5": "./img/myfriend/player/soul_walk5.png",
+        "soul_walk6": "./img/myfriend/player/soul_walk6.png",
+        "soul_walk7": "./img/myfriend/player/soul_walk7.png",
+        "soul_walk8": "./img/myfriend/player/soul_walk8.png",
+        "soul_walk9": "./img/myfriend/player/soul_walk9.png",
+
+        "soul_walkback0": "./img/myfriend/player/soul_walkback0.png",
+        "soul_walkback1": "./img/myfriend/player/soul_walkback1.png",
+        "soul_walkback2": "./img/myfriend/player/soul_walkback2.png",
+        "soul_walkback3": "./img/myfriend/player/soul_walkback3.png",
+        "soul_walkback4": "./img/myfriend/player/soul_walkback4.png",
+        "soul_walkback5": "./img/myfriend/player/soul_walkback5.png",
+        "soul_walkback6": "./img/myfriend/player/soul_walkback6.png",
+
         "hello": "./music/soul/hello.wav",
+        "winter-wind": "./music/soul/winter-wind.mp3",
+        "leafwalk": "./music/soul/leafwalk.mp3",
         "introSoul": "./music/soul/introSoul.mp3",
+        "introSoulBGM": "./music/soul/Forest of Echoes.mp3",
+        "initialBGM": "./music/soul/The Forgotten Path.mp3",
         "bgm": "./sfx/myfriend/bgm.mp3"
       }
     },
@@ -674,7 +744,21 @@
         "casinoBG": "./img/slots/casinoBG.png",
         "frame": "./img/slots/slot_frame.png",
         "reels": "./img/slots/slot_reels.png",
-        "lever": "./img/slots/slot_lever.png"
+        "lever": "./img/slots/slot_lever.png",
+
+                // SLOT
+        "slotghost": "./img/abandonedhouse/slotghost.png",
+        "slotpumpkin": "./img/abandonedhouse/slotpumpkin.png",
+        "slotgoldcoin": "./img/abandonedhouse/slotgoldcoin.png",
+        "slotbat": "./img/abandonedhouse/slotbat.png",
+        "sloteye": "./img/abandonedhouse/sloteye.png",
+        "slotskull": "./img/abandonedhouse/slotskull.png",
+        "slotcandle": "./img/abandonedhouse/slotcandle.png",
+        "slotframe": "./img/abandonedhouse/slotframe.png",
+        "slotspinbtn": "./img/abandonedhouse/slotspinbtn.png",
+
+        "wheel-spin": "./sfx/AH/wheel-spin.mp3",
+        "clickSFX": "./sfx/AH/clickSFX.mp3"
       }
     },
     // RUNFALL

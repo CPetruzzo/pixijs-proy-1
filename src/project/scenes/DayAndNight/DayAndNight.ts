@@ -25,7 +25,7 @@ export class DayAndNight extends PixiScene {
 	private telescope: Graphics;
 	private house: Sprite;
 	private elapsed: number = 0;
-	private cycleDuration: number = 2000000;
+	private cycleDuration: number = 30000; // OPTIMIZADO: Reducido de 2000000 a 30 segundos
 	private shootingStars: ShootingStar[] = [];
 	private illuminationFilter: ColorMatrixFilter;
 	public static readonly BUNDLES = ["skystar"];
@@ -36,6 +36,17 @@ export class DayAndNight extends PixiScene {
 
 	private uiContainer: Container;
 	private telescopeUIButton?: any;
+
+	// OPTIMIZADO: Cache para evitar recalcular filtros constantemente
+	private lastBrightnessValue: number = -1;
+	private lastBgColor: number = -1;
+
+	// OPTIMIZADO: Controlar spawn de estrellas
+	private starSpawnCooldown: number = 0;
+	private readonly STAR_SPAWN_INTERVAL: number = 100; // frames entre spawns
+
+	// OPTIMIZADO: Tween activo para limpiar
+	private activeTween: Tween<any> | null = null;
 
 	constructor() {
 		super();
@@ -50,9 +61,6 @@ export class DayAndNight extends PixiScene {
 		this.createIlluminationContainer();
 		this.createMountain();
 		this.createGrass();
-		// this.createCharacter();
-		// this.createTelescope();
-		// this.createUI();
 
 		this.gameContainer.pivot.set(this.gameContainer.width * 0.5, this.gameContainer.height * 0.5);
 	}
@@ -112,25 +120,26 @@ export class DayAndNight extends PixiScene {
 	}
 
 	private createSunAndMoon(): void {
+		// OPTIMIZADO: Reducir calidad y intensidad de filtros
 		this.sun = this.createCircleSprite(40, 0xffff00, {
 			filters: [
 				new GlowFilter({
-					distance: 25,
-					outerStrength: 15,
-					innerStrength: 1,
+					distance: 20,
+					outerStrength: 8, // Reducido de 15
+					innerStrength: 0.5, // Reducido de 1
 					color: 0xffff00,
-					quality: 0.3,
+					quality: 0.1, // Reducido de 0.3
 				}),
 			],
 		});
 		this.moon = this.createCircleSprite(30, 0xcccccc, {
 			filters: [
 				new GlowFilter({
-					distance: 12,
-					outerStrength: 1.5,
-					innerStrength: 1,
+					distance: 10,
+					outerStrength: 1, // Reducido de 1.5
+					innerStrength: 0.5, // Reducido de 1
 					color: 0xffffff,
-					quality: 0.3,
+					quality: 0.1, // Reducido de 0.3
 				}),
 			],
 		});
@@ -157,12 +166,13 @@ export class DayAndNight extends PixiScene {
 	}
 
 	private createGrass(): void {
+		// OPTIMIZADO: Reducir intensidad del glow
 		this.grassGlowFilter = new GlowFilter({
-			distance: 12,
-			outerStrength: 0.5,
-			innerStrength: 0.5,
+			distance: 10,
+			outerStrength: 0.3, // Reducido de 0.5
+			innerStrength: 0.3, // Reducido de 0.5
 			color: 0xffffff,
-			quality: 0.3,
+			quality: 0.1, // Reducido de 0.3
 		});
 
 		const frontLayer = Sprite.from("mountainFrontLayer");
@@ -202,7 +212,7 @@ export class DayAndNight extends PixiScene {
 					outerStrength: 2,
 					innerStrength: 1,
 					color: 0x00ff00,
-					quality: 0.5,
+					quality: 0.3, // Reducido de 0.5
 				});
 				this.character.filters = [this.selectionFilter];
 				console.log("Personaje seleccionado");
@@ -240,13 +250,20 @@ export class DayAndNight extends PixiScene {
 	}
 
 	private moveCharacterTo(targetX: number, targetY: number, onComplete: () => void): void {
-		new Tween(this.character.position)
+		// OPTIMIZADO: Detener tween anterior si existe
+		if (this.activeTween) {
+			this.activeTween.stop();
+			this.activeTween = null;
+		}
+
+		this.activeTween = new Tween(this.character.position)
 			.to({ x: targetX, y: targetY }, 1000)
 			.easing(Easing.Quadratic.InOut)
 			.onComplete(() => {
 				onComplete();
 				this.characterSelected = false;
 				this.character.filters = [];
+				this.activeTween = null;
 			})
 			.start();
 	}
@@ -314,7 +331,7 @@ export class DayAndNight extends PixiScene {
 	}
 
 	public override update(dt: number): void {
-		this.elapsed += dt * (1000 / 60);
+		this.elapsed += dt * (1000 / 60) * 0.01;
 		const t = (this.elapsed % this.cycleDuration) / this.cycleDuration;
 
 		const nightColor = 0x001848;
@@ -346,7 +363,12 @@ export class DayAndNight extends PixiScene {
 			const tFinal = (normalizedSun - (atardecerStart + atardecerSpan)) / finalTransitionSpan;
 			bgColor = this.lerpColor(sunsetColor, nightColor, tFinal);
 		}
-		this.background.tint = bgColor;
+
+		// OPTIMIZADO: Solo actualizar tint si cambió significativamente
+		if (this.lastBgColor !== bgColor) {
+			this.background.tint = bgColor;
+			this.lastBgColor = bgColor;
+		}
 
 		const w = 1520,
 			h = 800;
@@ -357,11 +379,18 @@ export class DayAndNight extends PixiScene {
 		this.updateIllumination(sunAngle);
 
 		const isNight = normalizedSun >= 0 && normalizedSun < Math.PI;
-		if (isNight && Math.random() < 0.01) {
+
+		// OPTIMIZADO: Controlar frecuencia de spawn de estrellas
+		this.starSpawnCooldown--;
+		if (isNight && this.starSpawnCooldown <= 0 && Math.random() < 0.3) {
 			this.spawnShootingStar();
+			this.starSpawnCooldown = this.STAR_SPAWN_INTERVAL;
 		} else if (!isNight) {
 			this.clearShootingStars();
 		}
+
+		// OPTIMIZADO: Limitar número máximo de estrellas
+		const MAX_STARS = 5;
 		for (let i = this.shootingStars.length - 1; i >= 0; i--) {
 			const starData = this.shootingStars[i];
 			starData.star.position.x += starData.vx * dt;
@@ -370,7 +399,17 @@ export class DayAndNight extends PixiScene {
 			starData.star.alpha = starData.life / starData.maxLife;
 			if (starData.life <= 0) {
 				this.background.removeChild(starData.star);
+				starData.star.destroy(); // OPTIMIZADO: Destruir el gráfico
 				this.shootingStars.splice(i, 1);
+			}
+		}
+
+		// OPTIMIZADO: Eliminar estrellas más viejas si hay demasiadas
+		while (this.shootingStars.length > MAX_STARS) {
+			const oldStar = this.shootingStars.shift();
+			if (oldStar) {
+				this.background.removeChild(oldStar.star);
+				oldStar.star.destroy();
 			}
 		}
 	}
@@ -378,7 +417,12 @@ export class DayAndNight extends PixiScene {
 	private updateIllumination(sunAngle: number): void {
 		const sunFactor = Math.max(0, Math.sin(sunAngle + Math.PI / 4));
 		const brightnessValue = 0.7 - 0.4 * sunFactor;
-		this.illuminationFilter.brightness(brightnessValue, false);
+
+		// OPTIMIZADO: Solo actualizar si el cambio es significativo (>1%)
+		if (Math.abs(brightnessValue - this.lastBrightnessValue) > 0.01) {
+			this.illuminationFilter.brightness(brightnessValue, false);
+			this.lastBrightnessValue = brightnessValue;
+		}
 	}
 
 	private spawnShootingStar(): void {
@@ -391,7 +435,8 @@ export class DayAndNight extends PixiScene {
 		const tailX = -Math.cos(angle) * tailLength;
 		const tailY = -Math.sin(angle) * tailLength;
 
-		star.lineStyle(4, 0xffffff, 1);
+		// OPTIMIZADO: Reducir grosor de línea
+		star.lineStyle(2, 0xffffff, 1); // Reducido de 4 a 2
 		star.moveTo(0, 0);
 		star.lineTo(tailX, tailY);
 		star.endFill();
@@ -417,6 +462,7 @@ export class DayAndNight extends PixiScene {
 	private clearShootingStars(): void {
 		for (const starData of this.shootingStars) {
 			this.background.removeChild(starData.star);
+			starData.star.destroy(); // OPTIMIZADO: Destruir el gráfico
 		}
 		this.shootingStars = [];
 	}
@@ -438,5 +484,15 @@ export class DayAndNight extends PixiScene {
 		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, _newW, _newH, 1600, 900, ScaleHelper.FIT);
 		this.gameContainer.x = _newW * 0.5;
 		this.gameContainer.y = _newH * 0.5;
+	}
+
+	// OPTIMIZADO: Método de limpieza
+	public override destroy(_options?: any): void {
+		if (this.activeTween) {
+			this.activeTween.stop();
+			this.activeTween = null;
+		}
+		this.clearShootingStars();
+		super.destroy();
 	}
 }

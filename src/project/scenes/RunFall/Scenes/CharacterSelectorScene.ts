@@ -141,9 +141,7 @@ export class CharacterSelectorScene extends PixiScene {
 		this.updateZIndices();
 		// Ahora que los personajes están creados, actualizamos el banner
 		this.updateBanner();
-		this.unlockCharacter(0);
-		this.unlockCharacter(1);
-		this.unlockCharacter(2);
+		unlockedChars.forEach((i) => this.unlockCharacter(i));
 
 		// Botón de navegación izquierda
 		const leftButton = Sprite.from("leftArrow");

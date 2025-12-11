@@ -1,4 +1,5 @@
-import { Container, Sprite } from "pixi.js";
+import type { Container } from "pixi.js";
+import { Sprite } from "pixi.js";
 
 export class Maze {
 	// Dibuja el laberinto usando sprites en lugar de gráficos
@@ -19,7 +20,7 @@ export class Maze {
 				// Ajustar el tamaño y posición del sprite
 				sprite.width = tileSize;
 				sprite.height = tileSize;
-				sprite.x = x * tileSize;  // Colocamos el sprite en la posición correcta del grid
+				sprite.x = x * tileSize; // Colocamos el sprite en la posición correcta del grid
 				sprite.y = y * tileSize;
 
 				// Añadir el sprite al contenedor

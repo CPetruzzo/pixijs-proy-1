@@ -1,4 +1,5 @@
-import { Container, Graphics } from "pixi.js";
+import type { Container } from "pixi.js";
+import { Graphics } from "pixi.js";
 
 export class GridManager {
 	private grid: number[][];

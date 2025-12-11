@@ -34,5 +34,11 @@ declare namespace GlobalMixins {
 		curse: any;
 		served: any;
 		orderComplete: any;
+
+		cleaned: any;
+		hygieneviolation: any;
+		stationdirty: any;
+		ingredientspoiled: any;
+		temperatureabuse: any;
 	}
 }

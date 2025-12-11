@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 export const GameConfig = {
+	// Dimensiones de referencia para scaling
+	idealWidth: 736,
+	idealHeight: 736,
 	// Tamaño de la celda de la grilla
-	tileSize: 64, // Tamaño de cada celda en píxeles
+	tileSize: 92, // Tamaño de cada celda en píxeles
 
 	// Intervalo de tiempo entre cada aparición de enemigo
 	spawnInterval: 1500, // Tiempo en milisegundos

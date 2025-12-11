@@ -1,8 +1,11 @@
+// ============================================
+// Terrain.ts - Mejorado con nuevos tipos
+// ============================================
 import type { Texture } from "pixi.js";
 
 export class Terrain {
-	private movementCost: number;
-	private isWater: boolean;
+	public movementCost: number;
+	public isWater: boolean;
 	private terrainTexture: Texture;
 	private name: string;
 

@@ -1,173 +1,227 @@
-import { ref, set, onValue, onDisconnect, remove } from "firebase/database";
+import { ref, set, onValue, onDisconnect } from "firebase/database";
 import { db } from "../../../..";
 import { Keyboard } from "../../../../engine/input/Keyboard";
 import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { Container } from "pixi.js";
 import { CachoWorldPlayer } from "../CachoWorldPlayer";
 import { NewWorldMap } from "../NewWorldMap";
-import { Routes } from "../Chat";
 import { JoystickMultiplayerCachoWorld } from "../JoystickMultiplayerCachoWorld";
-import { PortalToMenu } from "../PortalToMenu";
-import { Room } from "../Classes/Room";
+import { Portal } from "../Classes/Portal";
 import { MultiplayerCachoWorldGameScene } from "../Scenes/MultiplayerCachoWorldGameScene";
+import { ChatManager } from "../Managers/ChatManager";
+import { UsernameManager } from "../Managers/UsernameManager";
 
 export class RoomScene extends PixiScene {
 	private players: Record<string, CachoWorldPlayer> = {};
 	private playerId: string;
+	private roomId: string;
 	private worldContainer: Container = new Container();
 	private newWorldMap: NewWorldMap;
 	public static readonly BUNDLES = ["joystick", "cachoworld"];
 	private joystick: JoystickMultiplayerCachoWorld;
-	private portal: PortalToMenu;
-	private room: Room; // Instancia de Room para manejar la sala
+	private portalToLobby: Portal;
+	private localPlayerCreated: boolean = false;
+	private firebaseUnsubscribe: (() => void) | null = null;
+	private isDestroyed: boolean = false;
+	private chatManager: ChatManager | null = null;
+	private usernameManager: UsernameManager;
 
-	constructor(playerEnteringID: string, roomId: string) {
+	constructor(playerId: string, roomId: string) {
 		super();
+		this.playerId = playerId;
+		this.roomId = roomId;
+
+		console.log(`RoomScene created for player ${playerId} in room ${roomId}`);
+
 		this.worldContainer.name = "WorldContainer";
 		this.addChild(this.worldContainer);
 
-		this.playerId = playerEnteringID;
-		// ---- HERE is the fix:
-		// Pass the *game* scene as destination, not RoomScene.
-		this.room = new Room(
-			roomId, // e.g. "1" or "Lobby"
-			MultiplayerCachoWorldGameScene, // <— the actual game scene class
-			this.playerId,
-			/* isMainScene= */ false
-		);
-		// Crear mapa de la nueva escena
+		// Crear mapa
 		this.createMap();
 
-		// Crear jugadores y actualizaciones
+		// Portal de vuelta al lobby
+		this.portalToLobby = new Portal(
+			250, // x
+			250, // y
+			80, // width
+			100, // height
+			MultiplayerCachoWorldGameScene, // Clase de escena destino
+			"lobby", // ID de sala destino
+			150, // spawn x en lobby
+			150 // spawn y en lobby
+		);
+		this.worldContainer.addChild(this.portalToLobby);
+
+		// IMPORTANT: Create local player IMMEDIATELY before Firebase listeners
+		this.createLocalPlayer();
+
+		// Then setup Firebase listeners
 		this.listenForPlayersUpdates();
-		this.addPlayerToDatabase();
 
-		// Configurar controles de teclado u otras funcionalidades
-		this.setupInputHandling();
+		// Setup disconnect handler
+		const playerOnDisconnectRef = ref(db, `rooms/${this.roomId}/players/${this.playerId}`);
+		onDisconnect(playerOnDisconnectRef).remove();
 
-		const lobbyRoom = new Room(
-			roomId,
-			MultiplayerCachoWorldGameScene, // <— when you go through portal, switch into the game
-			this.playerId,
-			false
-		); // 3) Create a portal that points into the game scene
-		this.portal = new PortalToMenu(lobbyRoom, 200, 300, 50, 100, this.playerId);
-		this.worldContainer.addChild(this.portal);
-		this.worldContainer.addChild(this.portal); // Agregar el portal al contenedor principal
+		// Initialize chat
+		this.initializeChat();
 
-		console.log("players", this.players);
+		console.log("RoomScene setup complete");
+	}
+
+	// eslint-disable-next-line @typescript-eslint/require-await
+	// Reemplaza el método initializeChat en RoomScene.ts
+
+	private async initializeChat(): Promise<void> {
+		// Get or create username manager instance
+		this.usernameManager = UsernameManager.getInstance(this.playerId);
+
+		// IMPORTANT: Wait for username to be initialized
+		const username = await this.usernameManager.initialize();
+		console.log("Username initialized:", username);
+
+		// Initialize chat manager for this room with the loaded username
+		this.chatManager = new ChatManager(this.roomId, this.playerId, username, (playerId: string) => this.getPlayerById(playerId));
+		this.addChild(this.chatManager.getChatContainer());
 	}
 
 	private createMap(): void {
-		this.newWorldMap = new NewWorldMap(); // Nuevo mapa para la nueva escena
+		this.newWorldMap = new NewWorldMap();
 		this.worldContainer.addChildAt(this.newWorldMap, 0);
 	}
 
-	// Configuración de jugadores y Firebase
-	// eslint-disable-next-line @typescript-eslint/require-await
-	private async listenForPlayersUpdates(): Promise<void> {
-		const playersRef = ref(db, "players");
-		onValue(
+	private createLocalPlayer(): void {
+		console.log(`Creating local player ${this.playerId} in room ${this.roomId}`);
+
+		// Create player at spawn position
+		const localPlayer = new CachoWorldPlayer(this.playerId, 150, 150);
+		localPlayer.visible = true; // Ensure player is visible
+		this.players[this.playerId] = localPlayer;
+		this.worldContainer.addChild(localPlayer);
+
+		// Create joystick
+		this.joystick = new JoystickMultiplayerCachoWorld(localPlayer);
+		this.worldContainer.addChild(this.joystick);
+
+		this.localPlayerCreated = true;
+		console.log(`Local player ${this.playerId} created successfully`);
+	}
+
+	private createRemotePlayer(id: string, x: number, y: number): void {
+		console.log(`Creating remote player ${id} at (${x}, ${y})`);
+		const newPlayer = new CachoWorldPlayer(id, x, y);
+		newPlayer.visible = true; // Ensure remote player is visible
+		this.players[id] = newPlayer;
+		this.worldContainer.addChild(newPlayer);
+	}
+
+	private getPlayerById(playerId: string): CachoWorldPlayer | undefined {
+		return this.players[playerId];
+	}
+
+	private listenForPlayersUpdates(): void {
+		// Listen to this specific room's players
+		const playersRef = ref(db, `rooms/${this.roomId}/players`);
+
+		// Store the unsubscribe function
+		this.firebaseUnsubscribe = onValue(
 			playersRef,
 			(snap) => {
+				// Don't process updates if scene is destroyed
+				if (this.isDestroyed) {
+					console.log("Scene destroyed, ignoring Firebase update");
+					return;
+				}
+
 				const serverPlayers = snap.exists() ? (snap.val() as Record<string, { x: number; y: number } | null>) : {};
 
-				// a) Remove any local sprite whose ID no longer appears (or is null)
+				console.log(`Firebase update for room ${this.roomId}:`, Object.keys(serverPlayers));
+
+				// Remove disconnected players (but NEVER remove local player this way)
 				Object.keys(this.players)
+					.filter((id) => id !== this.playerId) // Never remove local player
 					.filter((id) => !(id in serverPlayers) || serverPlayers[id] === null)
 					.forEach((id) => {
 						const p = this.players[id];
-						if (p) {
+						if (p && !this.isDestroyed) {
+							console.log(`Removing remote player ${id}`);
 							this.worldContainer.removeChild(p);
 							delete this.players[id];
 						}
 					});
 
-				// b) Update existing or create new ones
+				// Update or create REMOTE players only
 				for (const [id, data] of Object.entries(serverPlayers)) {
-					if (!data) {
-						// a `null` value means Firebase removed that key
+					if (!data || this.isDestroyed) {
 						continue;
 					}
+
+					// Skip local player - it's already created
 					if (id === this.playerId) {
-						// skip the local player
+						// Just update position if it changed in Firebase
+						const localPlayer = this.players[this.playerId];
+						if (localPlayer && localPlayer.position && this.localPlayerCreated) {
+							// Only update if the position in Firebase is significantly different
+							const distanceSquared = Math.pow(localPlayer.x - data.x, 2) + Math.pow(localPlayer.y - data.y, 2);
+
+							// Only update if player moved more than 50 pixels (to avoid sync issues)
+							if (distanceSquared > 2500) {
+								console.log(`Syncing local player position from Firebase`);
+								localPlayer.x = data.x;
+								localPlayer.y = data.y;
+							}
+						}
 						continue;
 					}
 
 					const existing = this.players[id];
-					if (existing) {
-						// only update when sprite is present
+					if (existing && existing.position) {
 						existing.x = data.x;
 						existing.y = data.y;
-					} else {
-						// create if it didn’t exist
-						this.createPlayer(id, data.x, data.y);
+					} else if (!existing) {
+						this.createRemotePlayer(id, data.x, data.y);
 					}
 				}
 			},
 			(err) => {
-				console.error("Firebase onValue error:", err);
+				if (!this.isDestroyed) {
+					console.error("Firebase onValue error:", err);
+				}
 			}
 		);
 	}
 
-	private createPlayer(id: string, x: number, y: number): void {
-		const newPlayer = new CachoWorldPlayer(id, x, y);
-		this.players[id] = newPlayer;
-		this.worldContainer.addChild(newPlayer);
-	}
-
-	private async addPlayerToDatabase(): Promise<void> {
-		const playerRef = ref(db, `players/${this.playerId}`);
-		await set(playerRef, { x: 150, y: 150 });
-
-		const playerOnDisconnectRef = ref(db, `players/${this.playerId}`);
-		onDisconnect(playerOnDisconnectRef).remove();
-
-		if (!this.players[this.playerId]) {
-			this.createLocalPlayer(); // Solo crea el jugador si no existe
-		}
-	}
-
-	private createLocalPlayer(): void {
-		const newPlayer = new CachoWorldPlayer(this.playerId, 0, 0);
-		this.room.addPlayer(newPlayer); // Agregar al jugador a la sala
-		this.addChild(newPlayer); // Agregar el jugador a la escena
-		this.joystick = new JoystickMultiplayerCachoWorld(newPlayer);
-		this.addChild(this.joystick); // Agregar el joystick a la escena
-	}
-
-	private setupInputHandling(): void {
-		let speed = 0;
-		let direction = 0;
-
-		// Procesar entrada del teclado para el jugador local
-		if (Keyboard.shared.isDown("ArrowUp")) {
-			speed = 5;
-			direction = -Math.PI / 2;
-		}
-		if (Keyboard.shared.isDown("ArrowDown")) {
-			speed = 5;
-			direction = Math.PI / 2;
-		}
-		if (Keyboard.shared.isDown("ArrowLeft")) {
-			speed = 5;
-			direction = Math.PI;
-		}
-		if (Keyboard.shared.isDown("ArrowRight")) {
-			speed = 5;
-			direction = 0;
-		}
-
-		// Obtener el jugador local
+	// This method handles keyboard input - called from update()
+	private handleInput(): void {
 		const player = this.players[this.playerId];
 		if (!player) {
-			console.warn("No local player found with ID:", this.playerId);
 			return;
 		}
 
-		// Actualizar animación solo para el jugador local
-		if (speed === 0) {
+		let speed = 0;
+		let direction = 0;
+		let moving = false;
+
+		// Check keyboard input
+		if (Keyboard.shared.isDown("ArrowUp")) {
+			speed = 5;
+			direction = -Math.PI / 2;
+			moving = true;
+		} else if (Keyboard.shared.isDown("ArrowDown")) {
+			speed = 5;
+			direction = Math.PI / 2;
+			moving = true;
+		} else if (Keyboard.shared.isDown("ArrowLeft")) {
+			speed = 5;
+			direction = Math.PI;
+			moving = true;
+		} else if (Keyboard.shared.isDown("ArrowRight")) {
+			speed = 5;
+			direction = 0;
+			moving = true;
+		}
+
+		// Update animation based on movement
+		if (!moving) {
 			if (player.animator.currentStateName !== "idle") {
 				player.animator.playState("idle");
 			}
@@ -175,52 +229,65 @@ export class RoomScene extends PixiScene {
 			if (player.animator.currentStateName !== "bouncing") {
 				player.animator.playState("bouncing");
 			}
-		}
-
-		// Mover al jugador local si hay velocidad
-		if (speed !== 0 || direction !== 0) {
+			// Move the player
 			player.move(speed, direction);
-			this.updatePlayerPositionInFirebase(); // Actualizar en Firebase solo para el jugador local
 		}
 	}
 
-	// Actualizar la posición del jugador en Firebase
 	private async updatePlayerPositionInFirebase(): Promise<void> {
+		// Don't update if scene is destroyed
+		if (this.isDestroyed) {
+			return;
+		}
+
 		try {
 			const player = this.players[this.playerId];
-			// console.log('player', player)
-			if (player) {
-				const playerRef = ref(db, `${Routes.PLAYERS}/${this.playerId}`);
+			if (player && player.position) {
+				const playerRef = ref(db, `rooms/${this.roomId}/players/${this.playerId}`);
+				// Only update x and y, nothing else
 				await set(playerRef, { x: player.x, y: player.y });
-				// console.log("Player position updated in Firebase.");
 			}
 		} catch (error) {
-			console.error("Error updating player position in Firebase:", error);
+			if (!this.isDestroyed) {
+				console.error("Error updating player position in Firebase:", error);
+			}
 		}
 	}
 
 	public override update(_dt: number): void {
-		// joystick & local position push
+		// Don't update if scene is destroyed
+		if (this.isDestroyed) {
+			return;
+		}
+
+		const local = this.players[this.playerId];
+
+		if (!local || !local.position) {
+			return;
+		}
+
+		// Handle keyboard input
+		this.handleInput();
+
+		// Update joystick and sync to Firebase
 		if (this.joystick) {
 			this.joystick.updateJoystick();
 			this.updatePlayerPositionInFirebase();
 		}
 
-		// input + portal only if local exists
-		const local = this.players[this.playerId];
-		if (local) {
-			this.setupInputHandling();
-			this.portal.checkCollision(local, this.worldContainer);
+		// Check portal collision
+		if (this.portalToLobby) {
+			this.portalToLobby.checkCollision(local, this.roomId);
 		}
 
-		// update all players safely
+		// Update all players
 		for (const id in this.players) {
 			const player = this.players[id];
-			if (!player) {
-				continue; // skip null/deleted entries
+			if (!player || !player.position) {
+				continue;
 			}
 
-			// center camera on local
+			// Center camera on local player
 			if (id === this.playerId) {
 				const scale = this.worldTransform.a;
 				const targetX = -player.x * scale + window.innerWidth * 0.5;
@@ -229,24 +296,53 @@ export class RoomScene extends PixiScene {
 				this.worldContainer.y += (targetY - this.worldContainer.y) * 0.1;
 			}
 
-			// call each player’s own update
 			player.update(_dt);
 		}
 	}
 
-	public checkCollision(player: CachoWorldPlayer): void {
-		const portalBounds = this.getBounds();
-		if (portalBounds.contains(player.x, player.y)) {
-			this.teleportPlayer(player);
-		}
+	public override onResize(_newW: number, _newH: number): void {
+		// Handle resize if needed
 	}
 
-	private async teleportPlayer(player: CachoWorldPlayer): Promise<void> {
-		// Eliminar el jugador de la escena
-		this.worldContainer.removeChild(player);
+	public override destroy(_options?: any): void {
+		console.log(`Destroying RoomScene for room ${this.roomId}`);
 
-		// Eliminar al jugador de la base de datos
-		const playerRef = ref(db, `players/${player.id}`);
-		await remove(playerRef);
+		// Mark as destroyed to stop all updates
+		this.isDestroyed = true;
+
+		// Unsubscribe from Firebase listener
+		if (this.firebaseUnsubscribe) {
+			this.firebaseUnsubscribe();
+			this.firebaseUnsubscribe = null;
+			console.log("Firebase listener unsubscribed");
+		}
+
+		// Clean up chat manager
+		if (this.chatManager) {
+			this.chatManager.destroy();
+			this.chatManager = null;
+		}
+
+		// Clean up all players
+		for (const id in this.players) {
+			const player = this.players[id];
+			if (player) {
+				this.worldContainer.removeChild(player);
+				player.destroy();
+			}
+		}
+		this.players = {};
+
+		// Clean up joystick
+		if (this.joystick) {
+			this.worldContainer.removeChild(this.joystick);
+			this.joystick.destroy();
+			this.joystick = null;
+		}
+
+		// Call parent destroy
+		super.destroy();
+
+		console.log(`RoomScene ${this.roomId} destroyed successfully`);
 	}
 }

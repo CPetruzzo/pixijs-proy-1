@@ -73,7 +73,9 @@ export const pixiRenderer = new PixiRenderer(pixiSettings);
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const Manager = new SceneManager(pixiRenderer);
-Manager.setRotateScene("portrait", SimpleLockScene, [ROTATE]);
+// Manager.setRotateScene("portrait", SimpleLockScene, [ROTATE]);
+console.log("ROTATE", ROTATE);
+console.log("SimpleLockScene", SimpleLockScene);
 
 export const mousePosition = Manager.sceneRenderer.pixiRenderer.events.pointer.global;
 
@@ -85,7 +87,7 @@ export const cameraControl = new CameraOrbitControl(pixiSettings.view);
 export const isMobile: boolean = DataManager.getValue(JoystickEmits.MOBILE);
 
 DataManager.initialize(new ForagePersistanceProvider(), SAVEDATA_VERSION);
-if (navigator.userAgent.includes("Mobile")) {
+if (isMobileDevice()) {
 	DataManager.setValue(JoystickEmits.MOBILE, true);
 	console.log("Estás accediendo desde un dispositivo móvil.");
 } else {
@@ -151,4 +153,14 @@ export function vibrateMobileDevice(): void {
 	} else {
 		console.log("La vibración no es compatible con este dispositivo.");
 	}
+}
+
+function isMobileDevice(): boolean {
+	// 1. Detección de pantalla táctil
+	const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+	// 2. Fallback a User Agent para navegadores que no exponen touchpoints
+	const isMobileUA = /Android|iPhone|iPad|iPod|BlackBerry|Windows Phone|webOS/i.test(navigator.userAgent);
+
+	return isTouchDevice || isMobileUA;
 }

@@ -4,7 +4,7 @@ import { Node } from "./Node";
 import { GameConfig } from "../game/GameConfig";
 import { Grid } from "../utils/Grid";
 import { AStarPathfinding } from "../utils/AStarPathFinding";
-import { TowerDefenseScene } from "../scenes/TowerDefenseScene";
+import type { GameStats } from "../utils/GameStats";
 
 export enum EnemyTypes {
 	ENEMY1 = "ENEMY1",
@@ -197,10 +197,15 @@ export class Enemy {
 	// 	gameContainer.addChild(enemy.sprite);
 	// }
 
-	public static spawnEnemy(grid: number[][], enemies: Enemy[], gameContainer: Container): void {
+	public static spawnEnemy(
+		grid: number[][],
+		enemies: Enemy[],
+		gameContainer: Container,
+		gameStats: GameStats, // ← Pasar como parámetro
+		tileSize: number
+	): void {
 		const rows = GameConfig.gridHeight - 1;
 		const cols = GameConfig.gridWidth - 1;
-		// Verificar si la celda de inicio está ocupada
 		const startX = 0;
 		const startY = 0;
 		const startNode: Node = new Node(startX, startY);
@@ -210,40 +215,31 @@ export class Enemy {
 			console.log("La celda de inicio está ocupada o no es válida.");
 			return;
 		}
+
 		const path = AStarPathfinding.findPath(grid, startNode, goalNode);
 		if (!path) {
 			console.log("No se encontró un camino válido.");
+			return;
 		}
 
-		if (path) {
-			let enemyIndex = 0; // Por defecto, seleccionamos el primer enemigo
+		let enemyIndex = 0;
+		const score = gameStats.getScore(); // ← Usar el parámetro
 
-			// Desbloquear enemigos más fuertes si el score supera ciertos valores
-			if (TowerDefenseScene.gameStats.getScore() > 150) {
-				enemyIndex = 1; // Desbloqueamos el enemigo 2
-			}
-			if (TowerDefenseScene.gameStats.getScore() > 400) {
-				enemyIndex = 2; // Desbloqueamos el enemigo 3
-			}
-			if (TowerDefenseScene.gameStats.getScore() > 1500) {
-				enemyIndex = 3; // Desbloqueamos el enemigo 4
-			}
-			if (TowerDefenseScene.gameStats.getScore() > 4000) {
-				enemyIndex = 4; // Desbloqueamos el enemigo 5
-			}
-			if (TowerDefenseScene.gameStats.getScore() > 7000) {
-				enemyIndex = 5; // Desbloqueamos el enemigo 6
-			}
-
-			if (!Grid.isTileEmpty(startX, startY)) {
-				console.log("La celda de inicio está ocupada o no es válida.");
-				return;
-			}
-
-			// Crear el enemigo en la posición de inicio y asignarle el camino calculado
-			const enemy = new Enemy(startX, startY, path, TowerDefenseScene.tileSize, enemyIndex);
-			enemies.push(enemy);
-			gameContainer.addChild(enemy.sprite);
+		// Desbloquear enemigos más fuertes según score
+		if (score > 7000) {
+			enemyIndex = 5;
+		} else if (score > 4000) {
+			enemyIndex = 4;
+		} else if (score > 1500) {
+			enemyIndex = 3;
+		} else if (score > 400) {
+			enemyIndex = 2;
+		} else if (score > 150) {
+			enemyIndex = 1;
 		}
+
+		const enemy = new Enemy(startX, startY, path, tileSize, enemyIndex);
+		enemies.push(enemy);
+		gameContainer.addChild(enemy.sprite);
 	}
 }

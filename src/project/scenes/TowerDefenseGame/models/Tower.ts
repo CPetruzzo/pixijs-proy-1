@@ -5,7 +5,7 @@ import { ProjectileManager } from "../utils/ProjectileManager";
 import { DistanceHelper } from "../utils/DistanceHelper";
 import { GameConfig } from "../game/GameConfig"; // Asegúrate de importar GameConfig
 import { Grid } from "../utils/Grid";
-import { TowerDefenseScene } from "../scenes/TowerDefenseScene";
+import type { GameStats } from "../utils/GameStats";
 
 export class Tower {
 	public level: number = 1; // Nivel inicial de la torre
@@ -76,33 +76,48 @@ export class Tower {
 		}
 	}
 
-	public static addTower(x: number, y: number, towers: Tower[], gameContainer: Container): void {
+	public static addTower(
+		x: number,
+		y: number,
+		towers: Tower[],
+		gameContainer: Container,
+		gameStats: GameStats, // ← Pasar como parámetro
+		towerCost: number, // ← Pasar como parámetro
+		tileSize: number,
+		onCostChange: (newCost: number) => void // ← Callback para actualizar el costo
+	): boolean {
+		// ← Retornar si tuvo éxito
 		if (!Grid.isWoodTile(x, y)) {
 			console.log("Solo puedes colocar torres en tiles de tipo wood.");
-			return;
+			return false;
 		}
 
-		if (Grid.isTileEmpty(x, y)) {
-			if (TowerDefenseScene.gameStats.spendPoints(TowerDefenseScene.towerCost)) {
-				const tower = new Tower(x, y, TowerDefenseScene.tileSize);
-				towers.push(tower);
-				gameContainer.addChild(tower.animatedSprite);
-				tower.animatedSprite.zIndex = 1; // Asegúrate de que esté por encima de otros objetos.
-				gameContainer.sortChildren(); // Ordena los elementos según sus zIndex.
-
-				// Marcar la celda como ocupada
-				Grid.occupiedCells[y][x] = true;
-
-				// Aumentar el costo de la próxima torre en 5
-				TowerDefenseScene.towerCost += 30;
-
-				console.log(`Torre agregada en (${x}, ${y}). Puntos restantes: ${TowerDefenseScene.gameStats.getPoints()}`);
-				console.log(`Costo de la siguiente torre: ${TowerDefenseScene.towerCost}`);
-			} else {
-				console.log("No tienes suficientes puntos para agregar una torre.");
-			}
-		} else {
+		if (!Grid.isTileEmpty(x, y)) {
 			console.log("La celda está ocupada o no es válida para una torre.");
+			return false;
 		}
+
+		if (!gameStats.spendPoints(towerCost)) {
+			console.log("No tienes suficientes puntos para agregar una torre.");
+			return false;
+		}
+
+		const tower = new Tower(x, y, tileSize);
+		towers.push(tower);
+		gameContainer.addChild(tower.animatedSprite);
+		tower.animatedSprite.zIndex = 1;
+		gameContainer.sortChildren();
+
+		// Marcar la celda como ocupada
+		Grid.occupiedCells[y][x] = true;
+
+		// Aumentar el costo de la próxima torre
+		const newCost = towerCost + 30;
+		onCostChange(newCost);
+
+		console.log(`Torre agregada en (${x}, ${y}). Puntos restantes: ${gameStats.getPoints()}`);
+		console.log(`Costo de la siguiente torre: ${newCost}`);
+
+		return true;
 	}
 }

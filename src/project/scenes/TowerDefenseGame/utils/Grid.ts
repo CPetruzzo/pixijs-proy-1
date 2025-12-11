@@ -124,20 +124,17 @@ export class Grid {
 				let tile: Sprite;
 
 				if (cell === 1) {
-					// Si la celda es un obstáculo (1), usa el sprite de la pared
-					tile = Sprite.from("wood"); // Reemplaza con la ruta de tu imagen de pared
+					tile = Sprite.from("wood");
 				} else {
-					// Si es un camino (0), usa el sprite del camino
-					tile = Sprite.from("grass"); // Reemplaza con la ruta de tu imagen de camino
+					tile = Sprite.from("grass");
 				}
 
-				// Ajusta el tamaño y la posición del sprite
+				// ✅ Sin offset - coordenadas normales
 				tile.width = tileSize;
 				tile.height = tileSize;
-				tile.x = x * tileSize; // Posición en el eje X
-				tile.y = y * tileSize; // Posición en el eje Y
+				tile.x = x * tileSize;
+				tile.y = y * tileSize;
 
-				// Añadir el sprite al contenedor
 				container.addChild(tile);
 			});
 		});

@@ -71,7 +71,7 @@ export class ProjectileManager {
 		projectile.destroy();
 	}
 
-	static reset(): void {
+	public static reset(): void {
 		this.projectiles = []; // Limpia los proyectiles
 	}
 }

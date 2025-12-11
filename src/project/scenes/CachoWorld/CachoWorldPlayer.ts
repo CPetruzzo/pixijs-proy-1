@@ -2,35 +2,41 @@ import { Vector2 } from "@dimforge/rapier2d";
 import { Sprite, Text, TextStyle, Texture } from "pixi.js";
 import { StateMachineAnimator } from "../../../engine/animation/StateMachineAnimation";
 import type { Room } from "./Classes/Room";
+import { PlayerStats } from "./Classes/PlayerStats";
 
 export type Player = {
 	playerId: string;
 	username: string;
-	seenMessages: Set<string>; // Usamos un Set para almacenar los mensajes vistos (usamos el contenido del mensaje como clave)
-	showMessageAbove: (message: string) => void; // Método para mostrar el mensaje flotante
-	removeMessage: () => void; // Método para eliminar el mensaje flotante
+	seenMessages: Set<string>;
+	showMessageAbove: (message: string) => void;
+	removeMessage: () => void;
 };
 
 export class CachoWorldPlayer extends Sprite {
 	public id: string;
-	public speed: number = 0; // Propiedad adicional ejemplo
-	public direction: number = 0; // Dirección de movimiento
-	public animator: StateMachineAnimator; // StateMachineAnimator agregado
-	private messageText: Text | null = null; // Texto para mostrar el mensaje
+	public speed: number = 0;
+	public direction: number = 0;
+	public animator: StateMachineAnimator;
+	private messageText: Text | null = null;
 	private shownMessages: Set<string> = new Set();
 	public seenMessages: any;
-	public currentRoom: Room | null = null; // Add this property
+	public currentRoom: Room | null = null;
+	public stats: PlayerStats; // NEW: Player stats with HP
 
 	constructor(id: string, x: number, y: number) {
 		super(Sprite.from(Texture.WHITE).texture);
 		this.id = id;
-		this.anchor.set(0.5); // Configura el punto de anclaje al centro
+		this.anchor.set(0.5);
 		this.x = x;
 		this.y = y;
 
 		this.seenMessages = new Set();
 
-		// Crear instancia del StateMachineAnimator y configurarlo
+		// Initialize player stats
+		this.stats = new PlayerStats(id, 10);
+		this.addChild(this.stats.getHealthBarContainer());
+
+		// Create animator
 		this.animator = new StateMachineAnimator();
 		this.animator.addState(
 			"idle",
@@ -56,7 +62,11 @@ export class CachoWorldPlayer extends Sprite {
 		this.animator.playState("idle");
 		this.animator.anchor.set(0.5);
 		this.animator.scale.set(5);
-		this.addChild(this.animator); // Agregar el animator como hijo del sprite
+		this.addChild(this.animator);
+
+		// Make sprite interactive for combat
+		this.interactive = true;
+		this.cursor = "pointer";
 	}
 
 	public shootHim(charge: { x: number; y: number }): void {
@@ -128,5 +138,13 @@ export class CachoWorldPlayer extends Sprite {
 
 	public clearShownMessages(): void {
 		this.shownMessages.clear();
+	}
+
+	public override destroy(_options?: any): void {
+		// Clean up health bar
+		if (this.stats) {
+			this.removeChild(this.stats.getHealthBarContainer());
+		}
+		super.destroy(_options);
 	}
 }

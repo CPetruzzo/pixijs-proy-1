@@ -42,11 +42,10 @@ export class BasquetballGameScene extends PixiScene {
 	private bG: Sprite;
 	private hoopCollider: Collider;
 	private groundColliderDesc: ColliderDesc;
-	private hoopSensorEnabled = false; // Indica si el aro está en modo sensor
-	private groundCollider: Collider; // Collider del suelo
+	private hoopSensorEnabled = false;
+	private groundCollider: Collider;
 	private frontCollider: Collider;
 	private backCollider: Collider;
-	// private net: Sprite;
 	private ui: UI;
 	private wallContainer: Container = new Container();
 	private noTime: boolean = false;
@@ -54,14 +53,17 @@ export class BasquetballGameScene extends PixiScene {
 	private popupOpened: boolean = false;
 	private eventQueue: EventQueue;
 
-	// private basketballPlayer: BasketballPlayer;
+	// Variables de mejora
+	private consecutiveScores: number = 0;
+	private lastBounceTime: number = 0;
+	private scoreMultiplier: number = 1;
+
 	// #endregion VARIABLES
 	constructor() {
 		super();
 		this.eventQueue = new EventQueue(true);
 
 		this.sortableChildren = true;
-		// Mover el contenedor del mundo
 		this.worldContainer.name = "PHYSICS WORLD CONTAINER";
 		this.worldContainer.sortableChildren = true;
 		this.ui = new UI();
@@ -83,7 +85,6 @@ export class BasquetballGameScene extends PixiScene {
 		);
 		this.camera = new Camera2D();
 
-		// Crear el mundo de física con gravedad
 		const gravity = new Vector2(0.0, 140);
 		this.world = new World(gravity);
 
@@ -96,13 +97,6 @@ export class BasquetballGameScene extends PixiScene {
 		this.bG.y = 850;
 		this.bG.zIndex = -1;
 		this.worldContainer.addChild(this.bG);
-
-		// this.net = Sprite.from("basketnet");
-		// this.net.anchor.set(0.5);
-		// this.net.scale.set(1.55);
-		// this.net.position.set(861, 735);
-		// this.worldContainer.addChild(this.net);
-		// this.net.zIndex = 3;
 
 		const rim = Sprite.from("basketrim");
 		rim.anchor.set(0.5);
@@ -118,7 +112,6 @@ export class BasquetballGameScene extends PixiScene {
 		bG.y = 800;
 		this.backgroundContainer.addChild(bG);
 
-		// Crear el jugador (proyectil controlado por joystick)
 		this.player = new JoystickBasquetBallPlayer(this.world);
 		this.worldContainer.addChild(this.player);
 		this.worldContainer.zIndex = 2;
@@ -128,39 +121,39 @@ export class BasquetballGameScene extends PixiScene {
 		basquetball.anchor.set(0.5);
 		this.player.addChild(basquetball);
 
-		// Crear el joystick
 		this.joystick = new BasquetBallJoystick(this.player);
 		this.worldContainer.addChild(this.joystick);
 
-		// Crear el suelo (ground)
+		// Física mejorada
 		this.groundColliderDesc = ColliderDesc.cuboid(100.0, 1);
-		this.groundColliderDesc.restitution = 1.3;
+		this.groundColliderDesc.restitution = 0.7; // Más realista
 		this.groundCollider = this.world.createCollider(this.groundColliderDesc);
 		this.groundCollider.setTranslation({ x: 128.0, y: 118.0 });
 
-		// Crear el suelo (ground)
 		const leftWallDesc = ColliderDesc.cuboid(1, 200);
-		leftWallDesc.restitution = 1.3;
+		leftWallDesc.restitution = 0.6;
 		this.world.createCollider(leftWallDesc).setTranslation({ x: 45, y: 0 });
-		// Crear el suelo (ground)
+
 		const rightWallDesc = ColliderDesc.cuboid(1, 200);
-		rightWallDesc.restitution = 1.3;
+		rightWallDesc.restitution = 0.6;
 		this.world.createCollider(rightWallDesc).setTranslation({ x: 221.0, y: 110.0 });
-		// Crear el suelo (ground)
+
 		const topWallDesc = ColliderDesc.cuboid(100, 1);
-		topWallDesc.restitution = 1.3;
+		topWallDesc.restitution = 0.6;
 		this.world.createCollider(topWallDesc).setTranslation({ x: 128, y: 0 });
 
-		// Crear el aim
 		this.aim = new Aim();
 
-		if (!this.player.hasShot) {
-			this.joystick.on(JoystickEmits.AIM, () => {
+		this.joystick.on(JoystickEmits.AIM, () => {
+			if (!this.player.hasShot) {
 				this.player.addChild(this.aim);
 				this.aim.visible = true;
-				this.aim.updateTrajectory({ power: this.joystick.joystickPower, angle: this.joystick.joystickAngle });
-			});
-		}
+				this.aim.updateTrajectory({
+					power: this.joystick.joystickPower,
+					angle: this.joystick.joystickAngle,
+				});
+			}
+		});
 
 		this.joystick.on(JoystickEmits.STOPAIM, () => {
 			this.player.removeChild(this.aim);
@@ -169,23 +162,15 @@ export class BasquetballGameScene extends PixiScene {
 		this.worldContainer.pivot.y = this.player.y;
 		this.worldContainer.pivot.set(this.worldContainer.width * 0.5, this.worldContainer.height * 0.5);
 		this.backgroundContainer.pivot.set(this.backgroundContainer.width * 0.5, this.backgroundContainer.height * 0.5);
+
 		this.createHoop(86, 68);
 		this.createRim(78, 61);
-
-		// this.basketballPlayer = new BasketballPlayer(this.world);
-		// this.basketballPlayer.x = 1100;
-		// this.basketballPlayer.y = 1049;
-		// this.basketballPlayer.anchor.set(0.5);
-		// this.basketballPlayer.scale.set(1.1);
-		// this.basketballPlayer.zIndex = 5;
-		// this.worldContainer.addChild(this.basketballPlayer);
 
 		const megaWall = new NineSlicePlane(Texture.from("emptyframe"), 15, 15, 15, 15);
 		megaWall.height = ScaleHelper.IDEAL_HEIGHT;
 		megaWall.width = ScaleHelper.IDEAL_WIDTH;
 		megaWall.pivot.set(megaWall.width * 0.47, megaWall.height * 0.5);
 		megaWall.position.set(-50, 0);
-		// this.wallContainer.addChild(megaWall);
 	}
 
 	private createHoop(x: number, y: number): void {
@@ -194,13 +179,13 @@ export class BasquetballGameScene extends PixiScene {
 		hoop.drawRect(-5, 0, 50, 1);
 		hoop.endFill();
 		hoop.position.set(x * BasquetballGameScene.METER_TO_PIXEL, y * BasquetballGameScene.METER_TO_PIXEL);
-		// this.worldContainer.addChild(hoop);
 
-		const frontColliderDesc = ColliderDesc.ball(0.8).setRestitution(1.5);
+		// Colliders mejorados
+		const frontColliderDesc = ColliderDesc.ball(0.8).setRestitution(1.0);
 		this.frontCollider = this.world.createCollider(frontColliderDesc);
 		this.frontCollider.setTranslation({ x: x - 5.5, y });
 
-		const backColliderDesc = ColliderDesc.ball(0.8).setRestitution(1.5);
+		const backColliderDesc = ColliderDesc.ball(0.8).setRestitution(1.0);
 		this.backCollider = this.world.createCollider(backColliderDesc);
 		this.backCollider.setTranslation({ x: x + 5, y });
 
@@ -210,17 +195,15 @@ export class BasquetballGameScene extends PixiScene {
 	}
 
 	private createRim(x: number, y: number): void {
-		const blockCollider = ColliderDesc.roundCuboid(0.5, 8, 0.7).setRestitution(1);
+		const blockCollider = ColliderDesc.roundCuboid(0.5, 8, 0.7).setRestitution(0.8);
 		this.world.createCollider(blockCollider).setTranslation({ x: x - 0.3, y: y + 1.3 });
 	}
 
 	public override update(_dt: number): void {
-		if (this.ui.pauseButton.paused) {
+		if (this.ui.pauseButton.paused || this.isGameOver()) {
 			return;
 		}
-		if (this.isGameOver()) {
-			return;
-		}
+
 		this.ui.counterTime.on(CounterEmits.TIME_ENDED, () => {
 			this.noTime = true;
 		});
@@ -241,7 +224,7 @@ export class BasquetballGameScene extends PixiScene {
 	private isGameOver(): boolean {
 		if (this.gameOver && !this.popupOpened) {
 			this.ui.openNameInputPopup();
-			this.popupOpened = true; // Asegura que solo se abra una vez
+			this.popupOpened = true;
 			return true;
 		}
 		if (this.noTime) {
@@ -251,88 +234,122 @@ export class BasquetballGameScene extends PixiScene {
 		return false;
 	}
 
-	// Detección de colisión con el aro
+	// Detección de colisión con el aro - EXACTAMENTE como el original pero con mejoras
 	private detectHoopCollision(): void {
 		if (!this.hoopSensorEnabled) {
 			this.world.contactPair(this.player.collider, this.hoopCollider, (manifold, _flipped) => {
 				if (manifold.numContacts() > 0) {
 					const normal = manifold.localNormal1();
 					if (normal.y > 0) {
-						// Actualiza el puntaje y llama a la detección de puntuación
-						this.ui.updateScore(2);
-						this.onScoreDetected();
-						console.log("Puntaje actualizado:", this.ui.score);
+						// Sistema de rachas
+						this.consecutiveScores++;
 
-						// Activa el sensor para evitar múltiples detecciones inmediatas
+						if (this.consecutiveScores >= 5) {
+							this.scoreMultiplier = 3;
+						} else if (this.consecutiveScores >= 3) {
+							this.scoreMultiplier = 2;
+						} else {
+							this.scoreMultiplier = 1;
+						}
+
+						// Actualizar puntaje con multiplicador
+						const points = 2 * this.scoreMultiplier;
+						this.ui.updateScore(points);
+
+						console.log(`Puntaje actualizado: ${this.ui.score} | Racha: ${this.consecutiveScores}x | Multiplicador: ${this.scoreMultiplier}x`);
+
+						// Activa el sensor
 						this.hoopCollider.setSensor(true);
 						this.hoopSensorEnabled = true;
 
-						// Llama a una función para reiniciar el sensor después de un tiempo
+						// Resetea después de 2 segundos
 						setTimeout(() => {
 							this.resetHoopSensor();
-						}, 2000); // Ajusta el tiempo según sea necesario
+						}, 2000);
 					}
 				}
 			});
 		}
 	}
 
-	// Función para resetear el sensor del aro
 	private resetHoopSensor(): void {
 		this.hoopCollider.setSensor(false);
 		this.hoopSensorEnabled = false;
 		console.log("Sensor de aro reiniciado");
 	}
 
-	// Función para manejar lo que sucede cuando se detecta una puntuación
 	private onScoreDetected(): void {
 		console.log("Scored!");
 		this.player.spawnPlayer();
 		console.log("Player respawneado en posición:", this.player.rigidBody.translation());
 	}
 
-	// Detección de colisión con el suelo
+	// Detección mejorada con el suelo
 	private detectGroundCollision(): void {
 		this.world.contactPair(this.player.collider, this.groundCollider, (manifold, _flipped) => {
 			if (manifold.numContacts() > 0) {
-				const verticalVelocity = this.player.rigidBody.linvel().y;
+				const velocity = this.player.rigidBody.linvel();
+				const verticalVelocity = Math.abs(velocity.y);
+				const currentTime = Date.now();
 
-				// Reproducir sonido si la velocidad es suficientemente alta
-				if (verticalVelocity > 9) {
-					SoundLib.playSound("bounce", { loop: false, singleInstance: true, allowOverlap: false });
-				} else {
-					this.player.rigidBody.linvel().y = 0;
+				// Audio mejorado con control de tiempo
+				if (verticalVelocity > 9 && currentTime - this.lastBounceTime > 200) {
+					SoundLib.playSound("bounce", {
+						loop: false,
+						singleInstance: true,
+						allowOverlap: false,
+						volume: Math.min(verticalVelocity / 20, 1.0),
+					});
+					this.lastBounceTime = currentTime;
+				} else if (verticalVelocity < 2) {
+					this.player.rigidBody.setLinvel({ x: velocity.x * 0.7, y: 0 }, true);
 					this.player.isOnGround = true;
 				}
 
-				// Desactivar el sensor del aro cuando el jugador toca el suelo
+				// Desactivar el sensor del aro
 				if (this.hoopSensorEnabled) {
 					this.hoopCollider.setSensor(false);
 					this.hoopSensorEnabled = false;
 				}
 
-				// Solo respawnear si el jugador ha disparado y está tocando el suelo
+				// Respawnear si ha disparado
 				if (this.player.hasShot) {
+					// Romper racha si no anotó
+					if (!this.hoopSensorEnabled) {
+						this.consecutiveScores = 0;
+						this.scoreMultiplier = 1;
+						console.log("Racha rota - falló el tiro");
+					}
+
 					this.player.spawnPlayer();
-					this.player.hasShot = false; // Restablecer el estado de disparo para evitar respawneo continuo
+					this.player.hasShot = false;
 				}
 			}
 		});
 	}
 
-	// Detección de colisiones con los colliders del aro
+	// Detección mejorada con el aro
 	private detectRimCollisions(): void {
 		[this.frontCollider, this.backCollider].forEach((collider) => {
 			this.world.contactPair(this.player.collider, collider, (manifold, _flipped) => {
 				if (manifold.numContacts() > 0) {
+					const velocity = this.player.rigidBody.linvel();
+					const impact = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+
 					console.log("Colisión detectada con el aro");
-					SoundLib.playSound("hitRim", { loop: false, allowOverlap: false, volume: 0.03 });
+					if (impact > 2) {
+						SoundLib.playSound("hitRim", {
+							loop: false,
+							allowOverlap: false,
+							volume: Math.min(impact / 50 + 0.03, 0.3),
+						});
+					}
 				}
 			});
 		});
 	}
 
-	// Detección de eventos de colisión usando `drainCollisionEvents`
+	// EXACTAMENTE como el original
 	private detectDrainCollisionEvents(): void {
 		this.eventQueue.drainCollisionEvents((collider1, collider2, started) => {
 			if (started && this.isPlayerHoopCollision(collider1, collider2)) {
@@ -342,7 +359,6 @@ export class BasquetballGameScene extends PixiScene {
 		});
 	}
 
-	// Comprobación si es una colisión entre el jugador y el aro
 	private isPlayerHoopCollision(collider1: number, collider2: number): boolean {
 		return (
 			(collider1 === this.player.collider.handle && collider2 === this.hoopCollider.handle) ||
@@ -374,7 +390,6 @@ export class BasquetballGameScene extends PixiScene {
 	}
 
 	public override onResize(_newW: number, _newH: number): void {
-		// Escala ambos contenedores para que coincidan con el tamaño ideal de la pantalla
 		ScaleHelper.setScaleRelativeToIdeal(this.worldContainer, _newW * 1.15, _newH * 1.15, 1920, 1920, ScaleHelper.FILL);
 		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, _newW, _newH, 1920, 1080, ScaleHelper.FILL);
 		ScaleHelper.setScaleRelativeToIdeal(this.ui.rightContainer, _newW * 0.3, _newH * 0.3, 1920, 1080, ScaleHelper.FIT);
@@ -394,7 +409,6 @@ export class BasquetballGameScene extends PixiScene {
 		this.ui.timeContainer.x = _newW * 0.5;
 		this.ui.timeContainer.y = 0;
 
-		// Centra ambos contenedores
 		this.backgroundContainer.x = _newW / 2;
 		this.backgroundContainer.y = _newH / 2;
 		this.worldContainer.x = _newW * 0.6;

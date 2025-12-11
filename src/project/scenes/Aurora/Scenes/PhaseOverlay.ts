@@ -51,31 +51,22 @@ export class PhaseOverlay extends Container {
 		const enterXTo = 380;
 		const exitXTo = -100;
 		const delayStay = 200; // ms de espera en el centro antes de salir
+		console.log("delayStay", delayStay);
 
 		// Entrada: desde enterXFrom → enterXTo
-		new Tween(this.phaseName)
-			.from({ x: enterXFrom })
-			.to({ x: enterXTo, alpha: 1 }, 2000)
-			.start()
-			.easing(Easing.Quadratic.Out)
+		// En PhaseOverlay.ts -> animateChangePhase
+		const tweenIn = new Tween(this.phaseName).from({ x: enterXFrom }).to({ x: enterXTo, alpha: 1 }, 2000).easing(Easing.Quadratic.Out);
+
+		const tweenOut = new Tween(this.phaseName)
+			.to({ x: exitXTo, alpha: 0 }, 2000)
+			.easing(Easing.Quadratic.In)
+			.delay(200) // Reemplaza al setTimeout y espera 200ms antes de arrancar
 			.onComplete(() => {
-				// Después de entrar, esperar delayStay ms y luego salida
-				setTimeout(() => {
-					new Tween(this.phaseName)
-						.from({ x: enterXTo })
-						.easing(Easing.Quadratic.In)
-						.to({ x: exitXTo, alpha: 0 }, 2000)
-						.start()
-						.onComplete(() => {
-							// Al terminar salida:
-							if (onComplete) {
-								onComplete();
-							}
-							if (this.parent) {
-								this.parent.removeChild(this);
-							}
-						});
-				}, delayStay);
+				onComplete?.();
+				this.parent?.removeChild(this);
 			});
+
+		// Encadenar: cuando termine In, arranca Out
+		tweenIn.chain(tweenOut).start();
 	}
 }
