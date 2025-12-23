@@ -34,7 +34,7 @@ export class ConstructionGameScene extends PixiScene {
 	private jumpSpeed: number = -10;
 	public static readonly BUNDLES = ["construction"];
 	private uiContainer: Container = new Container();
-
+	public static currentLevelData: PlacedEntity[] | null = null;
 	constructor() {
 		super();
 
@@ -55,9 +55,12 @@ export class ConstructionGameScene extends PixiScene {
 		// Agregar botón para volver a ConstructionEngineScene
 		this.createReturnButton();
 
-		// Cargar el nivel desde state.json importado
-		this.loadLevelFromFile(gameMap).then(() => {
-			// Luego de cargar, buscamos si ya existe un player en el nivel
+		const levelToLoad = ConstructionGameScene.currentLevelData || gameMap;
+		// Limpiamos la variable estática para la próxima vez
+		ConstructionGameScene.currentLevelData = null;
+		console.log("ConstructionGameScene.currentLevelData", ConstructionGameScene.currentLevelData);
+
+		this.loadLevelFromFile(levelToLoad).then(() => {
 			this.findOrCreatePlayer();
 		});
 
@@ -233,6 +236,34 @@ export class ConstructionGameScene extends PixiScene {
 
 		this.player.x = tentativeX;
 		this.player.y = tentativeY;
+
+		this.checkFlagCollision();
+	}
+
+	// Nuevo método
+	private checkFlagCollision(): void {
+		const playerBounds = this.player.getBounds();
+
+		for (const child of this.levelContainer.children) {
+			if (child instanceof Sprite && child.name === "flag") {
+				const flagBounds = child.getBounds();
+				// Una colisión simple AABB
+				if (this.rectsIntersect(playerBounds, flagBounds)) {
+					console.log("¡Nivel Completado!");
+					// Volver al editor automáticamente o mostrar pantalla de victoria
+					Manager.changeScene(ConstructionEngineScene);
+				}
+			}
+		}
+	}
+
+	public getEntityRect(entity: Sprite): Rectangle {
+		return new Rectangle(
+			entity.x - entity.width / 2, // Asumiendo anchor 0.5
+			entity.y - entity.height / 2,
+			entity.width,
+			entity.height
+		);
 	}
 
 	/**

@@ -3,7 +3,8 @@
 /** Enum con todas tus escenas */
 export enum SceneKey {
 	TopDownProtoScene,
-
+	BromatoHeroScene,
+	RAPIER_SideScrollerScene,
 	// RUNFALL
 	RUNFALL_MenuScene,
 	RUNFALL_SelectorScene,
@@ -61,6 +62,7 @@ export enum SceneKey {
 	DIALOG_Scene,
 	ALGORITHM_ASTARScene,
 	ALGORITHM_WEIGHTEDScene,
+	LEVELSELECT_Scene,
 }
 
 /**
@@ -192,5 +194,20 @@ export const SceneRegistry: Record<SceneKey, () => Promise<any>> = {
 	[SceneKey.TopDownProtoScene]: () =>
 		import("./project/scenes/TopDownProtoScene").then((m) => ({
 			ALGORITHM_ASTARScene: m.TopDownProtoScene,
+		})),
+
+	[SceneKey.LEVELSELECT_Scene]: () =>
+		import("./project/scenes/LevelSelectScene").then((m) => ({
+			ALGORITHM_ASTARScene: m.LevelSelectScene,
+		})),
+
+	[SceneKey.BromatoHeroScene]: () =>
+		import("./project/scenes/CoffeeGame/BromatoHeroScene").then((m) => ({
+			BromatoHeroScene: m.BromatoHeroScene,
+		})),
+
+	[SceneKey.RAPIER_SideScrollerScene]: () =>
+		import("./project/scenes/Rapier3D/SideScrollerScene").then((m) => ({
+			SideScrollerScene: m.SideScrollerScene,
 		})),
 };

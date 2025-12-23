@@ -10,7 +10,6 @@ export class StorageManager {
 
 	constructor(slotCount: number, maxWeightPerSlot: number, storageKey: string = "inventory") {
 		this.slots = Array.from({ length: slotCount }, () => new Slot(maxWeightPerSlot));
-		console.log("this.slots", this.slots);
 		this.storageKey = storageKey;
 	}
 
@@ -25,7 +24,7 @@ export class StorageManager {
 
 	private notifyChange(): void {
 		this.listeners.forEach((callback) => callback());
-		this.saveInventoryToJSON(); // Auto-guardado opcional
+		// this.saveInventoryToJSON(); // Auto-guardado opcional
 	}
 
 	// --- Lógica de Inventario ---

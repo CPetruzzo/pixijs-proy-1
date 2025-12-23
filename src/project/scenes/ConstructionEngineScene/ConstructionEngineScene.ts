@@ -3,12 +3,13 @@ import type { Graphics } from "pixi.js";
 import { Container, Sprite, Text } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
-import { pixiRenderer } from "../../..";
+import { Manager, pixiRenderer } from "../../..";
 import { BlackboardManager } from "./blackboard/BlackboardManager";
 import { EntityManager } from "./entities/EntityManager";
 import { FileSystemManager } from "./files/FileSystemManager";
 import { ToolPalette } from "./tools/ToolPalette";
 import type { CustomSprite } from "../WebEngine/ConstructionEngineScene";
+import { ConstructionGameScene } from "./ConstructionGameScene";
 
 export class ConstructionEngineScene extends PixiScene {
 	private backgroundContainer: Container;
@@ -31,6 +32,8 @@ export class ConstructionEngineScene extends PixiScene {
 	private loadPanel: Container | null = null;
 	private loadPanelVisible: boolean = false;
 
+	private isPanning: boolean = false;
+	private lastMousePos: { x: number; y: number } = { x: 0, y: 0 };
 	constructor() {
 		super();
 		this.backgroundContainer = new Container();
@@ -59,19 +62,36 @@ export class ConstructionEngineScene extends PixiScene {
 		this.setupInteractions();
 	}
 
-	private onToolSelected(tool: string): void {
-		if (tool === "export") {
+	private async onToolSelected(tool: string): Promise<void> {
+		if (tool === "play") {
+			const levelData = [...this.entityManager.placedEntities];
+			ConstructionGameScene.currentLevelData = levelData;
+			Manager.changeScene(ConstructionGameScene);
+		} else if (tool === "export") {
 			this.fileSystemManager.exportStateToFile(this.entityManager.saveState()).catch(console.error);
 		} else if (tool === "load") {
-			this.toggleLoadPanel().catch(console.error);
+			// --- NUEVA LÓGICA DE CARGA ---
+			// Usamos el método directo loadFile en lugar del panel complejo
+			const data = await this.fileSystemManager.loadFile();
+			if (data) {
+				// 1. Limpiar visualmente
+				this.blackboardManager.cleanBlackboard();
+				// 2. Cargar datos y crear sprites
+				this.entityManager.loadState(data);
+				// (Opcional) Si tenías un panel abierto, ciérralo
+				if (this.loadPanelVisible) {
+					this.toggleLoadPanel();
+				}
+			}
 		} else if (tool === "clean") {
-			this.blackboardManager.cleanBlackboard();
+			// --- CORRECCIÓN CRÍTICA ---
+			this.blackboardManager.cleanBlackboard(); // Limpia Sprites/Grid
+			this.entityManager.clear(); // Limpia el Array de datos
 		} else if (tool === "exportPNG") {
 			this.exportToPNG();
 		} else if (tool === "saveDirect") {
 			this.fileSystemManager.saveStateDirectly(this.entityManager.saveState()).catch(console.error);
 		} else {
-			// "flag" para colocar bandera, "flagSelect" para moverla
 			this.currentTool = tool;
 			document.body.style.cursor = "crosshair";
 		}
@@ -92,6 +112,15 @@ export class ConstructionEngineScene extends PixiScene {
 		this.blackboard.interactive = true;
 
 		this.blackboard.on("pointermove", (event) => {
+			// Detectar botón central (rueda) o tal vez una tecla modificadora
+			if (event.data.button === 1 || this.currentTool === "hand") {
+				this.isPanning = true;
+				this.lastMousePos = { x: event.data.global.x, y: event.data.global.y };
+				// Evitar que propague eventos de colocar bloques
+				event.stopPropagation();
+				return;
+			}
+
 			const localPos = this.blackboard.toLocal(event.data.global);
 			const snapped = this.blackboardManager.getSnappedPosition(localPos.x, localPos.y);
 
@@ -115,6 +144,20 @@ export class ConstructionEngineScene extends PixiScene {
 		});
 
 		this.blackboard.on("pointerdown", (event) => {
+			if (this.isPanning) {
+				const currentX = event.data.global.x;
+				const currentY = event.data.global.y;
+
+				const diffX = currentX - this.lastMousePos.x;
+				const diffY = currentY - this.lastMousePos.y;
+
+				this.blackboard.x += diffX;
+				this.blackboard.y += diffY;
+
+				this.lastMousePos = { x: currentX, y: currentY };
+				return; // No hacemos snap ni preview si estamos moviendo la cámara
+			}
+
 			const localPos = this.blackboard.toLocal(event.data.global);
 			const snapped = this.blackboardManager.getSnappedPosition(localPos.x, localPos.y);
 
@@ -128,6 +171,11 @@ export class ConstructionEngineScene extends PixiScene {
 		});
 
 		this.blackboard.on("pointerup", (event) => {
+			if (this.isPanning) {
+				this.isPanning = false;
+				// IMPORTANTE: Return aquí para no colocar bloque al soltar la cámara
+				return;
+			}
 			const localPos = this.blackboard.toLocal(event.data.global);
 			const snapped = this.blackboardManager.getSnappedPosition(localPos.x, localPos.y);
 
@@ -164,6 +212,9 @@ export class ConstructionEngineScene extends PixiScene {
 			} else if (this.currentTool) {
 				this.entityManager.placeEntity(this.currentTool, snapped.x, snapped.y);
 			}
+		});
+		this.blackboard.on("pointerupoutside", () => {
+			this.isPanning = false;
 		});
 	}
 

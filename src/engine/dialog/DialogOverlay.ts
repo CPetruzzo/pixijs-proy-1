@@ -2,7 +2,10 @@ import { Container, Sprite, Graphics, Text, TextStyle, Texture, Point } from "pi
 import { Tween, Easing } from "tweedle.js";
 import { Manager } from "../..";
 
-export type OverlayMode = "cinematic" | "bubble";
+export enum OverlayMode {
+	CINEMATIC = "cinematic",
+	BUBBLE = "bubble",
+}
 
 export class DialogueOverlay extends Container {
 	private background: Graphics;
@@ -19,7 +22,7 @@ export class DialogueOverlay extends Container {
 	public onTypingComplete?: () => void;
 
 	// --- NUEVAS PROPIEDADES ---
-	private currentMode: OverlayMode = "cinematic";
+	private currentMode: OverlayMode = OverlayMode.CINEMATIC;
 	// Posición objetivo en pantalla donde apuntará la burbuja
 	private targetPos: Point = new Point(0, 0);
 	// --------------------------

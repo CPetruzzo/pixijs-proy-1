@@ -1,95 +1,155 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { Assets, Sprite } from "pixi.js";
+import { Texture, Sprite, Graphics } from "pixi.js";
 import { PixiScene } from "../../engine/scenemanager/scenes/PixiScene";
 
 interface Star {
 	sprite: Sprite;
-	x: number;
-	y: number;
-	z: number;
+	x: number; // Posición base X en el "cilindro"
+	y: number; // Posición base Y en el "cilindro"
+	z: number; // Profundidad absoluta
 }
 
 export class SpaceScene extends PixiScene {
-	public static readonly BUNDLES: string[] = []; // sin bundles externos
+	// Configuración exacta del ejemplo de referencia
+	private readonly STAR_AMOUNT = 1000;
+	private readonly FOV = 20;
+	private readonly BASE_SPEED = 0.001;
+	private readonly STAR_STRETCH = 5;
+	private readonly STAR_BASE_SIZE = 0.05;
 
 	private stars: Star[] = [];
-	private readonly STAR_COUNT = 1000;
 	private cameraZ = 0;
-	private readonly fov = 20;
-	private readonly baseSpeed = 0.025;
 	private speed = 0;
 	private warpSpeed = 0;
-	private readonly starStretch = 5;
-	private readonly starBaseSize = 0.05;
+	private warpTimer = 0; // Para simular el setInterval
+
+	// Fondo negro para evitar estelas
+	private background: Graphics;
 
 	constructor() {
 		super();
 
-		// 1) Carga la textura de la estrella y crea los sprites
-		Assets.load("https://pixijs.com/assets/star.png").then((tex) => {
-			for (let i = 0; i < this.STAR_COUNT; i++) {
-				const sprite = new Sprite(tex);
-				sprite.anchor.set(0.5, 0.7);
-				const star: Star = { sprite, x: 0, y: 0, z: 0 };
-				this.randomizeStar(star, true);
-				this.stars.push(star);
-				this.addChild(sprite);
-			}
-		});
+		// 1. Fondo negro (Importante en Pixi para limpiar el frame anterior visualmente)
+		this.background = new Graphics();
+		this.background.beginFill(0x000000);
+		this.background.drawRect(0, 0, 4000, 4000); // Tamaño arbitrario grande
+		this.background.endFill();
+		this.addChild(this.background);
 
-		// 2) Cada 5 s alternamos “warpSpeed” para el efecto de aceleración
-		setInterval(() => {
-			this.warpSpeed = this.warpSpeed > 0 ? 0 : 1;
-		}, 5000);
+		this.initializeStars();
+
+		// Inicializamos el timer del warp
+		this.warpTimer = 0;
 	}
 
-	/** Sitúa una estrella con coordenadas radiales aleatorias */
+	private initializeStars(): void {
+		for (let i = 0; i < this.STAR_AMOUNT; i++) {
+			const sprite = Sprite.from(Texture.WHITE);
+			sprite.tint = 0xffffff;
+
+			// Configuración del ancla exacta del ejemplo
+			sprite.anchor.set(0.5, 0.7);
+
+			const star: Star = {
+				sprite,
+				x: 0,
+				y: 0,
+				z: 0,
+			};
+
+			this.randomizeStar(star, true);
+			this.addChild(sprite);
+			this.stars.push(star);
+		}
+	}
+
 	private randomizeStar(star: Star, initial = false): void {
+		// Lógica de Z exacta del ejemplo
 		star.z = initial ? Math.random() * 2000 : this.cameraZ + Math.random() * 1000 + 2000;
 
+		// Lógica de posición radial exacta del ejemplo.
+		// ESTO es lo que evita el parpadeo central.
+		// El '+ 1' asegura que ninguna estrella esté en el centro exacto (0,0).
 		const deg = Math.random() * Math.PI * 2;
 		const distance = Math.random() * 50 + 1;
+
 		star.x = Math.cos(deg) * distance;
 		star.y = Math.sin(deg) * distance;
 	}
 
-	/** Se llama cada frame con `_dt` = ms transcurridos desde el último update */
 	public override update(_dt: number): void {
-		// easing simple de velocidad
-		this.speed += (this.warpSpeed - this.speed) / 20;
-		this.cameraZ += _dt * 10 * (this.speed + this.baseSpeed);
+		if (this.stars.length === 0) {
+			return;
+		}
 
-		const w2 = this.width / 2;
-		const h2 = this.height / 2;
+		// En el ejemplo usan app.renderer.screen.width/height.
+		// En PixiScene, esto suele ser this.width / this.height.
+		const width = this.width || 1920;
+		const height = this.height || 1080;
+		const cx = width / 2;
+		const cy = height / 2;
+
+		// Convertir delta time a la escala que usa el ejemplo.
+		// El ejemplo usa time.deltaTime que suele ser frames si se usa app.ticker.
+		// Asumiremos que _dt son milisegundos, así que lo normalizamos.
+		const delta = _dt / 16.66;
+
+		// Simulación del setInterval(() => warpSpeed = ... , 5000)
+		this.warpTimer += _dt;
+		if (this.warpTimer > 5000) {
+			this.warpSpeed = this.warpSpeed > 0 ? 0 : 1;
+			this.warpTimer = 0;
+		}
+
+		// Lerp de velocidad
+		this.speed += (this.warpSpeed - this.speed) / 2000;
+		console.log("this.speed", this.speed);
+
+		// Mover la cámara
+		this.cameraZ += delta * (this.speed + this.BASE_SPEED);
+		console.log("this.cameraZ", this.cameraZ);
+		console.log("delta", delta);
 
 		for (const star of this.stars) {
-			// si la estrella “cruza” la cámara, la reubicamos atrás
+			// Chequeo de reinicio
 			if (star.z < this.cameraZ) {
 				this.randomizeStar(star);
 			}
 
-			// proyección 3D→2D
-			const dz = star.z - this.cameraZ;
-			const proj = this.fov / dz;
-			star.sprite.x = star.x * proj * this.width + w2;
-			star.sprite.y = star.y * proj * this.width + h2;
+			// Proyección 3D simple
+			const z = star.z - this.cameraZ;
 
-			// escalado y rotación en función de la distancia al centro
-			const dxC = star.sprite.x - w2;
-			const dyC = star.sprite.y - h2;
-			const distC = Math.sqrt(dxC * dxC + dyC * dyC);
-			const scaleFactor = Math.max(0, (2000 - dz) / 2000);
+			// Coordenadas en pantalla
+			// NOTA: El ejemplo original usa 'width' para AMBOS ejes (X e Y)
+			// en la multiplicación para mantener la relación de aspecto cuadrada.
+			star.sprite.x = star.x * (this.FOV / z) * width + cx;
+			star.sprite.y = star.y * (this.FOV / z) * width + cy;
 
-			star.sprite.scale.x = scaleFactor * this.starBaseSize;
-			star.sprite.scale.y = scaleFactor * this.starBaseSize + (scaleFactor * this.speed * this.starStretch * distC) / this.width;
-			star.sprite.rotation = Math.atan2(dyC, dxC) + Math.PI / 2;
+			// Cálculos de Escala y Rotación
+			const dxCenter = star.sprite.x - cx;
+			const dyCenter = star.sprite.y - cy;
+
+			const distanceCenter = Math.sqrt(dxCenter * dxCenter + dyCenter * dyCenter);
+
+			// Fade-in basado en profundidad (2000 es el rango máx del ejemplo)
+			const distanceScale = Math.max(0, (2000 - z) / 2000);
+
+			star.sprite.scale.x = distanceScale * this.STAR_BASE_SIZE;
+
+			// Estiramiento en Y basado en velocidad y distancia al centro
+			star.sprite.scale.y = distanceScale * this.STAR_BASE_SIZE + (distanceScale * this.speed * this.STAR_STRETCH * distanceCenter) / width;
+
+			star.sprite.rotation = Math.atan2(dyCenter, dxCenter) + Math.PI / 2;
 		}
-
-		super.update(_dt);
 	}
 
 	public override onResize(newW: number, newH: number): void {
-		// actualizar width/height internos de PixiScene
 		super.onResize(newW, newH);
+		if (this.background) {
+			this.background.clear();
+			this.background.beginFill(0x000000);
+			this.background.drawRect(0, 0, newW, newH);
+			this.background.endFill();
+		}
 	}
 }

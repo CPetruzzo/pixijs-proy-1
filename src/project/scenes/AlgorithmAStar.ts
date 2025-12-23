@@ -78,7 +78,7 @@ export class AStarScene extends PixiScene {
 		this.gameContainer.addChild(this.player);
 
 		// Inicializar el Walker. Velocidad 5 pixeles por frame (ajustar según necesidad)
-		this.pathWalker = new PathWalker(this.player, this.tileSize, 5);
+		this.pathWalker = new PathWalker(this.player, { smoothUpdates: false, tileSize: this.tileSize, speed: 5 });
 
 		// Inicializamos outline en la posición del jugador
 		this.updateOutline(0, 0);

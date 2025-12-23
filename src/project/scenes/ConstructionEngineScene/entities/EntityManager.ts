@@ -20,6 +20,11 @@ export class EntityManager {
 		this.container = container;
 	}
 
+	// Agrega este método nuevo
+	public clear(): void {
+		this.placedEntities = [];
+	}
+
 	public placeEntity(tool: string, x: number, y: number): void {
 		let sprite: Sprite;
 		let entity: PlacedEntity;
@@ -78,18 +83,30 @@ export class EntityManager {
 	}
 
 	public loadState(state: string): void {
-		const entities: PlacedEntity[] = JSON.parse(state);
-		this.placedEntities = [];
-		entities.forEach((entity) => {
-			const sprite = Sprite.from(entity.texture);
-			sprite.anchor.set(0.5);
-			sprite.width = entity.width;
-			sprite.height = entity.height;
-			sprite.x = entity.x;
-			sprite.y = entity.y;
-			this.container.addChild(sprite);
-			this.placedEntities.push(entity);
-		});
+		try {
+			const entities: PlacedEntity[] = JSON.parse(state);
+			this.placedEntities = []; // Reseteamos datos
+
+			entities.forEach((entity) => {
+				// Validación básica para evitar errores si el JSON está corrupto
+				if (!entity.type || !entity.texture) {
+					return;
+				}
+
+				const sprite = Sprite.from(entity.texture);
+				sprite.anchor.set(0.5);
+				sprite.width = entity.width;
+				sprite.height = entity.height;
+				sprite.x = entity.x;
+				sprite.y = entity.y;
+				sprite.name = entity.type; // Importante asignar el name para lógica futura
+
+				this.container.addChild(sprite);
+				this.placedEntities.push(entity);
+			});
+		} catch (e) {
+			console.error("Error al parsear el nivel JSON:", e);
+		}
 	}
 
 	public saveState(): string {

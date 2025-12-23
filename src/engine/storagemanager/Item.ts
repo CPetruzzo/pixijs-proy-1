@@ -1,4 +1,13 @@
+/* eslint-disable prettier/prettier */
 // Eliminamos la importación de "pixi.js"
+
+export enum ItemType {
+	GENERIC = "generic",
+	WEAPON = "weapon",
+	HELMET = "helmet",
+	SHIELD = "shield",
+	ARMOR = "armor",
+}
 
 // Puedes mantener tus Enums, pero asegúrate de que los nombres y las imágenes
 // estén correctamente mapeados, ya que "SWORD" apunta a dos nombres distintos
@@ -14,6 +23,10 @@ export enum ItemNames {
 export enum ItemImages {
 	SWORD = "oldKnife",
 	POTION = "loli",
+	SHOTGUN = "shotgun",
+	ARMOR = "armor",
+	HELMET = "helmet",
+	SHIELD = "shield",
 	MANA = "star",
 	GOLD = "golditem1",
 }
@@ -28,9 +41,15 @@ export interface ItemData {
 }
 
 export class Item {
-	constructor(public itemName: string, public weight: number, public quantity: number, public description: string, public image: string) {
-		// La clase ya no llama a super() porque ya no extiende Container
-	}
+	// Agregamos 'type' al constructor
+	constructor(
+		public itemName: string,
+		public weight: number,
+		public quantity: number,
+		public description: string,
+		public image: string,
+		public type: ItemType = ItemType.GENERIC // Nuevo campo
+	) { }
 
 	public getTotalWeight(): number {
 		return this.weight * this.quantity;
@@ -44,13 +63,21 @@ export class Item {
 			quantity: this.quantity,
 			description: this.description,
 			image: this.image,
-		};
+			type: this.type, // Guardamos el tipo
+		} as any;
 	}
 
 	/**
 	 * Reconstruye una instancia de la clase Item a partir de un objeto plano (ej: desde JSON).
 	 */
-	public static fromJSON(data: ItemData): Item {
-		return new Item(data.itemName, data.weight, data.quantity, data.description, data.image);
+	public static fromJSON(data: any): Item {
+		return new Item(
+			data.itemName,
+			data.weight,
+			data.quantity,
+			data.description,
+			data.image,
+			data.type || ItemType.GENERIC // Recuperamos el tipo
+		);
 	}
 }

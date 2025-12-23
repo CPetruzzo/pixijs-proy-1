@@ -1,12 +1,11 @@
-import { Model, StandardMaterial } from "pixi3d/pixi7";
+import { Model, StandardMaterial, Container3D } from "pixi3d/pixi7"; // Importamos Container3D
 import { Color, Mesh3D } from "pixi3d/pixi7";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
-import { cameraControl } from "../../../index"; // Importamos la cámara global
+import { cameraControl } from "../../../index";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { EnviromentalLights } from "./Lights/EnviromentalLights";
 import { VEHICULE_SPEED } from "../../../utils/constants";
-import { GameObjectFactory } from "./GameObject";
-import type { PhysicsContainer3d } from "./3DPhysicsContainer";
+// import { GameObjectFactory } from "./GameObject"; // Ya no lo necesitamos para el player
 import { Assets } from "pixi.js";
 
 export interface Bullet extends Mesh3D {
@@ -14,19 +13,24 @@ export interface Bullet extends Mesh3D {
 }
 
 export class DoomScene extends PixiScene {
-	public static readonly BUNDLES = ["3d", "package-1"];
+	public static readonly BUNDLES = ["3d", "package-1", "3dshooter"];
 
-	private player: PhysicsContainer3d;
+	// REEMPLAZO: En lugar de un solo player, usamos un contenedor y dos modelos
+	private playerContainer: Container3D;
+	private modelIdle: Model;
+	private modelRun: Model;
+	private currentAnimState: "idle" | "run" = "idle";
+
 	private bullets: any[];
 	private enemies: any[];
 	private keys: Record<string, boolean> = {};
 	public cameraControl: any;
 	public enviromentalLights: EnviromentalLights;
 
-	private lastCameraPosition = { x: 20, y: 0, z: 50 }; // Posición inicial de la cámara
-	private cameraLerpSpeed = 0.8; // Factor de suavizado
+	private lastCameraPosition = { x: 20, y: 0, z: 50 };
+	private cameraLerpSpeed = 0.8;
 
-	private spawnInterval = 3; // Intervalo en segundos para generar nuevos enemigos
+	private spawnInterval = 3;
 	private lastSpawnTime = 0;
 
 	private bulletDirections: { x: number; y: number; z: number }[] = [];
@@ -43,9 +47,10 @@ export class DoomScene extends PixiScene {
 		this.cameraControl.angles.x = 25;
 		this.cameraControl.target = { x: 20, y: 1.3, z: 50 };
 
-		this.init();
-
 		this.enviromentalLights = new EnviromentalLights();
+
+		// Llamamos a init al final del constructor
+		this.init();
 	}
 
 	private init(): void {
@@ -54,13 +59,55 @@ export class DoomScene extends PixiScene {
 		this.setupControls();
 	}
 
-	private setupPlayer(): void {
-		this.player = GameObjectFactory.createPlayer("futurecop");
-		this.player.name = "firstperson";
-		this.player.scale.set(4, 4, 4);
-		this.player.y = 150;
+	/**
+	 * Función de limpieza (Igual que en SideScroller)
+	 */
+	private cleanModel(model: Container3D): void {
+		const checkChildren = (obj: Container3D): void => {
+			obj.children.forEach((child) => {
+				const name = child.name.toLowerCase();
+				if (name.includes("cube") || name.includes("box")) {
+					child.visible = false;
+				}
+				if (child instanceof Container3D) {
+					checkChildren(child);
+				}
+			});
+		};
+		checkChildren(model);
+	}
 
-		this.addChild(this.player);
+	private setupPlayer(): void {
+		// 1. Creamos el contenedor padre (Invisible, solo lógica)
+		this.playerContainer = new Container3D();
+		this.playerContainer.name = "firstperson";
+		// Mantenemos la escala y posición que tenías
+		this.playerContainer.scale.set(4, 4, 4);
+		this.playerContainer.y = 150; // Ojo: ¿150 de altura? Asegúrate de que esto sea correcto.
+
+		// 2. Cargar IDLE ("futurecop")
+		this.modelIdle = Model.from(Assets.get("futurecop"));
+		this.modelIdle.name = "Idle";
+		this.cleanModel(this.modelIdle);
+		if (this.modelIdle.animations.length > 0) {
+			this.modelIdle.animations[0].loop = true;
+			this.modelIdle.animations[0].play();
+		}
+		this.playerContainer.addChild(this.modelIdle);
+
+		// 3. Cargar RUN ("futurecoprunforward")
+		this.modelRun = Model.from(Assets.get("futurecoprunforward"));
+		this.modelRun.name = "Run";
+		this.cleanModel(this.modelRun);
+		if (this.modelRun.animations.length > 0) {
+			this.modelRun.animations[0].loop = true;
+			this.modelRun.animations[0].play();
+		}
+		this.modelRun.visible = false; // Oculto al principio
+		this.playerContainer.addChild(this.modelRun);
+
+		// 4. Añadir a la escena
+		this.addChild(this.playerContainer);
 		this.bullets = [];
 	}
 
@@ -69,11 +116,9 @@ export class DoomScene extends PixiScene {
 		for (let i = 0; i < 5; i++) {
 			const enemy = Mesh3D.createCube();
 			enemy.position.set(Math.random() * 10 - 5, 2, -Math.random() * 10 - 5);
-
 			const enemyMaterial = new StandardMaterial();
-			enemyMaterial.baseColor = new Color(1, 0, 0); // Rojo
+			enemyMaterial.baseColor = new Color(1, 0, 0);
 			enemy.material = enemyMaterial;
-
 			this.addChild(enemy);
 			this.enemies.push(enemy);
 		}
@@ -88,83 +133,106 @@ export class DoomScene extends PixiScene {
 	private spawnEnemy(): void {
 		const enemy = Mesh3D.createCube();
 		enemy.position.set(Math.random() * 20 - 10, 0, -Math.random() * 20 - 10);
-
 		const enemyMaterial = new StandardMaterial();
-		enemyMaterial.baseColor = new Color(1, 0, 0); // Rojo
+		enemyMaterial.baseColor = new Color(1, 0, 0);
 		enemy.material = enemyMaterial;
-
 		this.addChild(enemy);
 		this.enemies.push(enemy);
 	}
 
 	public override update(delta: number): void {
-		this.player.update(delta);
+		// En lugar de this.player.update(delta), movemos el contenedor
+		// Si PhysicsContainer3d tenía lógica interna, habría que replicarla,
+		// pero por ahora solo manejamos posición visual.
 
-		// Movemos la cámara con un delay usando Lerp
 		this.handleCameraMovement(delta);
-		this.player.position.set(this.cameraControl.target.x, this.cameraControl.target.y, this.cameraControl.target.z);
-		this.player.rotationQuaternion.setEulerAngles(0, this.cameraControl.angles.y, 0);
+
+		// Sincronizar posición del jugador con el target de la cámara (Estilo Doom/Tanque)
+		this.playerContainer.position.set(this.cameraControl.target.x, this.cameraControl.target.y, this.cameraControl.target.z);
+
+		// Rotar el jugador según la cámara
+		this.playerContainer.rotationQuaternion.setEulerAngles(0, this.cameraControl.angles.y, 0);
 
 		if (Keyboard.shared.isDown("ArrowLeft")) {
 			this.cameraControl.angles.y += 2;
 		}
-
 		if (Keyboard.shared.isDown("ArrowRight")) {
 			this.cameraControl.angles.y -= 2;
 		}
 
 		this.handlePlayerMovement(delta);
+
+		// --- NUEVO: Manejo de Animaciones ---
+		this.handlePlayerAnimation();
+
 		this.handleShooting();
 		this.updateBullets();
 		this.updateEnemies();
-		this.handleEnemySpawning(delta); // Controlamos el respawn de enemigos
+		this.handleEnemySpawning(delta);
 	}
 
-	// Método para suavizar el movimiento de la cámara
+	/**
+	 * Lógica para cambiar entre Idle y Run
+	 */
+	private handlePlayerAnimation(): void {
+		// Detectar si alguna tecla de movimiento está presionada
+		const isMoving = Keyboard.shared.isDown("KeyW") || Keyboard.shared.isDown("KeyS") || Keyboard.shared.isDown("KeyA") || Keyboard.shared.isDown("KeyD");
+
+		const nextState = isMoving ? "run" : "idle";
+
+		if (this.currentAnimState !== nextState) {
+			this.currentAnimState = nextState;
+
+			// Ocultar ambos
+			this.modelIdle.visible = false;
+			this.modelRun.visible = false;
+
+			// Mostrar el correcto
+			if (nextState === "idle") {
+				this.modelIdle.visible = true;
+			} else {
+				this.modelRun.visible = true;
+			}
+		}
+	}
+
 	private handleCameraMovement(_delta?: number): void {
-		// Calculamos la nueva posición deseada de la cámara
 		const targetX = this.cameraControl.target.x;
 		const targetY = this.cameraControl.target.y;
 		const targetZ = this.cameraControl.target.z;
 
-		// Lerp entre la última posición conocida y la nueva posición
 		this.cameraControl.target.x = this.lastCameraPosition.x + (targetX - this.lastCameraPosition.x) * this.cameraLerpSpeed;
 		this.cameraControl.target.y = this.lastCameraPosition.y + (targetY - this.lastCameraPosition.y) * this.cameraLerpSpeed;
 		this.cameraControl.target.z = this.lastCameraPosition.z + (targetZ - this.lastCameraPosition.z) * this.cameraLerpSpeed;
 
-		// Guardamos la posición actual para la próxima iteración
 		this.lastCameraPosition = { ...this.cameraControl.target };
 	}
 
 	private handleEnemySpawning(delta: number): void {
-		this.lastSpawnTime += delta / 1000; // Convertimos delta a segundos
+		this.lastSpawnTime += delta / 1000;
 		if (this.lastSpawnTime >= this.spawnInterval) {
-			this.spawnEnemy(); // Generamos un nuevo enemigo
-			this.lastSpawnTime = 0; // Reiniciamos el temporizador
+			this.spawnEnemy();
+			this.lastSpawnTime = 0;
 		}
 	}
 
 	private handlePlayerMovement(_delta?: number): void {
 		const angleYRad = cameraControl.angles.y * (Math.PI / 180);
-
 		const moveX = VEHICULE_SPEED * Math.sin(angleYRad);
-
 		const moveZ = VEHICULE_SPEED * Math.cos(angleYRad);
+
 		if (Keyboard.shared.isDown("KeyA")) {
 			cameraControl.target.z -= moveX;
 			cameraControl.target.x += moveZ;
 		}
-
 		if (Keyboard.shared.isDown("KeyD")) {
 			cameraControl.target.z += moveX;
 			cameraControl.target.x -= moveZ;
 		}
-
 		if (Keyboard.shared.isDown("KeyW")) {
 			cameraControl.target.z += moveZ;
 			cameraControl.target.x += moveX;
 		}
-
 		if (Keyboard.shared.isDown("KeyS")) {
 			cameraControl.target.z -= moveZ;
 			cameraControl.target.x -= moveX;
@@ -175,10 +243,11 @@ export class DoomScene extends PixiScene {
 		if (Keyboard.shared.justPressed("Space")) {
 			const bullet = Mesh3D.createCube();
 			bullet.scale.set(0.2, 0.2, 0.2);
-			bullet.position.set(this.player.position.x, 0, this.player.position.z);
+			// Usamos playerContainer en lugar de player
+			bullet.position.set(this.playerContainer.position.x, 0, this.playerContainer.position.z);
 
 			const bulletMaterial = new StandardMaterial();
-			bulletMaterial.baseColor = new Color(1, 1, 0); // Amarillo
+			bulletMaterial.baseColor = new Color(1, 1, 0);
 			bullet.material = bulletMaterial;
 
 			this.bullets.push(bullet);
@@ -187,12 +256,10 @@ export class DoomScene extends PixiScene {
 	}
 
 	private updateBullets(): void {
-		// Obtener la dirección de la cámara
-		const cameraDirectionX = Math.sin(this.cameraControl.angles.y * (Math.PI / 180)); // Convertir a radianes
+		const cameraDirectionX = Math.sin(this.cameraControl.angles.y * (Math.PI / 180));
 		const cameraDirectionZ = Math.cos(this.cameraControl.angles.y * (Math.PI / 180));
 
 		this.bullets.forEach((bullet, index) => {
-			// Asegurarse de que la dirección esté asignada
 			if (!this.bulletDirections[index]) {
 				this.bulletDirections[index] = {
 					x: cameraDirectionX,
@@ -202,29 +269,27 @@ export class DoomScene extends PixiScene {
 			}
 
 			const bulletDirection = this.bulletDirections[index];
-			// Movimiento de la bala en la dirección de la cámara
 			bullet.position.x += bulletDirection.x;
 			bullet.position.z += bulletDirection.z;
 
-			// Calcular la distancia entre la bala y el jugador
-			const distance = Math.sqrt((bullet.position.x - this.player.position.x) ** 2 + (bullet.position.z - this.player.position.z) ** 2);
+			// Usamos playerContainer para calcular distancia
+			const distance = Math.sqrt((bullet.position.x - this.playerContainer.position.x) ** 2 + (bullet.position.z - this.playerContainer.position.z) ** 2);
 
-			// Si la bala se aleja más de 60 unidades del jugador, la eliminamos
 			if (distance > 60) {
 				this.removeChild(bullet);
 				this.bullets.splice(index, 1);
-				this.bulletDirections.splice(index, 1); // Eliminar la dirección correspondiente
+				this.bulletDirections.splice(index, 1);
 			}
 		});
 	}
 
 	private updateEnemies(): void {
 		this.enemies.forEach((enemy, enemyIndex) => {
-			const directionX = this.player.position.x - enemy.position.x;
-			const directionZ = this.player.position.z - enemy.position.z;
+			// Usamos playerContainer para que los enemigos sigan al jugador
+			const directionX = this.playerContainer.position.x - enemy.position.x;
+			const directionZ = this.playerContainer.position.z - enemy.position.z;
 			const length = Math.sqrt(directionX ** 2 + directionZ ** 2);
 
-			// Normalizamos el vector de dirección y lo escalamos para definir la velocidad
 			if (length > 0) {
 				enemy.position.x += (directionX / length) * 0.05;
 				enemy.position.z += (directionZ / length) * 0.05;
@@ -232,12 +297,7 @@ export class DoomScene extends PixiScene {
 
 			this.bullets.forEach((bullet, bulletIndex) => {
 				if (Math.abs(enemy.position.z - bullet.position.z) < 0.5 && Math.abs(enemy.position.x - bullet.position.x) < 0.5) {
-					// Eliminamos la bala y el enemigo de inmediato (por ahora, antes de la animación)
-
-					// Creamos la animación de la explosión
 					const cublosion = Model.from(Assets.get("cublosion"));
-
-					// Configuración de la animación para que no tenga delay
 					cublosion.animations[0].loop = false;
 					cublosion.animations[0].speed = 2;
 					cublosion.animations[0].play();
@@ -248,31 +308,12 @@ export class DoomScene extends PixiScene {
 					this.enemies.splice(enemyIndex, 1);
 					this.bullets.splice(bulletIndex, 1);
 
-					// Ajustar el comportamiento de la animación
-					// cublosion.meshes.forEach((mesh) => {
-					// 	const mat = mesh.material as StandardMaterial;
-					// 	mat.exposure = 1.1;
-					// 	mat.roughness = 0.6;
-					// 	mat.metallic = 0;
-					// });
-
-					// Posicionamos la animación en la misma posición que el enemigo
-
-					// Para asegurarnos de que la animación empieza inmediatamente
-					// cublosion.animations[0].stop(); // Detenemos cualquier animación que pueda estar en curso
-					cublosion.animations[0].play(); // Reanudamos la animación desde 0, sin retraso
-					console.log("cublosion.animations", cublosion.animations);
-
-					// Añadimos la animación a la escena
 					this.addChild(cublosion);
 
-					// Usamos setTimeout para eliminar la animación después de la duración
 					const animationDuration = cublosion.animations[0].duration;
-
 					setTimeout(() => {
-						// Eliminamos la animación y el objeto después de que termine
 						this.removeChild(cublosion);
-					}, animationDuration * 1000); // Convertimos a milisegundos
+					}, animationDuration * 1000);
 				}
 			});
 		});

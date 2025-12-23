@@ -20,14 +20,93 @@ export class FileSystemManager {
 		return this.savedProjectsDirHandle;
 	}
 
-	public async exportStateToFile(data: string, filename: string = "state.json"): Promise<void> {
-		const folderHandle = await this.getOrCreateSavedProjectsFolder();
-		const fileHandle = await folderHandle.getFileHandle(filename, { create: true });
-		// Se usa "any" para acceder a createWritable
-		const writable = await (fileHandle as any).createWritable();
-		await writable.write(data);
-		await writable.close();
-		console.log("Estado exportado a:", filename);
+	/**
+	 * Abre el explorador de archivos nativo de Windows/Mac para guardar el nivel.
+	 */
+	public async exportStateToFile(data: string, filename: string = "scene.json"): Promise<void> {
+		try {
+			// Verificamos si el navegador soporta la API moderna de guardado
+			if ("showSaveFilePicker" in window) {
+				const handle = await (window as any).showSaveFilePicker({
+					suggestedName: filename,
+					types: [
+						{
+							description: "JSON Files",
+							// eslint-disable-next-line @typescript-eslint/naming-convention
+							accept: { "application/json": [".json"] },
+						},
+					],
+				});
+
+				const writable = await handle.createWritable();
+				await writable.write(data);
+				await writable.close();
+				console.log("Archivo guardado en la ubicación elegida.");
+			} else {
+				// Opción de respaldo para navegadores que no soportan la API (descarga automática)
+				const blob = new Blob([data], { type: "application/json" });
+				const url = URL.createObjectURL(blob);
+				const link = document.createElement("a");
+				link.href = url;
+				link.download = filename;
+				link.click();
+				URL.revokeObjectURL(url);
+			}
+		} catch (error: any) {
+			// Si el usuario cierra la ventana sin guardar, no lanzamos error
+			if (error.name !== "AbortError") {
+				console.error("Error al exportar:", error);
+			}
+		}
+	}
+
+	/**
+	 * Abre un selector de archivos nativo para cargar un JSON.
+	 * Incluye fallback para navegadores que no soportan la API moderna.
+	 */
+	public async loadFile(): Promise<string | null> {
+		try {
+			// 1. Intento con API Moderna (Chrome/Edge)
+			if ("showOpenFilePicker" in window) {
+				const [handle] = await (window as any).showOpenFilePicker({
+					types: [
+						{
+							description: "JSON Level",
+							// eslint-disable-next-line @typescript-eslint/naming-convention
+							accept: { "application/json": [".json"] },
+						},
+					],
+					multiple: false,
+				});
+				const file = await handle.getFile();
+				return await file.text();
+			}
+
+			// 2. Fallback clásico (Firefox/Safari/Otros) usando input HTML oculto
+			return new Promise((resolve) => {
+				const input = document.createElement("input");
+				input.type = "file";
+				input.accept = ".json";
+
+				input.onchange = async (e: any) => {
+					const file = e.target.files[0];
+					if (file) {
+						const text = await file.text();
+						resolve(text);
+					} else {
+						resolve(null);
+					}
+				};
+
+				input.click();
+			});
+		} catch (error: any) {
+			// Si el usuario cancela, no es un error crítico
+			if (error.name !== "AbortError") {
+				console.error("Error al abrir archivo:", error);
+			}
+			return null;
+		}
 	}
 
 	public async saveStateDirectly(data: string, filename: string = "state.json"): Promise<void> {

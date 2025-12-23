@@ -176,6 +176,20 @@
         "soundbtn": "./img/soundbtn.png"
       }
     },
+       {
+      "name": "roboface",
+      "assets": {
+        "roboface": "./img/roboface.png",
+        "fence": "models/jurassic_park_fence_dirty/scene.gltf",
+        "streelight": "models/psx_style_street_light_kit/scene.gltf",
+        "barrier": "models/railway_barrier_game_ready/scene.gltf",
+        "gasmeter": "models/street_gas_meter/scene.gltf",
+        "garbagebags": "models/garbage_bags_asset_pack/scene.gltf",
+        "dirty_street": "models/dirty_street/scene.gltf",
+        "streetwall": "models/street-art-wall-camden-london/scene.gltf"
+
+      }
+    },
     {
       "name": "aurora",
       "assets": {
@@ -296,7 +310,10 @@
       "name": "storagescene",
       "assets": {
         "sword": "./img/player1.png",
-        "shield": "./img/player2.png"
+        "knife": "./img/knife2.png",
+        "shotgun": "./img/rifle.png",
+        "helmet": "./img/tutorial/helmet.png",
+        "shield": "./img/tutorial/shield.png"
       }
     },
     // MUSIC
@@ -766,7 +783,7 @@
       "name": "fallrungame",
       "assets": {
         "package 1 background": "./img/image.jpg",
-        "DODGE-BACKGROUND": "./img/BACKGROUND.jpg",
+        "DODGE-BACKGROUND": "./img/BACKGROUND.png",
         "DODGE-BACKGROUND2": "./img/BACKGROUND2.jpg",
         "player1": "./img/player1.png",
         "player2": "./img/player2.png",
@@ -1012,7 +1029,12 @@
         "idle2": "models/person/idle2/idle2.gltf",
         "running": "models/person/running/running.gltf",
         "character": "models/character/scene.gltf",
+        "Running": "./models/Running.glb",
+        "Running2": "./models/Running2.glb",
+        "Idle": "./models/Idle.glb",
+        "Jump": "./models/Jump.glb",
         "loli": "./models/cheers1.png"
+        
       }
     },
     // 3D SHOOTER
@@ -1039,6 +1061,108 @@
         "futurecoprunforward": "./models/futurecoprunforward.glb"
       }
     },
+// SPINE MANIFEST
+{
+    "name": "spine-characters",
+    "assets": [
+        // =======================================================
+        // 1. SPINEBOY (Correcto)
+        // =======================================================
+        { "name": "spineboy-atlas", "srcs": "./spine/spineboy-pma.atlas" },
+        { "name": "spineboy-pma.png", "srcs": "./spine/spineboy-pma.png" },
+        {
+            "name": "spineboy-data",
+            "srcs": "./spine/spineboy-pro.json",
+            "data": { "spineAtlas": "spineboy-atlas" }
+        },
+
+        // =======================================================
+        // 2. CELESTIAL CIRCUS 
+        // (Usamos el .json, quitamos el .skel que daba error 404)
+        // =======================================================
+        { "name": "celestial-atlas", "srcs": "./spine/celestial-circus-pma.atlas" },
+        { "name": "celestial-pma.png", "srcs": "./spine/celestial-circus-pma.png" },
+        {
+            "name": "celestial-data",
+            "srcs": "./spine/celestial-circus-pro.json",
+            "data": { "spineAtlas": "celestial-atlas" }
+        },
+
+        // =======================================================
+        // 3. CLOUD POT
+        // =======================================================
+        { "name": "cloud-pot-atlas", "srcs": "./spine/cloud-pot-pma.atlas" },
+        { "name": "cloud-pot-pma.png", "srcs": "./spine/cloud-pot-pma.png" },
+        {
+            "name": "cloud-pot-data",
+            "srcs": "./spine/cloud-pot.json", 
+            "data": { "spineAtlas": "cloud-pot-atlas" }
+        },
+
+        // =======================================================
+        // 4. COIN
+        // (Este sí es .skel según tu carpeta)
+        // =======================================================
+        { "name": "coin-atlas", "srcs": "./spine/coin-pma.atlas" },
+        { "name": "coin-pma.png", "srcs": "./spine/coin-pma.png" },
+        {
+            "name": "coin-data",
+            "srcs": "./spine/coin-pro.skel", 
+            "data": { "spineAtlas": "coin-atlas" }
+        },
+
+        // =======================================================
+        // 5. RAPTOR
+        // (CORREGIDO: Era .json en la carpeta, no .skel)
+        // =======================================================
+        { "name": "raptor-atlas", "srcs": "./spine/raptor-pma.atlas" },
+        { "name": "raptor-pma.png", "srcs": "./spine/raptor-pma.png" },
+        {
+            "name": "raptor-data",
+            "srcs": "./spine/raptor-pro.json", // Cambiado de .skel a .json
+            "data": { "spineAtlas": "raptor-atlas" }
+        },
+
+        // =======================================================
+        // 6. SACK
+        // (CORREGIDO: Era .json en la carpeta, no .skel)
+        // =======================================================
+        { "name": "sack-atlas", "srcs": "./spine/sack-pma.atlas" },
+        { "name": "sack-pma.png", "srcs": "./spine/sack-pma.png" },
+        {
+            "name": "sack-data",
+            "srcs": "./spine/sack-pro.json", // Cambiado de .skel a .json
+            "data": { "spineAtlas": "sack-atlas" }
+        },
+
+        // =======================================================
+        // 7. SNOWGLOBE
+        // (Quitamos las referencias a archivos que no existen)
+        // =======================================================
+        { "name": "snowglobe-atlas", "srcs": "./spine/snowglobe-pma.atlas" },
+        // Cargamos la imagen principal, el atlas buscará las _2, _3 automáticamente 
+        // si están en la misma carpeta.
+        { "name": "snowglobe-pma.png", "srcs": "./spine/snowglobe-pma.png" }, 
+        {
+            "name": "snowglobe-data",
+            "srcs": "./spine/snowglobe-pro.json",
+            "data": { "spineAtlas": "snowglobe-atlas" }
+        },
+
+        // =======================================================
+        // 8. STRETCHYMAN
+        // (Este es .skel y parece correcto en tu carpeta)
+        // =======================================================
+        { "name": "stretchyman-atlas", "srcs": "./spine/stretchyman-pma.atlas" },
+        { "name": "stretchyman-pma.png", "srcs": "./spine/stretchyman-pma.png" },
+        {
+            "name": "stretchyman-data",
+            "srcs": "./spine/stretchyman-pro.skel",
+            "data": { "spineAtlas": "stretchyman-atlas" }
+        }
+    ]
+},
+
     // DAGER
     {
       "name": "dager",

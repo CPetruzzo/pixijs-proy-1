@@ -148,7 +148,7 @@ export class ObstacleObject extends GameObject {
 	}
 
 	public update(dt: number): void {
-		if (this.y < this.parent?.height - this.height * 0.5 - 100) {
+		if (this.y < this.parent?.height - this.height * 0.5 - 250) {
 			this.y += OBJECT_SPEED * dt;
 		} else {
 			if (this.timeOnGround < this.timeToStayOnGround) {

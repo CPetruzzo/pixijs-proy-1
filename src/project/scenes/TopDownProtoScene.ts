@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/restrict-plus-operands */
 import { PixiScene } from "../../engine/scenemanager/scenes/PixiScene";
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics, Sprite, Texture } from "pixi.js";
 import { Keyboard } from "../../engine/input/Keyboard";
 import { DialogueOverlayManager } from "../../engine/dialog/DialogueOverlayManager";
 import { InteractableManager } from "../../engine/utils/InteractableManager";
@@ -8,10 +8,14 @@ import { Manager } from "../..";
 import { Tween, Easing } from "tweedle.js";
 import { InventoryView } from "../../engine/storagemanager/InventoryView";
 import { StorageManager } from "../../engine/storagemanager/StorageManager";
-import { Item } from "../../engine/storagemanager/Item";
+import { Item, ItemImages, ItemType } from "../../engine/storagemanager/Item";
 
 // IMPORTAMOS EL NUEVO CONTROLADOR
 import { TopDownMovementController } from "../../engine/topdownmovement/TopDownMovementController";
+import { OverlayMode } from "../../engine/dialog/DialogOverlay";
+import { PlayerAvatar } from "../../engine/utils/PlayerAvatar";
+import { EquipmentManager } from "../../engine/storagemanager/EquipmentManager";
+import { NPCManager } from "../../engine/npc/NPCManager";
 export class TopDownProtoScene extends PixiScene {
 	private readonly C_PLAYER = 0x3498db;
 	private readonly C_NPC = 0xf1c40f;
@@ -19,7 +23,8 @@ export class TopDownProtoScene extends PixiScene {
 	private readonly C_FLOOR = 0x2ecc71;
 	public static readonly BUNDLES = ["myfriend", "storagescene", "basquet", "package-2", "fallrungame"];
 
-	private player: Graphics;
+	private player: PlayerAvatar;
+	private equipmentManager: EquipmentManager;
 	private world: Container;
 	private walls: Graphics[] = [];
 
@@ -31,7 +36,7 @@ export class TopDownProtoScene extends PixiScene {
 	private inventoryManager: StorageManager;
 	private inventoryView: InventoryView;
 	private isInventoryOpen: boolean = false;
-
+	private npcManager: NPCManager; // <--- NUEVO
 	constructor() {
 		super();
 		DialogueOverlayManager.init(this);
@@ -42,8 +47,12 @@ export class TopDownProtoScene extends PixiScene {
 		this.interactManager = new InteractableManager(this.world);
 
 		this.inventoryManager = new StorageManager(10, 50, "player_inventory");
+		this.equipmentManager = new EquipmentManager(); // Nuevo manager
+
 		this.inventoryManager.loadInventoryFromJSON();
-		this.inventoryView = new InventoryView(this.inventoryManager);
+		this.equipmentManager.storage.loadInventoryFromJSON();
+		// Pasamos ambos managers
+		this.inventoryView = new InventoryView(this.inventoryManager, this.equipmentManager);
 		this.inventoryView.visible = false;
 		this.inventoryView.x = 200;
 		this.inventoryView.y = 100;
@@ -53,12 +62,17 @@ export class TopDownProtoScene extends PixiScene {
 		this.createPlayer();
 
 		// --- INICIALIZAR EL CONTROLADOR ---
-		this.movementController = new TopDownMovementController(this.player, this.walls);
-
+		this.movementController = new TopDownMovementController(this.player as any, this.walls);
 		// Opcional: Agregar efecto visual al dashear
 		this.movementController.onDashStart = () => {
 			this.spawnParticles(this.player.x, this.player.y, 0xffffff); // Partículas blancas al dashear
 		};
+
+		// --- INICIALIZAR NPC MANAGER ---
+		// Le pasamos las paredes (walls) para que cree el grid de navegación A*
+		this.npcManager = new NPCManager(this.world, this.interactManager, this.walls);
+
+		this.setupNPCs(); // Reemplazamos setupInteractions parcial o totalmente
 
 		this.setupInteractions();
 
@@ -66,6 +80,77 @@ export class TopDownProtoScene extends PixiScene {
 		DialogueOverlayManager.talk("¡Hola! Presiona 'Enter' para avanzar este diálogo.");
 		DialogueOverlayManager.talk("Ahora puedes usar el teclado o el mouse para leer.");
 		DialogueOverlayManager.talk("Presiona Space to make a dash.");
+	}
+
+	private setupNPCs(): void {
+		// 1. NPC Estático (Friendly Static)
+		this.npcManager.spawnStaticFriendly(500, 300, ["Soy un NPC estático.", "Me gusta ver pasar las nubes."]);
+
+		// 2. NPC Seguidor (Friendly Follower)
+		// Se ubica lejos, al interactuar vendrá hacia ti sorteando obstáculos
+		this.npcManager.spawnFollowerFriendly(150, 500, ["Hola viajero.", "Es peligroso ir solo."]);
+
+		// 3. NPC Agresivo (Aggressive Follower)
+		// Ponlo detrás de una pared para probar el A*
+		this.npcManager.spawnAggressive(900, 250, 250); // 250 de rango detección
+	}
+
+	private handleEquipWeaponInput(): void {
+		// 1. Verificar si el inventario está abierto y hay algo seleccionado
+		if (!this.isInventoryOpen) {
+			DialogueOverlayManager.talk("Abre el inventario (I) y selecciona un item para equipar.");
+			return;
+		}
+
+		const selectedIndex = this.inventoryView.selectedIndex;
+
+		if (selectedIndex === -1) {
+			DialogueOverlayManager.talk("Selecciona un objeto primero.");
+			return;
+		}
+
+		// 2. Obtener el item del slot seleccionado
+		const slot = this.inventoryManager.getSlots()[selectedIndex];
+		const itemToEquip = slot.item;
+
+		if (!itemToEquip) {
+			// El usuario seleccionó un slot vacío
+			return;
+		}
+
+		console.log(`Intentando equipar: ${itemToEquip.itemName} desde slot ${selectedIndex}`);
+
+		// 3. Intentar equipar usando el EquipmentManager
+		// Esto devuelve el item que estaba puesto antes (si había) o null
+		const oldItem = this.equipmentManager.equipItem(itemToEquip);
+
+		// equipItem devuelve el mismo item si falló (ej: tipo incorrecto)
+		if (oldItem === itemToEquip) {
+			DialogueOverlayManager.talk("No puedes equipar esto aquí.");
+			return;
+		}
+
+		// 4. ÉXITO: Actualizar inventario
+		// Quitamos el item que acabamos de equipar del inventario
+		this.inventoryManager.removeItemFromSlot(selectedIndex);
+
+		// Si había un item puesto anteriormente, lo devolvemos al inventario
+		// Idealmente al mismo slot que quedó libre, o al primero disponible
+		if (oldItem) {
+			// Intentamos ponerlo donde estaba el otro
+			const success = this.inventoryManager.addItemToSlot(oldItem, selectedIndex);
+			if (!success) {
+				// Si falla (por peso o algo raro), busca cualquier hueco
+				this.inventoryManager.addItemToFirstAvailableSlot(oldItem);
+			}
+			DialogueOverlayManager.talk(`Equipado ${itemToEquip.itemName}, desequipado ${oldItem.itemName}.`);
+		} else {
+			DialogueOverlayManager.talk(`¡Has equipado ${itemToEquip.itemName}!`);
+		}
+
+		// Reseteamos selección visual
+		this.inventoryView.selectedIndex = -1;
+		// Forzamos redibujado (aunque los notifyChange de los managers deberían encargarse)
 	}
 
 	private createLevel(): void {
@@ -97,10 +182,8 @@ export class TopDownProtoScene extends PixiScene {
 	}
 
 	private createPlayer(): void {
-		this.player = new Graphics();
-		this.player.beginFill(this.C_PLAYER);
-		this.player.drawCircle(0, 0, 20);
-		this.player.endFill();
+		// En lugar de Graphics, creamos el Avatar pasándole el manager
+		this.player = new PlayerAvatar(this.equipmentManager, this.C_PLAYER);
 		this.player.x = 100;
 		this.player.y = 100;
 		this.world.addChild(this.player);
@@ -121,7 +204,7 @@ export class TopDownProtoScene extends PixiScene {
 		this.world.addChild(npc);
 
 		this.interactManager.add(npc.x, npc.y, () => {
-			DialogueOverlayManager.changeTalkerImage("npc_face");
+			// DialogueOverlayManager.changeTalkerImage("playerface");
 			// 1. Calculamos la posición en pantalla del NPC.
 			// Como 'npc' es hijo de 'this.world', su posición absoluta en pantalla es:
 			// su posición local + la posición del contenedor mundo.
@@ -131,22 +214,22 @@ export class TopDownProtoScene extends PixiScene {
 
 			// 2. Usamos el nuevo modo "bubble" y pasamos el target
 			DialogueOverlayManager.talk("¡Hola! Soy un cubo amarillo en una burbuja.", {
-				mode: "bubble",
+				mode: OverlayMode.BUBBLE,
 				target: { x: screenX, y: screenY },
 				speed: 40,
 			});
 
 			DialogueOverlayManager.talk("Puedo cambiar el color del jugador si quieres.", {
-				mode: "bubble", // Seguimos en modo burbuja
+				mode: OverlayMode.BUBBLE, // Seguimos en modo burbuja
 				target: { x: screenX, y: screenY },
 			});
 
 			DialogueOverlayManager.chainEvent(() => {
-				this.player.tint = Math.random() * 0xffffff;
+				this.player.bodyShape.tint = Math.random() * 0xffffff;
 			});
 
 			// Volvemos a modo cinemático para el final (opcional, si no se especifica usa el default)
-			DialogueOverlayManager.talk("¡Listo! Ahora te ves diferente.", { mode: "cinematic" });
+			DialogueOverlayManager.talk("¡Listo! Ahora te ves diferente.", { mode: OverlayMode.BUBBLE });
 		});
 		const orb = new Graphics();
 		orb.beginFill(0x9b59b6);
@@ -165,6 +248,24 @@ export class TopDownProtoScene extends PixiScene {
 
 			DialogueOverlayManager.talk("...secuencia completada.");
 		});
+
+		// En createLevel o setupInteractions dentro de TopDownProtoScene.ts
+
+		// 1. Cuchillo (WEAPON -> Mano Derecha)
+		this.createLootItem(300, 300, "knife", new Item("Daga", 2, 1, "Rápida", "knife", ItemType.WEAPON));
+
+		// 2. Casco (HELMET -> Cabeza)
+		// Asegúrate de tener una imagen "helmet_icon" o similar cargada, sino saldrá blanco/rojo
+		this.createLootItem(400, 300, ItemImages.HELMET, new Item("Casco de Hierro", 3, 1, "Protege la cabeza", ItemImages.HELMET, ItemType.HELMET));
+
+		// 3. Escudo (SHIELD -> Mano Izquierda / Slot BODY)
+		this.createLootItem(
+			500,
+			350,
+			ItemImages.SHIELD,
+			new Item("Escudo de Madera", 5, 1, "Bloquea golpes", ItemImages.SHIELD, ItemType.SHIELD) // <--- Aquí usamos el nuevo tipo
+		);
+
 		const loot = new Graphics();
 		loot.beginFill(0xffd700);
 		loot.drawCircle(0, 0, 10);
@@ -175,7 +276,7 @@ export class TopDownProtoScene extends PixiScene {
 
 		const interaction = this.interactManager.add(loot.x, loot.y, () => {
 			// Intenta usar un nombre de imagen que SEGURO tengas, ej: "oldKnife" o "star"
-			const sword = new Item("Espada Mágica", 5, 1, "Brilla mucho", "sword");
+			const sword = new Item("Espada Mágica", 5, 1, "Brilla mucho", "sword", ItemType.WEAPON);
 			const added = this.inventoryManager.addItemToFirstAvailableSlot(sword);
 
 			if (added) {
@@ -185,6 +286,53 @@ export class TopDownProtoScene extends PixiScene {
 				this.interactManager.remove(interaction); // <--- NUEVO: Borra la lógica de la "E"
 
 				// Opcional: Abrir inventario automáticamente para ver que lo tienes
+				this.isInventoryOpen = true;
+				this.inventoryView.visible = true;
+			} else {
+				DialogueOverlayManager.talk("¡Inventario lleno!");
+			}
+		});
+	}
+
+	// --- Helper para crear loot rápidamente ---
+	private createLootItem(x: number, y: number, groundImage: string, itemData: Item): void {
+		// Círculo amarillo de fondo para resaltar el loot
+		const glow = new Graphics();
+		glow.beginFill(0xffd700, 0.5);
+		glow.drawCircle(0, 0, 15);
+		glow.endFill();
+		glow.x = x;
+		glow.y = y;
+		this.world.addChild(glow);
+
+		// Icono del item en el piso
+		// Usamos try/catch o un placeholder por si la imagen no existe en el asset loader aún
+		let sprite: Sprite;
+		try {
+			sprite = Sprite.from(groundImage);
+		} catch {
+			sprite = Sprite.from(Texture.WHITE); // O un cuadrado blanco si falla
+		}
+		sprite.anchor.set(0.5);
+		sprite.width = 20;
+		sprite.height = 20;
+		sprite.x = x;
+		sprite.y = y;
+		this.world.addChild(sprite);
+
+		// Interacción
+		const interaction = this.interactManager.add(x, y, () => {
+			const added = this.inventoryManager.addItemToFirstAvailableSlot(itemData);
+
+			if (added) {
+				DialogueOverlayManager.talk(`¡Obtuviste: ${itemData.itemName}!`);
+
+				// Limpieza visual y lógica
+				glow.destroy();
+				sprite.destroy();
+				this.interactManager.remove(interaction);
+
+				// Feedback visual inmediato
 				this.isInventoryOpen = true;
 				this.inventoryView.visible = true;
 			} else {
@@ -289,12 +437,18 @@ export class TopDownProtoScene extends PixiScene {
 			return;
 		}
 
+		this.npcManager.update(dt, this.player);
+
 		// --- BLOQUE 3: Lógica de Juego (Input del jugador) ---
 
 		// Toggle Inventario
 		if (Keyboard.shared.justPressed("KeyI")) {
 			this.isInventoryOpen = !this.isInventoryOpen;
 			this.inventoryView.visible = this.isInventoryOpen;
+		}
+
+		if (this.isInventoryOpen && Keyboard.shared.justPressed("KeyE")) {
+			this.handleEquipWeaponInput();
 		}
 
 		// Movimiento del personaje (solo si no hay inventario ni diálogo)

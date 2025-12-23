@@ -1,0 +1,11 @@
+Model Information:
+* title:	Garbage bags asset pack
+* source:	https://sketchfab.com/3d-models/garbage-bags-asset-pack-d270be54593141b58fd4ea3394e3dad0
+* author:	JollanERX (https://sketchfab.com/JollanXD)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Garbage bags asset pack" (https://sketchfab.com/3d-models/garbage-bags-asset-pack-d270be54593141b58fd4ea3394e3dad0) by JollanERX (https://sketchfab.com/JollanXD) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

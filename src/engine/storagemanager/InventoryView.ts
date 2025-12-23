@@ -1,20 +1,25 @@
 import type { FederatedPointerEvent } from "pixi.js";
-import { Container, Graphics, Sprite, Texture, Text, TextStyle } from "pixi.js"; // Asegúrate de importar Text y TextStyle
+import { Container, Graphics, Sprite, Texture, Text, TextStyle } from "pixi.js";
 import type { StorageManager } from "./StorageManager";
+import type { EquipmentManager } from "./EquipmentManager"; // <--- IMPORTANTE
 
 export class InventoryView extends Container {
-	// ... (tus propiedades existentes: manager, background, itemContainer, draggedItem, slotSize, gap, cols...)
 	private manager: StorageManager;
+	private equipmentManager?: EquipmentManager; // <--- NUEVA PROPIEDAD OPCIONAL
+
 	private background: Graphics;
 	private itemContainer: Container;
 	private draggedItem: { sprite: Sprite; originalIndex: number; startPos: { x: number; y: number } } | null = null;
 	private slotSize: number = 70;
 	private gap: number = 10;
 	private cols: number = 5;
+	public selectedIndex: number = -1;
 
-	constructor(manager: StorageManager) {
+	// Actualizamos el constructor para aceptar equipmentManager
+	constructor(manager: StorageManager, equipmentManager?: EquipmentManager) {
 		super();
 		this.manager = manager;
+		this.equipmentManager = equipmentManager; // Guardamos la referencia
 
 		this.background = new Graphics();
 		this.addChild(this.background);
@@ -22,85 +27,82 @@ export class InventoryView extends Container {
 		this.itemContainer = new Container();
 		this.addChild(this.itemContainer);
 
-		// --- NUEVO: Botón de Debug para Limpiar ---
 		this.createDebugButton();
 
-		// Nos suscribimos a cambios en los datos
 		this.manager.subscribe(() => this.draw());
-
 		this.draw();
 	}
 
-	// --- NUEVO MÉTODO: Crear botón de Debug ---
 	private createDebugButton(): void {
-		// --- Botón LIMPIAR (Rojo) ---
-		const btnClear = new Container();
-		const bgClear = new Graphics();
-		bgClear.beginFill(0xff0000);
-		bgClear.drawRoundedRect(0, 0, 90, 30, 5);
-		bgClear.endFill();
+		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+		const createBtn = (label: string, color: number, x: number, onClick: () => void) => {
+			const container = new Container();
+			const bg = new Graphics();
+			bg.beginFill(color);
+			bg.drawRoundedRect(0, 0, 90, 30, 5);
+			bg.endFill();
 
-		const txtClear = new Text("LIMPIAR", new TextStyle({ fontSize: 14, fill: "white", fontWeight: "bold" }));
-		txtClear.anchor.set(0.5);
-		txtClear.position.set(45, 15);
+			const txt = new Text(label, new TextStyle({ fontSize: 12, fill: "white", fontWeight: "bold" })); // Fuente un poco más chica para que quepan
+			txt.anchor.set(0.5);
+			txt.position.set(45, 15);
 
-		btnClear.addChild(bgClear, txtClear);
+			container.addChild(bg, txt);
+			container.eventMode = "static";
+			container.cursor = "pointer";
+			container.on("pointerdown", onClick);
+			container.position.set(x, buttonsY);
+			this.addChild(container);
+		};
 
-		// Evento Limpiar
-		btnClear.eventMode = "static";
-		btnClear.cursor = "pointer";
-		btnClear.on("pointerdown", () => {
+		// Calculamos posición Y
+		const rows = Math.ceil(this.manager.getSlots().length / this.cols);
+		const gridHeight = rows * (this.slotSize + this.gap);
+		const buttonsY = gridHeight + 10;
+
+		// 1. Limpiar (Rojo) - X: 0
+		createBtn("LIMPIAR", 0xff0000, 0, () => {
 			console.log("Limpiando...");
 			this.manager.clear();
 		});
 
-		// --- Botón ORDENAR (Azul) ---
-		const btnSort = new Container();
-		const bgSort = new Graphics();
-		bgSort.beginFill(0x3498db); // Azul
-		bgSort.drawRoundedRect(0, 0, 90, 30, 5);
-		bgSort.endFill();
-
-		const txtSort = new Text("ORDENAR", new TextStyle({ fontSize: 14, fill: "white", fontWeight: "bold" }));
-		txtSort.anchor.set(0.5);
-		txtSort.position.set(45, 15);
-
-		btnSort.addChild(bgSort, txtSort);
-
-		// Evento Ordenar
-		btnSort.eventMode = "static";
-		btnSort.cursor = "pointer";
-		btnSort.on("pointerdown", () => {
+		// 2. Ordenar (Azul) - X: 100
+		createBtn("ORDENAR", 0x3498db, 100, () => {
 			console.log("Ordenando...");
 			this.manager.organize();
 		});
 
-		// --- POSICIONAMIENTO ---
-		const rows = Math.ceil(this.manager.getSlots().length / this.cols);
-		const gridHeight = rows * (this.slotSize + this.gap);
+		// 3. Desequipar (Naranja/Violeta) - X: 200
+		// Solo mostramos este botón si pasamos el equipmentManager al constructor
+		if (this.equipmentManager) {
+			createBtn("DESEQUIPAR", 0x9b59b6, 200, () => {
+				console.log("Desequipando todo...");
+				if (this.equipmentManager) {
+					// Llamamos al método nuevo pasando 'this.manager' como destino
+					const success = this.equipmentManager.unequipAll(this.manager);
 
-		const buttonsY = gridHeight + 10;
-
-		btnClear.position.set(0, buttonsY);
-		// Lo ponemos a la derecha del botón limpiar (90 ancho + 10 margen)
-		btnSort.position.set(100, buttonsY);
-
-		this.addChild(btnClear);
-		this.addChild(btnSort);
+					if (!success) {
+						console.warn("Inventario lleno: No se pudo remover todo el equipamiento.");
+						// Opcional: Feedback visual rápido (ej: cambiar texto temporalmente)
+						alert("No se pudo remover todo el equipamiento (Inventario lleno)");
+					} else {
+						console.log("Todo desequipado con éxito.");
+					}
+				}
+			});
+		}
 	}
 
 	private draw(): void {
-		// Redibujamos el fondo adaptado al tamaño real de la grilla
-		// Esto es importante para saber qué es "dentro" y qué es "fuera"
+		// ... (Mismo código de draw que ya tenías, sin cambios)
 		this.background.clear();
 		const rows = Math.ceil(this.manager.getSlots().length / this.cols);
 		const width = this.cols * (this.slotSize + this.gap) - this.gap;
-		const height = rows * (this.slotSize + this.gap) - this.gap;
+		// Aumentamos un poco el height del fondo para cubrir los botones nuevos
+		const height = rows * (this.slotSize + this.gap) + 40;
 
-		// Fondo semitransparente que abarca toda el área de slots
 		this.background.beginFill(0x000000, 0.8);
 		this.background.lineStyle(2, 0xffffff);
-		this.background.drawRoundedRect(-10, -10, width + 20, height + 20, 10); // Padding visual
+		this.background.drawRoundedRect(-10, -10, width + 20, height, 10);
 		this.background.endFill();
 
 		this.itemContainer.removeChildren();
@@ -112,16 +114,22 @@ export class InventoryView extends Container {
 			const x = col * (this.slotSize + this.gap);
 			const y = row * (this.slotSize + this.gap);
 
-			// Dibujar hueco del slot visualmente
 			const slotBg = new Graphics();
-			slotBg.beginFill(0xffffff, 0.1);
+			if (index === this.selectedIndex) {
+				slotBg.beginFill(0xffff00, 0.3);
+				slotBg.lineStyle(2, 0xffff00);
+			} else {
+				slotBg.beginFill(0xffffff, 0.1);
+			}
 			slotBg.drawRect(0, 0, this.slotSize, this.slotSize);
 			slotBg.endFill();
 			slotBg.position.set(x, y);
+
+			slotBg.eventMode = "static";
+			slotBg.on("pointerdown", () => this.selectSlot(index));
 			this.itemContainer.addChild(slotBg);
 
 			if (slot.item) {
-				// Cargar textura (Asegúrate de que 'image' sea un key válido o URL)
 				const texture = Texture.from(slot.item.image);
 				const sprite = new Sprite(texture);
 
@@ -130,14 +138,16 @@ export class InventoryView extends Container {
 				sprite.anchor.set(0.5);
 				sprite.position.set(x + this.slotSize / 2, y + this.slotSize / 2);
 
-				// Habilitar arrastre
 				sprite.eventMode = "static";
 				sprite.cursor = "pointer";
-				sprite.on("pointerdown", (e) => this.onDragStart(e, sprite, index));
+
+				sprite.on("pointerdown", (e) => {
+					this.selectSlot(index);
+					this.onDragStart(e, sprite, index);
+				});
 
 				this.itemContainer.addChild(sprite);
 
-				// Texto cantidad
 				if (slot.item.quantity > 1) {
 					const txt = new Text(slot.item.quantity.toString(), { fontSize: 12, fill: "white" });
 					txt.position.set(x + 2, y + 2);
@@ -147,17 +157,22 @@ export class InventoryView extends Container {
 		});
 	}
 
+	// ... (Resto de tus métodos selectSlot, onDragStart, etc. se mantienen igual)
+	private selectSlot(index: number): void {
+		if (this.selectedIndex !== index) {
+			this.selectedIndex = index;
+			this.draw();
+		}
+	}
+
 	private onDragStart(_e: FederatedPointerEvent, sprite: Sprite, index: number): void {
 		this.draggedItem = {
 			sprite,
 			originalIndex: index,
 			startPos: { x: sprite.x, y: sprite.y },
 		};
-
 		sprite.alpha = 0.8;
-		this.itemContainer.addChild(sprite); // Traer al frente
-
-		// Listeners globales al sprite
+		this.itemContainer.addChild(sprite);
 		sprite.on("pointermove", this.onDragMove);
 		sprite.on("pointerup", this.onDragEnd);
 		sprite.on("pointerupoutside", this.onDragEnd);
@@ -182,45 +197,28 @@ export class InventoryView extends Container {
 		sprite.off("pointerupoutside", this.onDragEnd);
 		sprite.alpha = 1;
 
-		// --- LÓGICA DE TIRAR OBJETO (DROP) ---
-
-		// 1. Obtenemos los límites del fondo negro del inventario
-		// Usamos getBounds() que nos da coordenadas globales, igual que e.global
 		const bgBounds = this.background.getBounds();
-
-		// 2. Si el mouse está fuera de ese rectángulo... ¡TIRAR!
 		if (!bgBounds.contains(e.global.x, e.global.y)) {
-			console.log("Item tirado fuera del inventario (Basura)");
-
-			// Quitamos el item del Manager.
-			// Como nos suscribimos en el constructor, esto disparará this.draw() automáticamente.
+			console.log("Item tirado");
 			this.manager.removeItemFromSlot(originalIndex);
-
 			this.draggedItem = null;
 			return;
 		}
 
-		// --- LÓGICA DE MOVER ENTRE SLOTS (si estamos dentro) ---
-
 		const localPos = this.toLocal(e.global);
-		// Cálculo inverso de la grilla
 		const col = Math.floor(localPos.x / (this.slotSize + this.gap));
 		const row = Math.floor(localPos.y / (this.slotSize + this.gap));
 		const targetIndex = row * this.cols + col;
 		const totalSlots = this.manager.getSlots().length;
 
 		let success = false;
-
-		// Verificar límites válidos de array
 		if (targetIndex >= 0 && targetIndex < totalSlots && col < this.cols && col >= 0 && row >= 0) {
 			success = this.manager.moveItemBetweenSlots(originalIndex, targetIndex);
 		}
 
 		if (!success) {
-			// Regresa a su lugar si el movimiento fue inválido dentro del inventario
 			sprite.position.set(this.draggedItem.startPos.x, this.draggedItem.startPos.y);
 		}
-
 		this.draggedItem = null;
 	};
 }

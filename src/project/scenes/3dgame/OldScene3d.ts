@@ -695,7 +695,6 @@ export class OldScene3D extends PixiScene {
 		}
 	}
 
-
 	// private createWall(point: Point3D, sizeX: number, sizeY: number = 3, sizeZ: number = 1): Mesh3D {
 	// 	const wall = this.addChild(Mesh3D.createCube());
 	// 	wall.scale.set(sizeX, sizeY, sizeZ);

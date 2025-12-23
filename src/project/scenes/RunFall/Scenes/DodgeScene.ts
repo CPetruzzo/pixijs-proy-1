@@ -17,8 +17,9 @@ import { PLAYER_SCALE_RUNFALL, REMOVE_OBJECT_TIME } from "../../../../utils/cons
 import { SettingsPopUp } from "./PopUps/SettingsPopUp";
 import { Tween } from "tweedle.js";
 import { RunFallNameInputPopUp } from "./PopUps/RunFallNameInputPopUp";
-import type { Achievement, AchievementState } from "../Managers/AchievementsManager";
-import { AchievementsManager } from "../Managers/AchievementsManager";
+import type { Achievement } from "../Managers/AchievementsManager";
+import { AchievementsManager } from "../../../../engine/achievement/AchievementsManager";
+import type { RunFallGameState } from "../Objects/RunFallAchievements";
 
 export class DodgeScene extends PixiScene {
 	// #region VARIABLES
@@ -39,8 +40,7 @@ export class DodgeScene extends PixiScene {
 	private playerController: PlayerController;
 	private scoreManager: ScoreManager;
 	private spawnManager: SpawnManager;
-	private achievementsManager: AchievementsManager;
-	// booleans
+	private achievementsManager: AchievementsManager<RunFallGameState>; // booleans
 	public isPaused: boolean = false;
 
 	private uiButton: Sprite;
@@ -81,7 +81,7 @@ export class DodgeScene extends PixiScene {
 		this.player = new Player(this.scoreManager, this.healthBar, this.background);
 		this.player.scale.set(PLAYER_SCALE_RUNFALL);
 		this.player.x = this.background.width * 0.5;
-		this.player.y = this.background.height - 102.5 * 3;
+		this.player.y = this.background.height - 450;
 		this.background.addChild(this.player);
 
 		this.background.eventMode = "static";
@@ -187,7 +187,7 @@ export class DodgeScene extends PixiScene {
 		this.objects.forEach((obj) => {
 			obj.update(dt);
 
-			if (obj.y >= this.background.height - obj.height * 0.5 - 103.5) {
+			if (obj.y >= this.background.height - obj.height * 0.5 - 250) {
 				if (obj.name === ObjectsNames.OBSTACLE) {
 					if (obj.isOnGround) {
 						if (CollisionManager.checkCollision(this.player, obj)) {
@@ -305,15 +305,13 @@ export class DodgeScene extends PixiScene {
 		this.playerController.mouseMovements(this.background);
 		this.playerController.onKeyDown(this.background);
 
-		const currentState: AchievementState = {
-			score: this.scoreManager.getScore(),
-			lives: this.healthBar.getCurrentHealth(),
-			coinsCollected: this.player.achievementsState.coinsCollected,
-
-			cumulativeCoinsCollected: this.cumulativeCoinsInitial + this.player.achievementsState.coinsCollected,
-			enemyCollisions: this.player.achievementsState.enemyCollisions,
-			obstacleCollisions: this.player.achievementsState.obstacleCollisions,
-			potionsCollected: this.player.achievementsState.potionsCollected,
+		const currentState: RunFallGameState = {
+			coinsCurrent: this.player.achievementsState.coinsCollected,
+			coinsTotal: this.cumulativeCoinsInitial + this.player.achievementsState.coinsCollected,
+			enemiesHit: this.player.achievementsState.enemyCollisions,
+			obstaclesHit: this.player.achievementsState.obstacleCollisions,
+			potions: this.player.achievementsState.potionsCollected,
+			playerDied: this.healthBar.getCurrentHealth() <= 0,
 		};
 
 		this.achievementsManager.update(currentState);
