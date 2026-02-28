@@ -5,6 +5,7 @@ import { Container, NineSlicePlane, Sprite, Text, TextStyle, Texture } from "pix
 import { PixiScene } from "../../../../../engine/scenemanager/scenes/PixiScene";
 import { Keyboard } from "../../../../../engine/input/Keyboard";
 import { ScaleHelper } from "../../../../../engine/utils/ScaleHelper";
+import { SoundLib } from "../../../../../engine/sound/SoundLib";
 
 export class RunFallNameInputPopUp extends PixiScene {
 	// Assets
@@ -48,7 +49,7 @@ export class RunFallNameInputPopUp extends PixiScene {
 		this.fadeAndBlocker.scale.set(10);
 
 		// Panel de fondo
-		this.background = new NineSlicePlane(Texture.from("emptyBanner"), 10, 10, 10, 10);
+		this.background = new NineSlicePlane(Texture.from("gameover"), 10, 10, 10, 10);
 		this.background.pivot.set(this.background.width * 0.5, this.background.height * 0.5);
 		this.addChild(this.background);
 	}
@@ -80,20 +81,21 @@ export class RunFallNameInputPopUp extends PixiScene {
 	private createNameDisplay(): void {
 		const inputBox = new Graphics();
 		inputBox.beginFill(0xffffff, 0.2);
-		inputBox.drawRoundedRect(0, -25, 500, 80, 10);
+		inputBox.drawRoundedRect(0, -5, 400, 60, 10);
 		inputBox.endFill();
-		inputBox.position.set(200, 210);
+		inputBox.position.set(75, 260);
 
 		this.nameText = new Text(
 			this.playerName,
 			new TextStyle({
 				fontSize: 50,
-				fill: 0xffffff,
-				fontFamily: "Daydream",
+				fill: 0x000000,
+				letterSpacing: 5,
+				fontFamily: "Pixelate-Regular",
 			})
 		);
 		// Ajusta la posición dentro del box
-		this.nameText.position.set(220, 190);
+		this.nameText.position.set(74, 260);
 
 		this.nameInputContainer.addChild(inputBox);
 		this.nameInputContainer.addChild(this.nameText);
@@ -106,18 +108,29 @@ export class RunFallNameInputPopUp extends PixiScene {
 	 */
 	private createVirtualKeyboard(): void {
 		const keyboardContainer = new Container();
-		keyboardContainer.position.set(200, 300); // Ajusta según tu diseño
+		keyboardContainer.position.set(65, 360); // Ajusta según tu diseño
 
 		// Estilo para las "teclas"
 		const keyStyle = new TextStyle({
-			fontSize: 40,
+			fontSize: 60,
 			fill: 0xffffff,
-			fontFamily: "Daydream",
+			fontFamily: "Pixelate-Regular",
 		});
 
+		const backStyle = new TextStyle({
+			fontSize: 45,
+			fill: 0x0f2f22,
+			fontFamily: "Pixelate-Regular",
+		});
+
+		const spaceStyle = new TextStyle({
+			fontSize: 45,
+			fill: 0x0fff22,
+			fontFamily: "Pixelate-Regular",
+		});
 		// Letras A-Z
 		const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-		const keysPerRow = 7; // cuántas "teclas" por fila
+		const keysPerRow = 6; // cuántas "teclas" por fila
 		let row = 0;
 		let col = 0;
 
@@ -127,9 +140,10 @@ export class RunFallNameInputPopUp extends PixiScene {
 
 			letterKey.interactive = true;
 			letterKey.cursor = "pointer";
-			letterKey.position.set(col * 75, row * 75);
+			letterKey.position.set(col * 75, row * 50);
 
 			letterKey.on("pointertap", () => {
+				SoundLib.playSound("immersive", { volume: 1 });
 				this.addCharacter(letter);
 			});
 
@@ -143,20 +157,20 @@ export class RunFallNameInputPopUp extends PixiScene {
 		}
 
 		// Botón de espacio
-		const spaceKey = new Text("[SPACE]", keyStyle);
+		const spaceKey = new Text("[SPACE]", spaceStyle);
 		spaceKey.interactive = true;
 		spaceKey.cursor = "pointer";
-		spaceKey.position.set(0, (row + 1) * 80);
+		spaceKey.position.set(130, (row + 1) * 43);
 		spaceKey.on("pointertap", () => {
 			this.addCharacter(" ");
 		});
 		keyboardContainer.addChild(spaceKey);
 
 		// Botón de borrar (backspace)
-		const backKey = new Text("[DEL]", keyStyle);
+		const backKey = new Text("[DEL]", backStyle);
 		backKey.interactive = true;
 		backKey.cursor = "pointer";
-		backKey.position.set(350, (row + 1) * 80);
+		backKey.position.set(300, (row + 1) * 43);
 		backKey.on("pointertap", () => {
 			this.removeCharacter();
 		});
@@ -187,10 +201,9 @@ export class RunFallNameInputPopUp extends PixiScene {
 	 * Crea el botón de "Continuar" (confirm).
 	 */
 	private createConfirmButton(): void {
-		this.confirmButton = Sprite.from("buttonContinue");
+		this.confirmButton = Sprite.from("done");
 		this.confirmButton.anchor.set(0.5);
-		this.confirmButton.scale.set(0.65);
-		this.confirmButton.position.set(460, 800);
+		this.confirmButton.position.set(275, 680);
 		this.confirmButton.eventMode = "static";
 		this.background.addChild(this.confirmButton);
 
@@ -202,13 +215,13 @@ export class RunFallNameInputPopUp extends PixiScene {
 	private addButtonHoverEffect(button: Sprite): void {
 		button.on("pointerover", () => {
 			new Tween(button)
-				.to({ scale: { x: 0.65, y: 0.65 } }, 200)
+				.to({ scale: { x: 1.03, y: 1.03 } }, 200)
 				.easing(Easing.Quadratic.Out)
 				.start();
 		});
 		button.on("pointerout", () => {
 			new Tween(button)
-				.to({ scale: { x: 0.6, y: 0.6 } }, 200)
+				.to({ scale: { x: 1, y: 1 } }, 200)
 				.easing(Easing.Quadratic.Out)
 				.start();
 		});
@@ -219,26 +232,9 @@ export class RunFallNameInputPopUp extends PixiScene {
 	 * Título, caja donde se muestra el nombre y el teclado virtual.
 	 */
 	public showButtons(): void {
-		this.createTitle();
 		this.createNameDisplay();
 		this.createVirtualKeyboard();
 		this.createConfirmButton();
-	}
-
-	private createTitle(): void {
-		const titleText = new Text(
-			"Enter Your Name",
-			new TextStyle({
-				fontSize: 50,
-				fill: 0xffffff,
-				dropShadow: true,
-				dropShadowColor: 0x000000,
-				fontFamily: "Daydream",
-			})
-		);
-		titleText.anchor.set(0.5);
-		titleText.position.set(titleText.width * 0.59, -titleText.height * 1.2);
-		this.background.addChild(titleText);
 	}
 
 	// Animaciones de entrada
@@ -254,13 +250,13 @@ export class RunFallNameInputPopUp extends PixiScene {
 		const fadeAnimation = new Tween(this.fadeAndBlocker).to({ alpha: 1 }, 500);
 		const elasticAnimation = new Tween(this.background)
 			.from({
-				scale: { x: 7, y: 7 },
+				scale: { x: 13, y: 13 },
 				y: 8000,
 				alpha: 0,
 			})
 			.to(
 				{
-					scale: { x: 7, y: 7 },
+					scale: { x: 13, y: 13 },
 					y: 0,
 					alpha: 1,
 				},

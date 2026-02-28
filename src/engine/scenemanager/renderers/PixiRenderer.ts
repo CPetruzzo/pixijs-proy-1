@@ -42,8 +42,26 @@ export class PixiRenderer implements IRenderer {
 
 		// If you didn't pick, I would suggest not clearing before render because we will need to render a loooot of stuff
 		const auxPixiOptions = Object.assign<PixiRendererOptions, PixiRendererOptions>({ clearBeforeRender: false }, pixiOptions);
+
 		// initialize the pixi renderer
 		this.pixiRenderer = autoDetectRenderer<HTMLCanvasElement>(auxPixiOptions);
+
+		// CRÍTICO: Verificar y habilitar extensiones de WebGL para índices
+		const gl = (this.pixiRenderer as any).gl;
+		if (gl) {
+			// Intentar obtener la extensión OES_element_index_uint
+			const ext = gl.getExtension("OES_element_index_uint");
+			if (ext) {
+				console.log("✓ OES_element_index_uint extension available");
+			} else {
+				console.warn("⚠ OES_element_index_uint extension NOT available - limited to Uint16Array (65535 vertices max)");
+			}
+
+			// Log información de debug
+			console.log("WebGL Context:", gl.constructor.name);
+			console.log("WebGL Version:", gl.getParameter(gl.VERSION));
+			console.log("Max Vertex Attributes:", gl.getParameter(gl.MAX_VERTEX_ATTRIBS));
+		}
 
 		this.letterboxScale = Boolean(letterboxScale);
 

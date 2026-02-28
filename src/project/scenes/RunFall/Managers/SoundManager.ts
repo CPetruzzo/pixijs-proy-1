@@ -7,10 +7,11 @@ export enum Sounds {
 	POTION = "sound_award",
 	OBSTACLE = "sound_block",
 	OPENPOUP = "sound6",
-	CLOSEPOPUP = "sound1",
-	START = "sound4",
+	CLOSEPOPUP = "punchy5",
+	START = "modern",
 	BG_MUSIC = "sound_BGM",
 	BASKET_MUSIC = "courtBGM",
+	CHANGETAB = "immersive",
 }
 
 export class SoundManager extends SoundLib {

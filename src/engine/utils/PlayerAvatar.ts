@@ -3,24 +3,29 @@ import type { EquipmentManager } from "../storagemanager/EquipmentManager";
 import { EquipmentSlots } from "../storagemanager/EquipmentManager";
 
 export class PlayerAvatar extends Container {
-	public bodyShape: Graphics;
+	public bodyShape: Graphics | Sprite;
 
 	// Contenedores visuales
 	private weaponSprite: Sprite; // Mano derecha
 	private shieldSprite: Sprite; // Mano izquierda (Representará el slot BODY/ARMOR)
-	private helmetSprite: Sprite; // Cabeza
+	public helmetSprite: Sprite; // Cabeza
 
-	private equipmentManager: EquipmentManager;
+	public equipmentManager: EquipmentManager;
 
-	constructor(equipmentManager: EquipmentManager, color: number) {
+	constructor(equipmentManager: EquipmentManager, color: number, _spriteTexture?: string) {
 		super();
 		this.equipmentManager = equipmentManager;
 
-		// 2. Capa BASE (El cuerpo)
-		this.bodyShape = new Graphics();
-		this.bodyShape.beginFill(color);
-		this.bodyShape.drawCircle(0, 0, 20);
-		this.bodyShape.endFill();
+		if (_spriteTexture) {
+			this.bodyShape = Sprite.from(_spriteTexture);
+			this.bodyShape.anchor.set(0.5);
+		} else {
+			// 2. Capa BASE (El cuerpo)
+			this.bodyShape = new Graphics();
+			this.bodyShape.beginFill(color);
+			this.bodyShape.drawCircle(0, 0, 20);
+			this.bodyShape.endFill();
+		}
 		this.addChild(this.bodyShape);
 
 		// 1. Capa ESCUDO/ARMADURA (Mano Izquierda, dibujada PRIMERO para que quede "debajo" del cuerpo si rota)
@@ -87,8 +92,8 @@ export class PlayerAvatar extends Container {
 			try {
 				this.helmetSprite.texture = Texture.from(helmetItem.image);
 				this.helmetSprite.visible = true;
-				this.helmetSprite.width = 40;
-				this.helmetSprite.height = 20;
+				this.helmetSprite.width = 50;
+				this.helmetSprite.height = 50;
 			} catch (e) {
 				this.helmetSprite.visible = false;
 			}

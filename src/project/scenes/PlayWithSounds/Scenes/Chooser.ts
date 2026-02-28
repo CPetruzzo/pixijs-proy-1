@@ -38,7 +38,7 @@ export class Chooser extends PixiScene {
 		super();
 
 		SoundLib.stopMusic("farm-sfx");
-		SoundLib.playMusic("chooserMusic", { loop: true, volume: 0.5 });
+		SoundLib.playMusic("chooserMusic", { loop: true, volume: 0.1 });
 
 		this.cont = new Container();
 		this.cont.pivot.set(this.cont.width * 0.5, this.cont.height * 0.5);
@@ -95,7 +95,7 @@ export class Chooser extends PixiScene {
 		this.soundContainer.on(
 			"pointerover",
 			() => {
-				SoundLib.playMusic("birds-sfx", { volume: 2, loop: false });
+				SoundLib.playMusic("birds-sfx", { volume: 0.2, loop: false });
 				this.soundContainer.scale.set(1.1);
 			},
 			this
@@ -103,7 +103,7 @@ export class Chooser extends PixiScene {
 		this.soundContainer.on(
 			"pointerdown",
 			() => {
-				SoundLib.playMusic("birds-sfx", { volume: 2, loop: false });
+				SoundLib.playMusic("birds-sfx", { volume: 0.2, loop: false });
 				this.soundContainer.scale.set(1.1);
 			},
 			this
@@ -123,7 +123,7 @@ export class Chooser extends PixiScene {
 					// , [], IntermissionDuck
 				);
 
-				SoundLib.playMusic("transitionDuck-sfx", { loop: false });
+				SoundLib.playMusic("transitionDuck-sfx", { loop: false, volume: 0.2 });
 			},
 			this
 		);
@@ -136,7 +136,7 @@ export class Chooser extends PixiScene {
 		this.guessContainer.on(
 			"pointerover",
 			() => {
-				SoundLib.playMusic("windTransition-sfx", { volume: 2, loop: false });
+				SoundLib.playMusic("windTransition-sfx", { volume: 0.2, loop: false });
 				this.guessContainer.scale.set(1.2);
 			},
 			this
@@ -144,7 +144,7 @@ export class Chooser extends PixiScene {
 		this.guessContainer.on(
 			"pointerdown",
 			() => {
-				SoundLib.playMusic("windTransition-sfx", { volume: 2, loop: false });
+				SoundLib.playMusic("windTransition-sfx", { volume: 0.2, loop: false });
 				this.guessContainer.scale.set(1.2);
 			},
 			this
@@ -179,7 +179,7 @@ export class Chooser extends PixiScene {
 		this.frame2.position.set(this.guess.position.x - this.frame2.width / 2, this.guess.position.y - this.frame2.height);
 		this.frame2.alpha = 0.8;
 
-		this.sheep = Sprite.from("chooserSheep");
+		this.sheep = Sprite.from("chooserSheep-1");
 		this.sheep.scale.set(0.5);
 		this.sheep.anchor.set(0.5);
 		this.sheep.position.set(this.guess.position.x, this.guess.position.y - this.sheep.height / 1.5);

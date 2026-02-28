@@ -11,8 +11,8 @@ export enum EquipmentSlots {
 export class EquipmentManager {
 	public storage: StorageManager;
 
-	constructor() {
-		this.storage = new StorageManager(3, 100, "player_equipment");
+	constructor(storageKey: string = "player_equipment") {
+		this.storage = new StorageManager(3, 100, storageKey);
 	}
 
 	public equipItem(item: Item): Item | null {
@@ -75,5 +75,27 @@ export class EquipmentManager {
 			default:
 				return -1;
 		}
+	}
+
+	/**
+	 * Retorna el ítem equipado según el tipo (ej: HELMET para la máscara)
+	 */
+	public getEquippedItem(type: ItemType): Item | null {
+		const slotIndex = this.getSlotForType(type);
+		if (slotIndex !== -1) {
+			return this.getEquippedItemBySlot(slotIndex);
+		}
+		return null;
+	}
+
+	/**
+	 * Retorna lo que haya en un slot específico (usando el enum EquipmentSlots)
+	 */
+	public getEquippedItemBySlot(slotIndex: EquipmentSlots): Item | null {
+		const slots = this.storage.getSlots();
+		if (slots[slotIndex]) {
+			return slots[slotIndex].item;
+		}
+		return null;
 	}
 }

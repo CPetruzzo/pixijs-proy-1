@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 export const GameConfig = {
 	// Dimensiones de referencia para scaling
-	idealWidth: 736,
+	idealWidth: 766,
 	idealHeight: 736,
 	// Tamaño de la celda de la grilla
-	tileSize: 92, // Tamaño de cada celda en píxeles
+	tileSize: 46.5, // Tamaño de cada celda en píxeles
 
 	// Intervalo de tiempo entre cada aparición de enemigo
 	spawnInterval: 1500, // Tiempo en milisegundos
@@ -18,8 +18,8 @@ export const GameConfig = {
 	],
 
 	// Tamaño del mapa
-	gridWidth: 10, // Número de columnas
-	gridHeight: 10, // Número de filas
+	gridWidth: 14, // Número de columnas
+	gridHeight: 14, // Número de filas
 
 	// Configuración para las torres (puedes personalizar la potencia, rango, etc.)
 	towerConfig: {

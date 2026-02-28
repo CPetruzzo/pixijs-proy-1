@@ -1,10 +1,11 @@
 import { Texture } from "pixi.js";
 
-export const RIVER_TEXTURE: Texture = Texture.from("./img/water.png");
-export const GRASS_TEXTURE: Texture = Texture.from("./img/grass.png");
-export const HILL_TEXTURE: Texture = Texture.from("./img/mountain.png");
-export const FOREST_TEXTURE: Texture = Texture.from("./img/water.png");
-export const ROAD_TEXTURE: Texture = Texture.from("./img/grass.png");
+// REMEMBER NEVER AGAIN DO this, BECAUSE OF THIS NOW IF I DON'T WANT TO CHANGE WORLDMAP SCENE I HAVE TO BE SURE TO NOT DELETE THIS FILES
+export const RIVER_TEXTURE: Texture = Texture.from("./img/donotdelete/water.png");
+export const GRASS_TEXTURE: Texture = Texture.from("./img/donotdelete/grass.png");
+export const HILL_TEXTURE: Texture = Texture.from("./img/donotdelete/mountain.png");
+export const FOREST_TEXTURE: Texture = Texture.from("./img/donotdelete/water.png");
+export const ROAD_TEXTURE: Texture = Texture.from("./img/donotdelete/grass.png");
 export const ROTATE: Texture = Texture.from("./preloader/rotate.jpg");
 
 // LOLI GAME

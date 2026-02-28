@@ -13,7 +13,7 @@ import { AchievementsScene } from "./AchievementsScene";
 import { ToggleCheck } from "../Utils/toggle/ToggleCheck";
 
 export class MenuScene extends PixiScene {
-	public static readonly BUNDLES = ["package-1", "sfx", "music", "fallrungame", "runfallsfx"];
+	public static readonly BUNDLES = ["fallrungame", "runfallsfx"];
 
 	private backgroundContainer: Container = new Container();
 	private bleedingBackgroundContainer: Container = new Container();
@@ -35,7 +35,7 @@ export class MenuScene extends PixiScene {
 		this.backgroundContainer.addChild(background);
 
 		this.toggleCheck = new ToggleCheck({
-			buttonTexture: "buttonBG",
+			buttonTexture: "soundIconOff",
 			checkTexture: "soundIcon",
 			startingValue: SoundManager.isMusicOn(),
 			onToggleOn: () => {
@@ -78,42 +78,71 @@ export class MenuScene extends PixiScene {
 	}
 
 	private titleAnimation(background: Sprite): void {
-		const title = Sprite.from("runfall");
-		title.anchor.set(0.5);
-		title.scale.set(0.75);
-		title.x = 15;
-		this.backgroundContainer.addChild(title);
+		// 1. Configuración de los renglones
+		const line1Chars = ["R", "U", "N"];
+		const line2Chars = ["F", "A", "L", "L"];
 
+		const spacingX = 140; // Espacio horizontal entre letras
+		const lineGap = 160; // Espacio vertical entre RUN y FALL
+		const startY = -30; // Ajuste global de altura para que el bloque quede centrado
+
+		// Combinamos las letras en un solo array con datos de posición para animarlas fácilmente
+		const allLettersData = [
+			...line1Chars.map((char, i) => ({
+				char,
+				row: 0,
+				offsetX: (i - (line1Chars.length - 1) / 2) * spacingX,
+			})),
+			...line2Chars.map((char, i) => ({
+				char,
+				row: 1,
+				offsetX: (i - (line2Chars.length - 1) / 2) * spacingX,
+			})),
+		];
+
+		allLettersData.forEach((data, index) => {
+			const letter = Sprite.from(`runfall_${data.char}`);
+			letter.anchor.set(0.5);
+			letter.scale.set(0.95);
+
+			// Posición horizontal: 15 es tu centro original + el desplazamiento calculado
+			letter.x = 15 + data.offsetX;
+
+			// Posición inicial (fuera de pantalla arriba)
+			letter.y = -1500;
+
+			// Posición final: startY + (0 o 1 * lineGap)
+			const targetY = startY + data.row * lineGap;
+
+			this.backgroundContainer.addChild(letter);
+
+			// 2. Animación de caída staggered
+			new Tween(letter)
+				.to({ y: targetY }, 1200)
+				.delay(800 + index * 100) // Mantenemos el efecto cascada
+				.start()
+				.easing(Easing.Bounce.Out)
+				.onComplete(() => {
+					// Solo cuando la última "L" de "FALL" termine, aparece el botón
+					if (index === allLettersData.length - 1) {
+						this.showPlayButton(playButton, playY);
+					}
+				});
+		});
+
+		// 3. Configuración del botón Play (se mantiene igual que antes)
 		const playButton = Sprite.from("playbutton");
-		const playY = background.height * 0.3 + playButton.height * 0.5;
+		const playY = background.height * 0.35 + playButton.height * 0.5; // Bajé un poco el playY para que no choque con el texto
 		playButton.anchor.set(0.5);
 		playButton.y = 1500;
+		playButton.x = 0;
 		this.backgroundContainer.addChild(playButton);
+
 		playButton.eventMode = "static";
 		playButton.on("pointerdown", () => {
 			SoundLib.playSound(Sounds.START, { volume: 0.2 });
 			Manager.changeScene(DodgeScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});
-
-		new Tween(title)
-			.from({ y: -1500 })
-			.to({ y: 0 }, 1200)
-			.delay(800)
-			.start()
-			.easing(Easing.Bounce.Out)
-			.onComplete(() => {
-				new Tween(playButton)
-					.from({ x: 0, y: 1500 })
-					.to({ x: 0, y: playY }, 800)
-					.start()
-					.onComplete(() => {
-						new Tween(playButton)
-							.to({ scale: { x: 1.05, y: 1.05 } }, 500)
-							.start()
-							.repeat(Infinity)
-							.yoyo(true);
-					});
-			});
 
 		const leaderboardBase = Sprite.from("buttonBG");
 		leaderboardBase.scale.set(0.25);
@@ -222,6 +251,20 @@ export class MenuScene extends PixiScene {
 		achievements.on("pointertap", () => {
 			Manager.changeScene(AchievementsScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});
+	}
+
+	// Función auxiliar para limpiar el código de la animación del botón
+	private showPlayButton(playButton: Sprite, targetY: number): void {
+		new Tween(playButton)
+			.to({ y: targetY }, 800)
+			.start()
+			.onComplete(() => {
+				new Tween(playButton)
+					.to({ scale: { x: 1.05, y: 1.05 } }, 500)
+					.start()
+					.repeat(Infinity)
+					.yoyo(true);
+			});
 	}
 
 	private async openHighScorePopup(): Promise<void> {

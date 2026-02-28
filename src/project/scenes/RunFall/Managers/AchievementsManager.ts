@@ -59,14 +59,14 @@ export class AchievementsManager extends EventEmitter {
 			// Logros por partida (usando coinsCollected)
 			{
 				id: "bounty_hunter_1",
-				title: "Bounty Hunter I",
+				title: "Cazador del tesoro I",
 				description: "Recoge 10 monedas en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.coinsCollected >= 10,
 			},
 			{
 				id: "bounty_hunter_2",
-				title: "Bounty Hunter II",
+				title: "Cazador del tesoro II",
 				description: "Recoge 50 monedas en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.coinsCollected >= 50,
@@ -74,7 +74,7 @@ export class AchievementsManager extends EventEmitter {
 			// Logro acumulativo (usando cumulativeCoinsCollected)
 			{
 				id: "bounty_hunter_cumulative",
-				title: "Bounty Hunter Cumulative",
+				title: "Acumulador",
 				description: "Recoge 100 monedas en total a lo largo de todas las partidas.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.cumulativeCoinsCollected >= 100,
@@ -82,21 +82,21 @@ export class AchievementsManager extends EventEmitter {
 			// Logros de colisiones contra enemigos (por partida)
 			{
 				id: "meteor_crasher_1",
-				title: "My First Hit",
+				title: "Mi primer golpe",
 				description: "Choca contra enemigos 1 vez en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.enemyCollisions >= 1,
 			},
 			{
 				id: "meteor_crasher_2",
-				title: "Ok... twice now!",
+				title: "Bueno... mi segundo golpe!",
 				description: "Choca contra enemigos 2 veces en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.enemyCollisions >= 2,
 			},
 			{
 				id: "meteor_crasher_3",
-				title: "Meteor Party!",
+				title: "Fiesta de meteoros!",
 				description: "Choca contra enemigos 3 veces en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.enemyCollisions >= 3,
@@ -104,21 +104,21 @@ export class AchievementsManager extends EventEmitter {
 			// Logros de colisiones con obstáculos (por partida)
 			{
 				id: "stumble_champion_1",
-				title: "Stumble Champion I",
+				title: "Campeón... del tropezón I",
 				description: "Choca contra obstáculos 10 veces en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.obstacleCollisions >= 10,
 			},
 			{
 				id: "stumble_champion_2",
-				title: "Stumble Champion II",
+				title: "Campeón... del tropezón II",
 				description: "Choca contra obstáculos 20 veces en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.obstacleCollisions >= 20,
 			},
 			{
 				id: "stumble_champion_3",
-				title: "Stumble Champion III",
+				title: "Campeón... del tropezón III",
 				description: "Choca contra obstáculos 50 veces en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.obstacleCollisions >= 50,
@@ -126,21 +126,21 @@ export class AchievementsManager extends EventEmitter {
 			// Logros de potions (por partida)
 			{
 				id: "i_have_my_meds_1",
-				title: "I can handle this",
+				title: "Puedo soportarlo",
 				description: "Recoge 1 potion en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.potionsCollected >= 1,
 			},
 			{
 				id: "i_have_my_meds_2",
-				title: "I Have My Meds I",
+				title: "Tengo mis medicinas I",
 				description: "Recoge 2 potions en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.potionsCollected >= 2,
 			},
 			{
 				id: "i_have_my_meds_3",
-				title: "I Have My Meds II",
+				title: "Tengo mis medicinas II",
 				description: "Recoge 5 potions en esta partida.",
 				unlocked: false,
 				checkCondition: (state: AchievementState) => state.potionsCollected >= 5,

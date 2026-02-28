@@ -44,6 +44,7 @@ export class TowerDefenseScene extends PixiScene {
 
 	public static instance: TowerDefenseScene;
 	private startWaveButton: Container = new Container(); // ← Nuevo contenedor para el botón
+	private background: Sprite;
 
 	constructor() {
 		super();
@@ -51,6 +52,9 @@ export class TowerDefenseScene extends PixiScene {
 		// ✅ Agregar gridContainer al gameContainer
 		this.gameContainer.name = "GAMECONTAINER";
 		this.gridContainer.name = "GRIDCONTAINER";
+		this.background = Sprite.from("mainBG");
+		this.background.anchor.set(0.5);
+		this.addChild(this.background);
 
 		this.grid = Grid.createGridWithObstacles(GameConfig.gridWidth, GameConfig.gridHeight);
 		this.addChild(this.gameContainer);
@@ -101,7 +105,7 @@ export class TowerDefenseScene extends PixiScene {
 		this.startWaveButton.pivot.set(100, 30);
 
 		this.startWaveButton.x = 25;
-		this.startWaveButton.y = 445;
+		this.startWaveButton.y = 325;
 		// Hacer el botón interactivo
 		this.startWaveButton.eventMode = "static";
 		this.startWaveButton.cursor = "pointer";
@@ -153,9 +157,10 @@ export class TowerDefenseScene extends PixiScene {
 
 		// Centrar usando pivot basado en el contenido real
 		this.gridContainer.pivot.set(bounds.x + bounds.width * 0.5, bounds.y + bounds.height * 0.5);
-
-		this.gridContainer.x = 20;
-		this.gridContainer.y = 0;
+		this.gridContainer.scale.x = 1.045;
+		this.gridContainer.scale.y = 1.015;
+		this.gridContainer.x = 0;
+		this.gridContainer.y = -2;
 	}
 
 	public cleanupBeforeRestart(): void {
@@ -195,6 +200,7 @@ export class TowerDefenseScene extends PixiScene {
 		this.gridContainer.addChild(animatedSprite);
 
 		animatedSprite.anchor.set(0.5);
+		animatedSprite.scale.set(0.8);
 		animatedSprite.x = x * this.tileSize + this.tileSize / 2; // Sin offset!
 		animatedSprite.y = y * this.tileSize + this.tileSize / 2; // Sin offset!
 		animatedSprite.animationSpeed = 0.1;
@@ -336,7 +342,7 @@ export class TowerDefenseScene extends PixiScene {
 	}
 
 	public override onResize(newW: number, newH: number): void {
-		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, newW, newH, GameConfig.idealWidth * 1.37, GameConfig.idealHeight * 1.37, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToIdeal(this.gameContainer, newW, newH, 766, 736, ScaleHelper.FIT);
 		this.gameContainer.x = newW * 0.5;
 		this.gameContainer.y = newH * 0.5;
 
@@ -347,6 +353,10 @@ export class TowerDefenseScene extends PixiScene {
 		ScaleHelper.setScaleRelativeToIdeal(this.uiRightContainer, newW, newH, 1920, 1080, ScaleHelper.FIT);
 		this.uiRightContainer.x = newW;
 		this.uiRightContainer.y = 0;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.background, newW, newH, 766, 736, ScaleHelper.FIT);
+		this.background.x = newW * 0.5;
+		this.background.y = newH * 0.5;
 	}
 
 	public async openTowerDefenseInputPopup(): Promise<void> {

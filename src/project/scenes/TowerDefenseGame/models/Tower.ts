@@ -27,7 +27,7 @@ export class Tower {
 		this.animatedSprite.x = x * this.tileSize + this.tileSize * 0.5; // Centrar en el tile
 		this.animatedSprite.y = y * this.tileSize + this.tileSize * 0.5; // Centrar en el tile
 		this.animatedSprite.anchor.set(0.5, 0.7);
-		this.animatedSprite.scale.set(0.8, 0.8);
+		this.animatedSprite.scale.set(0.7, 0.7);
 		this.animatedSprite.animationSpeed = 0.1; // Ajusta la velocidad de la animación
 		this.animatedSprite.play();
 

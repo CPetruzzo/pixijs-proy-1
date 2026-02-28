@@ -1,7 +1,7 @@
 import type { Container, Graphics } from "pixi.js";
 import type { BaseNPC } from "./NPCClasses";
 import { FriendlyNPC, AggressiveNPC, CustomerState, CustomerNPC } from "./NPCClasses";
-import type { InteractableManager } from "../utils/InteractableManager";
+import type { InteractableItem, InteractableManager } from "../utils/InteractableManager";
 import { DialogueOverlayManager } from "../dialog/DialogueOverlayManager";
 import { OverlayMode } from "../dialog/DialogOverlay";
 
@@ -76,34 +76,75 @@ export class NPCManager {
 	): void {
 		let npc: CustomerNPC;
 
-		// 1. REUTILIZACIÓN (POOL)
 		if (this.customerPool.length > 0) {
-			npc = this.customerPool.pop()!; // Sacamos uno del depósito
+			npc = this.customerPool.pop()!;
 			npc.reset(spawnX, spawnY, targetX, targetY, exitX, exitY, patienceMs);
-			this.worldContainer.addChild(npc); // Lo volvemos a poner en escena
+			this.worldContainer.addChild(npc);
 		} else {
-			// 2. CREACIÓN (Si el pool está vacío)
 			npc = new CustomerNPC(spawnX, spawnY, targetX, targetY, exitX, exitY, patienceMs);
 			this.worldContainer.addChild(npc);
 		}
 
-		this.npcs.push(npc); // Agregamos a la lista de actualización activa
+		this.npcs.push(npc);
 
-		// Interacciones (se mantienen igual, creando una nueva para el NPC actual)
 		const interactionId = this.interactManager.add(targetX, targetY, () => {
 			if (npc.state === CustomerState.WAITING) {
-				npc.serve();
-				onSuccess();
-				this.interactManager.remove(interactionId);
+				// Usamos la nueva función interna para centralizar la resolución
+				this.resolveSingleNPC(npc, onSuccess, interactionId);
 			} else {
 				DialogueOverlayManager.talk("¡No te está prestando atención!", { mode: OverlayMode.BUBBLE });
 			}
 		});
 
+		// Guardamos metadatos genéricos en el NPC para poder resolverlo externamente
+		(npc as any)._onSuccess = onSuccess;
+		(npc as any)._interactionId = interactionId;
 		(npc as any)._onTimeoutCallback = () => {
 			this.interactManager.remove(interactionId);
 			onTimeout();
 		};
+	}
+
+	/**
+	 * Resuelve y limpia las interacciones de todos los NPCs en una ubicación específica.
+	 * Útil para atender a todo un grupo de una mesa a la vez.
+	 */
+	public resolveNPCsAt(x: number, y: number, radius: number): void {
+		this.npcs.forEach((npc) => {
+			// Verificamos que sea un cliente esperando
+			if (npc instanceof CustomerNPC && npc.state === CustomerState.WAITING) {
+				const dx = npc.x - x;
+				const dy = npc.y - y;
+				const distance = Math.sqrt(dx * dx + dy * dy);
+
+				// Si está dentro del radio de la mesa
+				if (distance <= radius) {
+					const onSuccess = (npc as any)._onSuccess;
+					const interactionId = (npc as any)._interactionId;
+
+					// 1. Detener el timer y cambiar estado del NPC
+					npc.serve();
+
+					// 2. Ejecutar el callback de éxito (opcional)
+					if (onSuccess) {
+						onSuccess();
+					}
+
+					// 3. REMOVER EL INTERACTABLE: Esto quita el icono de "E" de este NPC
+					this.interactManager.remove(interactionId);
+				}
+			}
+		});
+	}
+	/**
+	 * Limpia el estado del NPC, detiene su timer y quita su interacción.
+	 */
+	private resolveSingleNPC(npc: CustomerNPC, onSuccess: () => void, interactionId: InteractableItem): void {
+		npc.serve(); // Esto debería detener el timer interno del NPC
+		if (onSuccess) {
+			onSuccess();
+		}
+		this.interactManager.remove(interactionId);
 	}
 
 	// Getter para saber cuántos hay activos

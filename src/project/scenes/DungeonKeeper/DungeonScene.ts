@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { Container, Graphics, Text, TextStyle, Point } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
+import { SoundLib } from "../../../engine/sound/SoundLib";
 
 enum TileType {
 	WALL = 0,
@@ -73,6 +74,8 @@ export class DungeonScene extends PixiScene {
 	public trainingTilesCount = 0;
 	public trainingPoints = 0;
 	public readonly TOTEM_BONUS = 10; // Cada tótem vale por 10 celdas extra
+	public static readonly BUNDLES = ["dk"];
+
 	constructor() {
 		super();
 		this.initGrid();
@@ -515,6 +518,8 @@ export class DungeonScene extends PixiScene {
 					if (m.gx === m.targetX && m.gy === m.targetY) {
 						// Llegamos al destino final (el suelo junto a la pared)
 						m.state = "MINING";
+						SoundLib.playSound("shovel", { loop: false, volume: 0.3 });
+
 						m.miningTimer = 100;
 					} else if (m.path && m.path.length > 0) {
 						// Tomamos el siguiente paso del camino azul

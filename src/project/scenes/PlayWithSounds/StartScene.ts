@@ -52,12 +52,6 @@ export class StartScene extends PixiScene {
 		super();
 
 		// --------------------------
-		// Sonido
-		// --------------------------
-		SoundLib.stopAllMusic();
-		SoundLib.playMusic("farm-sfx", { loop: true });
-
-		// --------------------------
 		// Escenario y contenedor
 		// --------------------------
 		this.cont = new Container();
@@ -100,6 +94,12 @@ export class StartScene extends PixiScene {
 		new Tween(this.text).from({ angle: -3 }).to({ angle: 3 }, 500).yoyo().repeat(Infinity).start();
 
 		new Tween(this.btnOpenPopup).from({ angle: -5 }).to({ angle: 5 }, 500).yoyo().repeat(Infinity).start();
+
+		// --------------------------
+		// Sonido
+		// --------------------------
+		SoundLib.stopAllMusic();
+		SoundLib.playMusic("farm-sfx", { loop: true, volume: 0.2 });
 	}
 
 	// ==========================

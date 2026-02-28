@@ -1,7 +1,7 @@
 ext {
     minSdkVersion = 22
-    compileSdkVersion = 34
-    targetSdkVersion = 34
+    compileSdkVersion = 35 // <--- CAMBIO ESTO A 35
+    targetSdkVersion = 35  // <--- CAMBIO ESTO A 35 PARA PODER SUBIRLO A LA PLAYSTORE DE ANDROID
     androidxActivityVersion = '1.8.0'
     androidxAppCompatVersion = '1.6.1'
     androidxCoordinatorLayoutVersion = '1.2.0'

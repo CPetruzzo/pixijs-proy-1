@@ -45,13 +45,12 @@ export class GuessShapes extends PixiScene {
 		super();
 
 		this.movingContainer = new Container();
-		this.movingContainer.position.set(0, -600);
+		this.movingContainer.position.set(1170, -200);
 
 		this.bg = Sprite.from("BG9");
-		this.bg.scale.set(1.05, 0.81);
 
 		this.ui = new HudGuess();
-		this.ui.position.set(1680, 160);
+		this.ui.position.set(1680, 180);
 		this.ui.scale.set(0.8);
 		this.ui.on("ButtonStart" as any, () => {
 			this.start = true;
@@ -64,7 +63,9 @@ export class GuessShapes extends PixiScene {
 		});
 
 		this.animalButtons = new AnimalButtonsGuess();
-		this.animalButtons.position.set(1100, 750);
+		this.animalButtons.x = 1050;
+		this.animalButtons.y = 900;
+
 		this.animalButtons.on("CLICKED_ANIMAL" as any, (clicked: string) => {
 			if (!this.alreadyClicked) {
 				if (clicked == this.currentAnimal) {
@@ -105,7 +106,7 @@ export class GuessShapes extends PixiScene {
 			minValue: 0,
 		});
 		this.progress.scale.set(0.3);
-		this.progress.position.set(1000, 100);
+		this.progress.position.set(1000, 120);
 
 		this.sceneContainer = new Container();
 		this.sceneContainer.addChild(this.bg, this.ui, this.animalButtons, this.progress);
@@ -155,13 +156,12 @@ export class GuessShapes extends PixiScene {
 			const newCloud = this.shapes[Math.floor(Math.random() * this.shapes.length)];
 
 			const cloud = new Nubes(newCloud);
-			cloud.alpha = 0.8;
 
 			DataManager.setValue("animal", newCloud);
 			cloud.position.x = 600;
 			cloud.scale.set(0.3);
 
-			this.moveUp(cloud);
+			this.startCloudAnimation(cloud); // Lanzamos la animación fluida
 
 			this.nubes.push(cloud);
 			this.movingContainer.addChild(cloud);
@@ -180,8 +180,9 @@ export class GuessShapes extends PixiScene {
 	}
 
 	public override onResize(newW: number, newH: number): void {
-		this.position.set(newW / 2, newH / 2);
-		ScaleHelper.setScaleRelativeToScreen(this.sceneContainer, newW, newH, 1, 1, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToScreen(this.sceneContainer, newW, newH, 1, 1, ScaleHelper.forceWidth);
+		this.sceneContainer.x = newW / 2;
+		this.sceneContainer.y = newH / 2;
 	}
 
 	private moveUp(cloud: Nubes): void {
@@ -190,5 +191,27 @@ export class GuessShapes extends PixiScene {
 
 	private moveDown(cloud: Nubes): void {
 		new Tween(cloud).from({ y: 300 }).to({ y: 400 }, 1000).easing(Easing.Sinusoidal.In).start().onComplete(this.moveUp.bind(this));
+	}
+
+	private startCloudAnimation(cloud: Nubes): void {
+		// Definimos un desfase aleatorio para que no todas las nubes se muevan al unísono
+		const randomDuration = 1000 + Math.random() * 1000;
+		const randomOffset = Math.random() * 100;
+
+		new Tween(cloud)
+			.from({ y: 300 })
+			.to({ y: 400 + randomOffset }, randomDuration)
+			.easing(Easing.Quadratic.InOut) // Suaviza entrada y salida
+			.repeat(Infinity) // Se repite para siempre
+			.yoyo(true) // Hace el camino de ida y vuelta automáticamente
+			.start();
+
+		// Opcional: Un pequeño "balanceo" en la escala para que parezca que respira
+		new Tween(cloud.scale)
+			.to({ x: 0.32, y: 0.32 }, randomDuration * 1.5)
+			.easing(Easing.Sinusoidal.InOut)
+			.repeat(Infinity)
+			.yoyo(true)
+			.start();
 	}
 }

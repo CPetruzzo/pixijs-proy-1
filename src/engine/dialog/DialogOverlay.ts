@@ -1,6 +1,7 @@
 import { Container, Sprite, Graphics, Text, TextStyle, Texture, Point } from "pixi.js";
 import { Tween, Easing } from "tweedle.js";
 import { Manager } from "../..";
+import { SoundLib } from "../sound/SoundLib";
 
 export enum OverlayMode {
 	CINEMATIC = "cinematic",
@@ -8,6 +9,8 @@ export enum OverlayMode {
 }
 
 export class DialogueOverlay extends Container {
+	public static readonly BUNDLES = ["donotdelete"];
+
 	private background: Graphics;
 	private portrait: Sprite;
 	private letterContainer: Container;
@@ -46,7 +49,7 @@ export class DialogueOverlay extends Container {
 		this.background = new Graphics();
 		this.addChild(this.background);
 
-		this.portrait = Sprite.from("playerface");
+		this.portrait = Sprite.from(Texture.EMPTY);
 		this.portrait.anchor.set(0, 1);
 		this.addChild(this.portrait);
 
@@ -294,16 +297,26 @@ export class DialogueOverlay extends Container {
 
 	private revealChar(index: number, data: any[], style: TextStyle, highlightWord: string, highlightColor: string): void {
 		if (!this.isOpen) {
+			// Si se cierra el overlay, nos aseguramos de parar el sonido
+			SoundLib.stopMusic("speak");
 			return;
+		}
+
+		// --- AL INICIAR EL TEXTO ---
+		if (index === 0 && this.typeSpeed > 0) {
+			SoundLib.playMusic("speak", { loop: true, volume: 0.05 });
 		}
 
 		if (index >= data.length) {
 			this.isTyping = false;
+
+			// --- AL FINALIZAR EL TEXTO ---
+			SoundLib.stopMusic("speak");
+
 			this.recalculateScrollLimits();
 			this.closeIndicator.visible = true;
 			this.animateHighlight(highlightWord, highlightColor);
 
-			// Avisar al manager que terminamos
 			if (this.onTypingComplete) {
 				this.onTypingComplete();
 			}
@@ -340,28 +353,48 @@ export class DialogueOverlay extends Container {
 	}
 
 	private recalculateScrollLimits(): void {
-		// ... (Tu lógica original intacta) ...
 		if (this.letters.length === 0) {
 			this.contentHeight = 0;
 			this.maxScroll = 0;
 			this.scrollOffset = 0;
 			return;
 		}
+
 		let maxY = 0;
 		let minY = Number.POSITIVE_INFINITY;
-		this.letters.forEach((l) => {
-			if (l.y > maxY) {
-				maxY = l.y;
+
+		for (const l of this.letters) {
+			// --- PROTECCIÓN DEFINITIVA ---
+			// Verificamos explícitamente 'position' porque Pixi lo anula en pestañas inactivas
+			// antes de terminar de destruir el objeto.
+			if (!l || l.destroyed || (l as any).position === null || !l.parent) {
+				continue;
 			}
-			if (l.y < minY) {
-				minY = l.y;
+
+			try {
+				// Usamos l.y con un bloque try-catch por si Pixi cambia el estado
+				// justo en medio de la iteración (problema de concurrencia asíncrona)
+				const currentY = l.y;
+				if (currentY > maxY) {
+					maxY = currentY;
+				}
+				if (currentY < minY) {
+					minY = currentY;
+				}
+			} catch (e) {
+				continue; // Si falla el acceso interno de Pixi, ignoramos esta letra
 			}
-		});
+		}
+
 		const lineHeight = 50;
 		this.contentHeight = maxY + lineHeight - (minY === Infinity ? 0 : minY);
 		this.maxScroll = Math.max(0, this.contentHeight - this.visibleTextHeight);
 		this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, this.maxScroll));
-		this.letterContainer.y = this.letterBaseY - this.scrollOffset;
+
+		// Verificación final antes de mover el contenedor
+		if (this.letterContainer && !this.letterContainer.destroyed && (this.letterContainer as any).position) {
+			this.letterContainer.y = this.letterBaseY - this.scrollOffset;
+		}
 	}
 
 	// Métodos de utilidad pública para scroll

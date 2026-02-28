@@ -6,8 +6,6 @@ import { FadeColorTransition } from "../../../../engine/scenemanager/transitions
 import { MenuScene } from "./MenuScene";
 
 export class LoaderScene extends PixiScene {
-	public static readonly BUNDLES = ["package-1", "sfx", "music", "fallrungame"];
-
 	private backgroundContainer: Container;
 	private bleedingBackgroundContainer: Container;
 	private video: HTMLVideoElement;

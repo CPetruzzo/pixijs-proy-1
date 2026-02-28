@@ -9,6 +9,7 @@ import { Timer } from "../../../../../engine/tweens/Timer";
 import type { Button } from "@pixi/ui";
 import { SoundLib } from "../../../../../engine/sound/SoundLib";
 import { DodgeScene } from "../DodgeScene";
+import type { ITextStyle, TextStyle } from "pixi.js";
 import { Container } from "pixi.js";
 import { Text } from "pixi.js";
 import { Sounds } from "../../Managers/SoundManager";
@@ -42,19 +43,20 @@ export class HighScorePopUp extends PixiScene {
 	public closing: boolean = false;
 	public restart: boolean = false;
 	public pauseScene: boolean = false;
-	private startY: number = 150;
+	private startY: number = 50;
 	// Contenedor para mostrar los puntajes
 	private scoreListContainer: Container;
 	// Pestañas
 	private tabGlobal: Text;
 	private tabLocal: Text;
 	private isMenu: boolean = true;
-
+	private currentScore: number = 0;
+	private currentName: string = "";
 	constructor(_score: number = 0, _isMenu: boolean = true) {
 		super();
 
 		this.isMenu = _isMenu;
-
+		this.currentScore = _score; // Guardamos el puntaje recibido
 		this.fadeAndBlocker = new Graphics();
 		this.fadeAndBlocker.beginFill(0x000000, 0.5);
 		this.fadeAndBlocker.drawRect(0, 0, 1500, 1500);
@@ -191,16 +193,16 @@ export class HighScorePopUp extends PixiScene {
 
 	// Crea las pestañas (Global y Local)
 	private createTabs(): void {
-		const styleInactive = { fontSize: 17, fill: 0xffffff, fontFamily: "Daydream" };
-		const styleActive = { fontSize: 17, fill: 0xe99f96, fontFamily: "Daydream" };
+		const styleInactive = { fontSize: 80, fill: 0xffffff, fontFamily: "Pixelate-Regular" };
+		const styleActive = { fontSize: 80, fill: 0xe99f96, fontFamily: "Pixelate-Regular" };
 
 		this.tabGlobal = new Text("Global", styleActive);
 		this.tabLocal = new Text("Local", styleInactive);
 
 		this.tabGlobal.anchor.set(0.5);
 		this.tabLocal.anchor.set(0.5);
-		this.tabGlobal.position.set(-55, -157);
-		this.tabLocal.position.set(57, -157);
+		this.tabGlobal.position.set(-125, -300);
+		this.tabLocal.position.set(125, -300);
 
 		this.tabGlobal.interactive = true;
 		this.tabGlobal.eventMode = "static";
@@ -208,11 +210,11 @@ export class HighScorePopUp extends PixiScene {
 		this.tabLocal.eventMode = "static";
 
 		this.tabGlobal.on("pointertap", () => {
-			SoundLib.playSound("switch", { volume: 0.2 });
+			SoundLib.playSound(Sounds.CHANGETAB, { volume: 0.2 });
 			this.activateTab("global");
 		});
 		this.tabLocal.on("pointertap", () => {
-			SoundLib.playSound("switch", { volume: 0.2 });
+			SoundLib.playSound(Sounds.CHANGETAB, { volume: 0.2 });
 			this.activateTab("local");
 		});
 
@@ -254,18 +256,48 @@ export class HighScorePopUp extends PixiScene {
 	private displayScores(scores: HighscoreEntry[]): void {
 		const lineHeight = 90;
 		const maxEntries = 5;
+		const styleNormal: TextStyle | Partial<ITextStyle> = {
+			fontSize: 70,
+			fill: 0xffffff,
+			align: "center",
+			fontFamily: "Pixelate-Regular",
+		};
+		const styleCurrent: TextStyle | Partial<ITextStyle> = {
+			fontSize: 70,
+			fill: 0xe99f96, // Color diferente para resaltar
+			align: "center",
+			fontFamily: "Pixelate-Regular",
+		};
+
+		// 1. Dibujar el Top 5
+		let playerInTop = false;
 		for (let i = 0; i < Math.min(scores.length, maxEntries); i++) {
 			const entry = scores[i];
-			const entryText = new Text(`${entry.playerName}: ${entry.score}`, {
-				fontSize: 20,
-				fill: 0xffffff,
-				align: "center",
-				dropShadow: true,
-				fontFamily: "Daydream",
-			});
+
+			// Verificamos si esta entrada es la del jugador actual
+			const isCurrentPlayer = entry.playerName === this.currentName && entry.score === this.currentScore;
+			if (isCurrentPlayer) {
+				playerInTop = true;
+			}
+
+			const entryText = new Text(`${entry.playerName}: ${entry.score}`, isCurrentPlayer ? styleCurrent : styleNormal);
+
 			entryText.anchor.set(0.5, 0.5);
 			entryText.position.set(0, this.startY + i * lineHeight - 220);
 			this.scoreListContainer.addChild(entryText);
+		}
+
+		// 2. Si no está en el Top 5 y no es el menú, mostrar su posición abajo
+		if (!playerInTop && !this.isMenu && this.currentName !== "") {
+			// Buscamos su posición real en la lista completa
+			const playerRank = scores.findIndex((s) => s.playerName === this.currentName && s.score === this.currentScore) + 1;
+
+			// Añadimos el puntaje del jugador al final
+			const rankLabel = playerRank > 0 ? `${playerRank}.` : "-";
+			const footerText = new Text(`${rankLabel} ${this.currentName}: ${this.currentScore}`, styleCurrent);
+			footerText.anchor.set(0.5, 0.5);
+			footerText.position.set(0, this.startY + (maxEntries + 0.8) * lineHeight - 300);
+			this.scoreListContainer.addChild(footerText);
 		}
 	}
 
@@ -289,8 +321,8 @@ export class HighScorePopUp extends PixiScene {
 	public async showHighscores(playerScore: number): Promise<void> {
 		// Solicita el nombre (o usa el almacenado en RunFallNameInputPopUp)
 		const playerName = RunFallNameInputPopUp.playerName || (await this.showNameInputDialog());
-		console.log(`Player Name: ${playerName}`);
-
+		this.currentName = playerName;
+		this.currentScore = playerScore;
 		// Actualiza los puntajes locales en este dispositivo
 		localHighscores.push({ playerName, score: playerScore });
 		localHighscores.sort((a, b) => b.score - a.score);

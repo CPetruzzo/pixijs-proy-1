@@ -16,7 +16,7 @@ const INTERACTION_DIST = 2.5; // Distancia para interactuar
 const SAFE_SPAWN_Y = 2.0; // Altura segura para NPCs y jugador (encima del suelo y de la cápsula)
 
 export class BromatoHero3DScene extends PixiScene {
-	public static readonly BUNDLES = ["3dshooter", "package-1", "musicShooter", "sfx"];
+	public static readonly BUNDLES = ["3dshooter", "package-1", "musicShooter", "sfx", "donotdelete"];
 
 	// --- COLORES ---
 	private readonly C_WALL = 0x2c3e50;

@@ -21,7 +21,7 @@ export class TopDownProtoScene extends PixiScene {
 	private readonly C_NPC = 0xf1c40f;
 	private readonly C_WALL = 0xe74c3c;
 	private readonly C_FLOOR = 0x2ecc71;
-	public static readonly BUNDLES = ["myfriend", "storagescene", "basquet", "package-2", "fallrungame"];
+	public static readonly BUNDLES = ["myfriend", "storagescene", "basquet", "package-2", "fallrungame", "donotdelete"];
 
 	private player: PlayerAvatar;
 	private equipmentManager: EquipmentManager;

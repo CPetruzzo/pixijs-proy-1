@@ -45,7 +45,7 @@ interface Interactable {
 	condition?: () => boolean; // retorna true si se puede interactuar
 }
 export class SoulMountainScene extends PixiScene {
-	private readonly DEBUG_MODE: boolean = true;
+	private readonly DEBUG_MODE: boolean = false;
 
 	public static readonly BUNDLES = ["fallrungame", "sfx", "myfriend"];
 	private player: StateMachineAnimator;
@@ -98,6 +98,12 @@ export class SoulMountainScene extends PixiScene {
 
 	private tutorialText: Text;
 	private tutorialActive: boolean = false;
+
+	// ... otras propiedades
+	private dogButtonContainer: Container;
+	private dogButton: Sprite;
+	private tutorialSeen: boolean = false; // Para rastrear si ya movió al personaje
+	private isButtonVisible: boolean = false; // Control interno para la animación
 
 	private startOptions: SceneOptions;
 	constructor(options: SceneOptions = {}) {
@@ -521,6 +527,32 @@ export class SoulMountainScene extends PixiScene {
 		if (!this.startOptions.skipIntro) {
 			this.uiContainer.addChild(this.tutorialText);
 		}
+
+		// Si saltamos la intro (ej: volviendo del druida), asumimos tutorial visto
+		if (this.startOptions.skipIntro) {
+			this.tutorialSeen = true;
+		}
+
+		// --- BOTÓN DE PERRO (Contenedor Independiente) ---
+		this.dogButtonContainer = new Container();
+		this.dogButton = Sprite.from("buttondog");
+		this.dogButton.anchor.set(0.5);
+		this.dogButton.scale.set(0.6);
+		this.dogButton.interactive = true;
+		this.dogButton.cursor = "pointer";
+
+		this.dogButton.on("pointertap", () => {
+			logger.log("Botón de perro presionado");
+		});
+
+		this.dogButtonContainer.addChild(this.dogButton);
+
+		// Estado inicial: oculto para la animación
+		this.dogButtonContainer.visible = false;
+		this.dogButtonContainer.alpha = 0;
+
+		// Lo agregamos a 'this' (la escena) directamente para que sea independiente del uiContainer
+		this.addChild(this.dogButtonContainer);
 	}
 
 	private updateHealthBar(): void {
@@ -987,6 +1019,35 @@ export class SoulMountainScene extends PixiScene {
 	}
 
 	public override update(dt: number): void {
+		const shouldShow = (this.tutorialSeen || this.startOptions.skipIntro) && !this.dialogueOverlay.isOpen;
+		const initialPosY = this.dogButtonContainer.y;
+
+		if (shouldShow && !this.isButtonVisible) {
+			// ENTRADA (Aparece)
+			this.isButtonVisible = true;
+			this.dogButtonContainer.visible = true;
+
+			new Tween(this.dogButtonContainer)
+				.to({ y: initialPosY - 100, alpha: 1 }, 3000)
+				.easing(Easing.Quadratic.Out)
+
+				.start();
+		} else if (!shouldShow && this.isButtonVisible) {
+			// SALIDA (Se esconde)
+			this.isButtonVisible = false;
+
+			new Tween(this.dogButtonContainer)
+				.from(initialPosY)
+				.to({ alpha: 0, y: initialPosY + 100 }, 100) // Cae hacia abajo
+				.easing(Easing.Quadratic.In)
+				.onComplete(() => {
+					if (!this.isButtonVisible) {
+						this.dogButtonContainer.visible = false;
+					}
+				})
+				.start();
+		}
+
 		if (this.dialogueOverlay.isOpen) {
 			// Scroll con ArrowDown o S si el diálogo tiene contenido desbordado
 			if ((Keyboard.shared.justPressed("ArrowDown") || Keyboard.shared.justPressed("KeyS")) && this.dialogueOverlay.canScroll()) {
@@ -1041,9 +1102,13 @@ export class SoulMountainScene extends PixiScene {
 				Keyboard.shared.isDown("ArrowRight") ||
 				Keyboard.shared.isDown("KeyD")
 			) {
-				new Tween(this.tutorialText)
-					.to({ alpha: 0 }, 500) // Desaparece en medio segundo
-					.start();
+				// El usuario se ha movido: Marcamos tutorial como visto
+				if (!this.tutorialSeen) {
+					this.tutorialSeen = true;
+					// No necesitamos disparar el tween aquí manualmente porque
+					// la lógica de arriba (shouldShow) lo detectará en el próximo frame.
+				}
+				new Tween(this.tutorialText).to({ alpha: 0 }, 500).start();
 			}
 		}
 		// ------------------------------------------
@@ -1137,5 +1202,10 @@ export class SoulMountainScene extends PixiScene {
 		if (this.playerHealth <= 0) {
 			logger.log("Game Over!");
 		}
+	}
+
+	public override onResize(_newW: number, _newH: number): void {
+		this.dogButtonContainer.x = _newW / 2;
+		this.dogButtonContainer.y = _newH;
 	}
 }

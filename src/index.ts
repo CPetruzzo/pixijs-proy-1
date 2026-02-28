@@ -22,12 +22,12 @@ import { StatusBar } from "@capacitor/status-bar";
 import { NavigationBar } from "@hugotomazi/capacitor-navigation-bar";
 import { KeepAwake } from "@capacitor-community/keep-awake";
 import { App } from "@capacitor/app";
-import { AdMob } from "@capacitor-community/admob";
 import { SoundLib } from "./engine/sound/SoundLib";
 import { Sounds } from "./project/scenes/RunFall/Managers/SoundManager";
 import { SimpleLockScene } from "./engine/scenemanager/scenes/SimpleLockScene";
 import { ROTATE } from "./utils/constants";
 import { setInitialScene } from "./project/scenes/InitialScene";
+import { AdMobManager } from "./engine/utils/AdMobManager";
 
 settings.RENDER_OPTIONS.hello = false;
 
@@ -143,7 +143,8 @@ if (Capacitor.isNativePlatform()) {
 		}
 	});
 
-	AdMob.initialize(); // Inicializa AdMob cuando arranca la app
+	// Al inicio, configuramos si es test y el ID base del juego
+	AdMobManager.initialize();
 }
 
 export function vibrateMobileDevice(): void {

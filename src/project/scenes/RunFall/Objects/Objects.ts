@@ -1,5 +1,5 @@
 import type { Container } from "pixi.js";
-import { Sprite } from "pixi.js";
+import { Sprite, Texture } from "pixi.js";
 import { GameObject } from "./GameObject";
 import { Player } from "./Player";
 import { OBJECT_SPEED, REMOVE_OBJECT_TIME } from "../../../../utils/constants";
@@ -141,9 +141,9 @@ export class ObstacleObject extends GameObject {
 	constructor() {
 		super();
 
-		this.obstacule = Sprite.from("meteorEnemy");
+		this.obstacule = Sprite.from("enemy");
 		this.obstacule.anchor.set(0.5);
-		this.obstacule.scale.set(0.2);
+		this.obstacule.scale.set(0.15);
 		this.addChild(this.obstacule);
 	}
 
@@ -154,10 +154,12 @@ export class ObstacleObject extends GameObject {
 			if (this.timeOnGround < this.timeToStayOnGround) {
 				this.timeOnGround += dt;
 				this.isOnGround = true;
-				this.obstacule.tint = 0xd83a6d;
-				// this.obstacule.tint = 0xfe4d1e;
-				// 0xd93e3e
-				// new Tween(this.obstacule).to({ scale: { x: 0.35, y: 0.35 } }, this.timeToStayOnGround).easing(Easing.Bounce.InOut).start()
+				this.obstacule.texture = Texture.from("enemylanded");
+
+				// EFECTO SHAKE MANUAL:
+				// Movemos la x a una posición aleatoria muy pequeña cerca del centro (0)
+				// Asumiendo que el anchor es 0.5, el sprite oscilará rápido.
+				this.obstacule.x = (Math.random() - 0.5) * 4; // Oscila entre -2 y 2
 			} else {
 				const index = this.parent?.children.indexOf(this);
 				if (index !== undefined && index !== -1) {

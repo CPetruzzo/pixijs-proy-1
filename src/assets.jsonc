@@ -274,11 +274,11 @@
         "grass": "./img/towerdefense/grass.jpg",
         "mainBG": "./img/towerdefense/mainBG.jpg",
         "mainBG2": "./img/towerdefense/mainBG.png",
-        "TD_gameover": "./img/towerdefense/TD_gameover.png",
-        "TD_settings": "./img/towerdefense/TD_settings.png",
+        "TD_gameover": "./img/towerdefense/TD_gameover3.png",
+        "TD_settings": "./img/towerdefense/TD_settings3.png",
         "TD_settingsBTN": "./img/towerdefense/TD_settingsBTN.png",
         "TD_play": "./img/towerdefense/TD_play.png",
-        "TD_menuBG": "./img/towerdefense/TD_menuBG.png",
+        "TD_menuBG": "./img/towerdefense/TD_menuBG3.png",
         "TD_menu": "./img/towerdefense/TD_menu.png",
         "TD_resetBTN": "./img/towerdefense/TD_resetBTN.png",
         "tdBG": "./img/towerdefense/tdframe.png",
@@ -286,6 +286,7 @@
         "wood": "./img/towerdefense/block.png",
         "resetButton": "./img/towerdefense/resetButton.png",
         "resetButtonPressed": "./img/towerdefense/resetButtonPressed.png",
+        "settingsBack": "./img/towerdefense/settingsBack.png",
         "bgExtended": "./img/towerdefense/bgExtended.jpg",
         "flag": "./img/towerdefense/flag.png",
         "1": "./img/towerdefense/1.png",
@@ -294,7 +295,8 @@
         "4": "./img/towerdefense/4.png",
         "5": "./img/towerdefense/5.png",
         "6": "./img/towerdefense/6.png",
-        "TD_MAIN_BGM": "./music/towerdefense/Defend The Towers.mp3"
+        "TD_MAIN_BGM": "./music/towerdefense/Defend The Towers.mp3",
+        "sword-slide": "./music/towerdefense/sword-slide.mp3"
       }
     },
     {
@@ -318,7 +320,7 @@
     },
     // MUSIC
     {
-      "name": "music",
+      "name": "musicGame",
       "assets": {
         "pianoBG": "./img/music/pianoBG.png",
         "emptyScroll": "./img/music/emptyScroll.png",
@@ -422,8 +424,10 @@
         "charlayer": "./img/myfriend/layer.png",
         "doglayer": "./img/myfriend/cuba2.png",
         "start": "./img/myfriend/start.png",
+        "credits": "./img/myfriend/credits.png",
         "leaf": "./img/myfriend/leaf.png",
         "treehouse": "./img/myfriend/treehouse1.png",
+        "treehouse3": "./img/myfriend/treehouse3.png",
         "arrows1": "./img/myfriend/arrows1.png",
         "arrows2": "./img/myfriend/arrows2.png",
         "arrows3": "./img/myfriend/arrows3.png",
@@ -782,32 +786,46 @@
     {
       "name": "fallrungame",
       "assets": {
-        "package 1 background": "./img/image.jpg",
-        "DODGE-BACKGROUND": "./img/BACKGROUND.png",
-        "DODGE-BACKGROUND2": "./img/BACKGROUND2.jpg",
-        "player1": "./img/player1.png",
-        "player2": "./img/player2.png",
-        "player3": "./img/player3.png",
-        "powerup": "./img/powerup.png",
-        "star": "./img/star.png",
-        "enemy": "./img/enemy.png",
-        "coin": "./img/monedita.png",
-        "obstacule": "./img/obstacule.png",
-        "sound_BGM": "./sfx/sceneBGM.mp3",
-        "sound_collectable": "./sfx/uiCollectable.mp3",
-        "sound_award": "./sfx/Fruitcollect1.wav",
-        "sound_big_award": "./sfx/BigEggcollect1.wav",
-        "sound_hit": "./sfx/Bosshit1.wav",
-        "sound_cancel": "./sfx/Cancel1.wav",
-        "sound_confirm": "./sfx/Confirm1.wav",
-        "sound_block": "./sfx/BlockBreak1.wav",
-        "smokeTexture": "./img/CartoonSmoke.png",
-        "fireTexture": "./img/Fire.png",
-        "sparksTexture": "./img/Sparks.png",
-        "frame": "./img/Laterales.png",
+        "DODGE-BACKGROUND": "./img/runfall/BACKGROUND.png",
+        "DODGE-BACKGROUND2": "./img/runfall/BACKGROUND2.jpg",
+        "enemy": "./img/runfall/enemy.png",
+        "enemylanded": "./img/runfall/enemylanded.png",
+        "runfall": "./img/runfall/runfall.png",
+        "playbutton": "./img/runfall/playbutton.png",
+
+        "sound_BGM": "./sfx/runfall/sceneBGM.mp3",
+        "sound_collectable": "./sfx/runfall/uiCollectable.mp3",
+        "sound_award": "./sfx/runfall/Fruitcollect1.wav",
+        "sound_big_award": "./sfx/runfall/BigEggcollect1.wav",
+        "sound_hit": "./sfx/runfall/Bosshit1.wav",
+        "sound_cancel": "./sfx/runfall/Cancel1.wav",
+        "sound_confirm": "./sfx/runfall/Confirm1.wav",
+        "sound_block": "./sfx/runfall/BlockBreak1.wav",
+
+        "click2": "./sfx/runfall/casual-click-pop-ui-2.mp3",
+        "click1": "./sfx/runfall/casual-click-pop-ui-1.mp3",
+        "confirm-tap": "./sfx/runfall/confirm-tap.mp3",
+        "game-start": "./sfx/runfall/game-start.mp3",
+        "immersive": "./sfx/runfall/immersivecontrol.mp3",
+        "punchy5": "./sfx/runfall/punchy-taps-ui-5.mp3",
+        "punchy8": "./sfx/runfall/punchy-taps-ui-8.mp3",
+        "punchy10": "./sfx/runfall/punchy-taps-ui-10.mp3",
+        "modern": "./sfx/runfall/modern-button-click.mp3",
+        "gameover": "./img/runfall/gameover.png",
+        "done":"./img/runfall/done.png",
+        // "smokeTexture": "./img/CartoonSmoke.png",
+        // "fireTexture": "./img/Fire.png",
+        // "sparksTexture": "./img/Sparks.png",
+        // "frame": "./img/Laterales.png",
         "highscore": "./img/runfall/leaderboardBG.png",
         "emptyBanner": "./img/runfall/emptyBannerBG.png",
-        "highscore2": "./img/highscore_popup.png",
+        "emptyBannerGold": "./img/runfall/emptyBannerBG1.png",
+        "pauseBanner": "./img/runfall/pause.png",
+        
+        "select": "./img/runfall/select.png",
+        "equipped": "./img/runfall/equipped.png",
+
+        // "highscore2": "./img/highscore_popup.png",
         "trophy": "./img/runfall/trophy.png",
         "buttonBack": "./img/runfall/buttonBack.png",
         "buttonContinue": "./img/runfall/buttonContinue.png",
@@ -869,6 +887,14 @@
 
         "cheers": "./img/runfall/cheers.png",
 
+        
+        "runfall_R": "./img/runfall/runfall_R.png",
+        "runfall_U": "./img/runfall/runfall_U.png",
+        "runfall_N": "./img/runfall/runfall_N.png",
+        "runfall_F": "./img/runfall/runfall_F.png",
+        "runfall_A": "./img/runfall/runfall_A.png",
+        "runfall_L": "./img/runfall/runfall_L.png",
+
         "buttonBG": "./img/runfall/buttonBG.png",
         "astroIcon": "./img/runfall/astroIcon.png",
         "leaderboardIcon": "./img/runfall/leaderboardIcon.png",
@@ -880,6 +906,7 @@
         "golditem2": "./img/runfall/goldmoon.png",
         "golditem3": "./img/runfall/goldstar.png",
         "soundIcon": "./img/runfall/soundIcon.png",
+        "soundIconOff": "./img/runfall/soundIconOff.png",
         "soundOn": "./img/runfall/soundOn.png",
         "soundOff": "./img/runfall/soundOff.png",
         "soundBG": "./img/runfall/fondoknob.png",
@@ -978,6 +1005,7 @@
 
         "chooserBirds": "./img/farmAnimals/birds.png",
         "chooserSheep": "./img/farmAnimals/sheep.png",
+        "chooserSheep-1": "./img/farmAnimals/sheep-1.png",
 
         "b_1": "./img/farmAnimals/b_1.png",
         "b_2": "./img/farmAnimals/b_2.png",
@@ -990,7 +1018,7 @@
 
         "farmAnimals0": "./img/farmAnimals/farmAnimals0.png",
         "farmAnimals1": "./img/farmAnimals/farmAnimals1.png",
-        "farmAnimals2": "./img/farmAnimals/farmAnimals2.png",
+        // "farmAnimals2": "./img/farmAnimals/farmAnimals2.png",
         "farmAnimals3": "./img/farmAnimals/farmAnimals3.png",
         "farmAnimals4": "./img/farmAnimals/farmAnimals4.png",
         "farmAnimals5": "./img/farmAnimals/farmAnimals5.png",
@@ -1006,6 +1034,61 @@
         "bar_1": "./img/farmAnimals/bar_1.png",
         "s1": "./img/farmAnimals/s1.png",
         "bar_2": "./img/farmAnimals/bar_2.png"
+      }
+    },
+    // ISOMETRIC
+    {
+      "name": "isometric",
+      "assets": {
+        "player": "./img/isometric/player.png",
+        "iso_pared": "./img/isometric/iso_pared.png",
+        "iso_suelo": "./img/isometric/iso_suelo.png",
+        "iso_floor": "./img/isometric/iso_floor.png",
+        "iso_top_pared": "./img/isometric/iso_top_pared.png",
+                "iso_stair_up": "./img/isometric/iso_stair_up.png",
+                "iso_stair_down": "./img/isometric/iso_stair_down.png"
+
+      }
+    },      
+    // ESPERT3D
+    {
+      "name": "espert3d",
+      "assets": {
+        "espert3d": "./models/espert/espert.glb"
+      }
+    },
+    {
+      "name": "donotdelete",
+      "assets": {
+        "speak": "./sfx/donotdelete/speak.mp3",
+        "dash":"./sfx/donotdelete/dash.mp3"
+      }
+    },
+    // GGJ2026
+    {
+      "name": "ggj2026",
+      "assets": {
+        "kid": "./img/ggj2026/kid.png",
+        "house": "./img/ggj2026/house.png",
+        "streetintro": "./img/ggj2026/streetintro.png",
+        "gameBG": "./img/ggj2026/wholestreet.png",
+        "gameFrontLayer": "./img/ggj2026/wholestreetfront.png",
+        "ghost_mask": "./img/ggj2026/ghost_mask.png",
+        "pumpkin_mask": "./img/ggj2026/pumpkin_mask.png",
+        "frank_mask": "./img/ggj2026/frank_mask.png",
+        "alien_mask": "./img/ggj2026/alien_mask.png",
+        "pirate_mask": "./img/ggj2026/pirate_mask.png",
+
+        "kidface": "./img/ggj2026/kidface.png",
+        "ninesliceplane2": "./img/ggj2026/ninesliceplane2.png",
+"oldmanface": "./img/ggj2026/oldmanface.png",
+        "oldman": "./img/ggj2026/oldman.png",
+        "haunting": "./music/ggj2026/Master of the Pit.mp3",
+        "leafwalk": "./music/ggj2026/leafwalk.mp3",
+
+        "collect": "./sfx/ggj2026/collect.mp3",
+        "text": "./sfx/ggj2026/text.mp3",
+        "achive": "./sfx/ggj2026/achive.mp3"
       }
     },
     // 3D
@@ -1035,6 +1118,41 @@
         "Jump": "./models/Jump.glb",
         "loli": "./models/cheers1.png"
         
+      }
+    },
+    {
+      "name": "dk",
+      "assets": {
+        "room": "./img/dk/room.png",
+        "food": "./img/dk/food.png",
+
+        "goldwall": "./img/dk/goldwall.png",
+        "topwall_1x1": "./img/dk/topwall_1x1.png",
+        "topwall_generic": "./img/dk/topwall_generic.png",
+        "topwall_side1_n_side2_1": "./img/dk/topwall_side1_n_side2_1.png",
+        "topwall_side1_n_T": "./img/dk/topwall_side1_n_T.png",
+        "topwall_corner_nxn": "./img/dk/topwall_corner_nxn.png",        
+        "topwall_T_corner": "./img/dk/topwall_T_corner.png",
+        "topwall_corner_inside": "./img/dk/topwall_corner_inside.png",
+        "topwall_corner_inandout": "./img/dk/topwall_corner_inandout.png",
+        "topwall_side_n": "./img/dk/topwall_side_n.png",
+        "topwall1xn": "./img/dk/topwall1xn.png",
+        "topwall_1x1_cross": "./img/dk/topwall_1x1_cross.png",
+        "topwall_side_1xn": "./img/dk/topwall_side_1xn.png",
+
+        "library": "./img/dk/library.png",
+        "heart": "./img/dk/heart.png",
+        "training": "./img/dk/training.png",
+        "brickwall": "./img/dk/wallbrick.png",
+
+        "heartbase": "./models/dk/heartbase.glb",
+        "portal": "./models/dk/portal.glb",
+        "shelf": "./models/dk/shelf.glb",
+        "gallinero": "./models/dk/gallinero.glb",
+        "boxdkfight": "./models/dk/boxdkfight.glb",
+        
+        "shovel": "./music/dk/shovel.mp3",
+        "coin":  "./music/dk/goldcoins.mp3"
       }
     },
     // 3D SHOOTER

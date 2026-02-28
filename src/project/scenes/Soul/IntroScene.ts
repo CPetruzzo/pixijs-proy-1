@@ -70,10 +70,19 @@ export class IntroScene extends PixiScene {
 
 		const start = Sprite.from("start");
 		start.anchor.set(0.5);
-		start.y = 600;
+		start.y = 500;
 		start.alpha = 0;
 		start.eventMode = "none";
 		start.on("pointertap", () => {
+			Manager.changeScene(SoulMountainScene, { transitionClass: FadeColorTransition });
+		});
+
+		const credits = Sprite.from("credits");
+		credits.anchor.set(0.5);
+		credits.y = 630;
+		credits.alpha = 0;
+		credits.eventMode = "none";
+		credits.on("pointertap", () => {
 			Manager.changeScene(SoulMountainScene, { transitionClass: FadeColorTransition });
 		});
 
@@ -101,6 +110,16 @@ export class IntroScene extends PixiScene {
 								console.log("ready");
 								new Tween(start).to({ alpha: 0.5 }, 1000).repeat(Infinity).yoyo(true).start();
 							});
+
+						new Tween(credits)
+							.to({ alpha: 1 }, 5500)
+							.start()
+							.onComplete(() => {
+								credits.cursor = "pointer";
+								credits.eventMode = "static";
+								console.log("ready");
+								new Tween(credits).to({ alpha: 0.5 }, 1000).repeat(Infinity).yoyo(true).start();
+							});
 					});
 			});
 
@@ -119,6 +138,7 @@ export class IntroScene extends PixiScene {
 			doglayer,
 			soulTitle,
 			start
+			// ,credits
 		);
 		this.worldContainer.addChild(this.emitterContainer);
 

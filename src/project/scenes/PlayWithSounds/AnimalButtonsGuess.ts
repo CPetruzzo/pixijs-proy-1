@@ -22,41 +22,36 @@ export class AnimalButtonsGuess extends PixiScene {
 
 		this.gallo = Sprite.from("farmAnimals1");
 		this.gallo.anchor.set(0.5);
-		this.gallo.position.set(0, 200);
+		this.gallo.position.x = 0;
 		this.gallo.scale.set(0.7);
-		new Tween(this.gallo).from({ x: 520, y: 0, alpha: 0 }).to({ x: this.gallo.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out);
 
 		this.pig = Sprite.from("farmAnimals3");
 		this.pig.anchor.set(0.5);
-		this.pig.position.set(300, 200);
+		this.pig.position.x = 300;
 		this.pig.scale.set(0.7);
-		new Tween(this.pig).from({ x: 520, alpha: 0 }).to({ x: this.pig.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out);
 
 		this.cow = Sprite.from("farmAnimals0");
 		this.cow.anchor.set(0.5);
-		this.cow.position.set(600, 225);
+		this.cow.position.x = 600;
 		this.cow.scale.set(0.7);
-		new Tween(this.cow).from({ x: 520, alpha: 0 }).to({ x: this.cow.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out);
 
 		this.horse = Sprite.from("farmAnimals5");
 		this.horse.anchor.set(0.5);
-		this.horse.position.set(900, 200);
+		this.horse.position.x = 900;
 		this.horse.scale.set(0.7);
-		new Tween(this.horse).from({ x: 520, alpha: 0 }).to({ x: this.horse.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out);
 
 		this.sheep = Sprite.from("farmAnimals4");
 		this.sheep.anchor.set(0.5);
-		this.sheep.position.set(1200, 200);
+		this.sheep.position.x = 1200;
 		this.sheep.scale.set(0.7);
-		new Tween(this.sheep).from({ x: 520, alpha: 0 }).to({ x: this.sheep.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out);
 
 		this.duck = Sprite.from("farmAnimals6");
 		this.duck.anchor.set(0.5);
-		this.duck.position.set(1500, 200);
+		this.duck.position.x = 1500;
 		this.duck.scale.set(0.7);
-		new Tween(this.duck).from({ x: 520, alpha: 0 }).to({ x: this.duck.position.x, alpha: 1 }, 1000).start().easing(Easing.Bounce.Out);
 
 		this.cont.addChild(this.gallo, this.pig, this.cow, this.horse, this.sheep, this.duck);
+
 		this.cont.pivot.set(this.cont.width / 2, this.cont.height / 2);
 
 		this.addChild(this.cont);
@@ -67,6 +62,14 @@ export class AnimalButtonsGuess extends PixiScene {
 		this.horse.interactive = true;
 		this.duck.interactive = true;
 		this.cow.interactive = true;
+
+		console.log("this.gallo.position.x", this.gallo.position.x);
+		new Tween(this.gallo).from({ y: 1000, alpha: 0 }).to({ y: 0, alpha: 1 }, 1100).start().easing(Easing.Circular.Out);
+		new Tween(this.pig).from({ y: 1000, alpha: 0 }).to({ y: 0, alpha: 1 }, 1200).start().easing(Easing.Circular.Out);
+		new Tween(this.cow).from({ y: 1000, alpha: 0 }).to({ y: 0, alpha: 1 }, 1500).start().easing(Easing.Circular.Out);
+		new Tween(this.horse).from({ y: 1000, alpha: 0 }).to({ y: 0, alpha: 1 }, 1900).start().easing(Easing.Circular.Out);
+		new Tween(this.sheep).from({ y: 1000, alpha: 0 }).to({ y: 0, alpha: 1 }, 2400).start().easing(Easing.Circular.Out);
+		new Tween(this.duck).from({ y: 1000, alpha: 0 }).to({ y: 0, alpha: 1 }, 2900).start().easing(Easing.Circular.Out);
 
 		// ROOSTER
 		this.gallo.on(

@@ -1,153 +1,118 @@
 import type { FederatedPointerEvent } from "pixi.js";
+// AchievementsScene.ts
 import { Container, Sprite, Text, Texture } from "pixi.js";
 import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { Tween } from "tweedle.js";
-import type { Achievement } from "../../../../engine/achievement/AchievementsManager";
-import { AchievementsManager } from "../../../../engine/achievement/AchievementsManager";
+import type { Achievement } from "../Managers/AchievementsManager";
+import { AchievementsManager } from "../Managers/AchievementsManager";
 import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
 import { Manager } from "../../../..";
 import { MenuScene } from "./MenuScene";
 import { FadeColorTransition } from "../../../../engine/scenemanager/transitions/FadeColorTransition";
 import { CharacterSelectorScene } from "./CharacterSelectorScene";
-import { initRunFallAchievements, type RunFallGameState } from "../Objects/RunFallAchievements";
+import { SoundLib } from "../../../../engine/sound/SoundLib";
+import { Sounds } from "../Managers/SoundManager";
+
 /**
  * Clase que representa una "card" individual para un logro.
  */
 class AchievementCard extends Container {
-	public achievement: Achievement<any>; // Usamos any o el genérico si queremos ser estrictos
+	public achievement: Achievement;
 	private background: Sprite;
-	private iconSprite: Sprite; // Nuevo sprite para el icono
 	private titleText: Text;
+	private descriptionText: Text; // Nueva propiedad para la descripción fija
 	private overlayText?: Text;
 	private cardWidth: number;
 	private cardHeight: number;
 
-	constructor(achievement: Achievement<any>, cardWidth: number, cardHeight: number) {
+	constructor(achievement: Achievement, cardWidth: number, cardHeight: number) {
 		super();
 		this.achievement = achievement;
 		this.cardWidth = cardWidth;
 		this.cardHeight = cardHeight;
 		this.createCard();
-		this.interactive = true;
-		this.on("pointertap", this.onPointerTap.bind(this));
+		// Ya no necesitamos que sea interactiva para mostrar la descripción
 	}
 
 	private createCard(): void {
-		// 1. Fondo de la card (Marco)
-		// Usamos la textura según si está desbloqueado o no
-		const bgTextureName = this.achievement.unlocked ? "achievement1" : "achievement2";
-		this.background = Sprite.from(bgTextureName);
-		this.background.scale.set(0.5); // Ajusta según el tamaño de tu asset original
+		const isUnlocked = this.achievement.unlocked;
+
+		// 1. Determinar texturas y colores según el estado
+		const bgTexture = isUnlocked ? "emptyBannerGold" : "emptyBanner";
+		const titleColor = isUnlocked ? 0x000000 : 0xffffff; // Gris oscuro vs Blanco
+		const descColor = isUnlocked ? 0x3a3a3a : 0xcccccc; // Gris medio vs Gris claro
+
+		// Fondo de la card
+		this.background = Sprite.from(bgTexture);
+		this.background.scale.set(0.5);
 		this.addChild(this.background);
 
-		// 2. Icono del logro (Nuevo)
-		// Si tienes una textura por defecto para errores, úsala, si no, usa el nombre del config
-		try {
-			this.iconSprite = Sprite.from(this.achievement.icon);
-		} catch (e) {
-			this.iconSprite = Sprite.from("default_icon"); // Fallback
-		}
-
-		// Centramos el icono en la carta
-		this.iconSprite.anchor.set(0.5);
-		this.iconSprite.position.set(this.cardWidth * 0.5, this.cardHeight * 0.4);
-
-		// Escalar icono para que quepa bien
-		const maxIconSize = 100;
-		const scale = Math.min(maxIconSize / this.iconSprite.width, maxIconSize / this.iconSprite.height);
-		this.iconSprite.scale.set(scale);
-
-		// Si está bloqueado, oscurecemos el icono (tinte negro) o lo ocultamos
-		if (!this.achievement.unlocked) {
-			this.iconSprite.tint = 0x000000;
-			this.iconSprite.alpha = 0.5;
-		}
-
-		// Nota: Agregamos el icono AL FONDO o al contenedor, dependiendo de cómo sea tu asset de fondo.
-		// Si el fondo es un marco transparente, añádelo antes. Si es solido, añádelo después.
-		this.background.addChild(this.iconSprite);
-		// Corrección de posición relativa al background (ya que agregué iconSprite a background)
-		this.iconSprite.position.set(this.background.width, this.background.height * 0.8); // Ajuste manual según tu asset
-
-		// 3. Título centrado
+		// Título
 		this.titleText = new Text(this.achievement.title, {
-			fontSize: 73,
+			fontSize: 90,
 			align: "center",
-			lineHeight: 60,
+			lineHeight: 80,
 			wordWrap: true,
-			wordWrapWidth: this.cardWidth * 0.9,
-			fill: 0xffffff,
+			wordWrapWidth: this.cardWidth * 2.5,
+			fill: titleColor, // Color dinámico
 			fontFamily: "Pixelate-Regular",
 		});
 		this.titleText.anchor.set(0.5);
-		// Ajustamos posición relativa al background
-		this.titleText.position.set(this.background.width, this.background.height * 1.6);
+		this.titleText.position.set(this.cardWidth * 1.55, this.cardHeight - 150);
 		this.background.addChild(this.titleText);
 
-		// 4. Estado Bloqueado (Overlay)
-		if (!this.achievement.unlocked) {
-			this.overlayText = new Text("Locked", {
-				fontSize: 20,
+		// Descripción FIJA
+		this.descriptionText = new Text(this.achievement.description, {
+			fontSize: 65,
+			fill: descColor, // Color dinámico
+			fontFamily: "Pixelate-Regular",
+			wordWrap: true,
+			align: "center",
+			wordWrapWidth: this.cardWidth * 2.2,
+		});
+		this.descriptionText.anchor.set(0.5, 0);
+		this.descriptionText.position.set(this.cardWidth * 1.55, this.cardHeight);
+		this.background.addChild(this.descriptionText);
+
+		// Lógica para estado Bloqueado
+		if (!isUnlocked) {
+			this.overlayText = new Text("Bloqueado", {
+				fontSize: 70,
+				wordWrap: true,
+				wordWrapWidth: this.cardWidth * 0.5,
 				fill: 0xff0000,
-				fontFamily: "Daydream",
-				stroke: 0x000000,
-				strokeThickness: 3,
+				fontFamily: "Pixelate-Regular",
 			});
 			this.overlayText.anchor.set(0.5);
-			this.overlayText.position.set(this.background.width, this.background.height); // Centro visual
+			this.overlayText.position.set(this.cardWidth * 1.5, this.cardHeight + 280);
 			this.background.addChild(this.overlayText);
+
+			this.descriptionText.alpha = 0.5;
 		}
 	}
 
-	private onPointerTap(): void {
-		// Muestra descripción temporal
-		const descText = new Text(this.achievement.description, {
-			fontSize: 18, // Un poco más grande para leerse bien
-			fill: 0xffffff,
-			fontFamily: "Daydream",
-			wordWrap: true,
-			align: "center",
-			wordWrapWidth: this.cardWidth * 1.2,
-			dropShadow: true,
-			dropShadowColor: 0x000000,
-			dropShadowDistance: 2,
-		});
-		descText.anchor.set(0.5);
-		// Posición global relativa a la carta (ajustar según necesidad)
-		descText.position.set(this.cardWidth / 2, this.cardHeight / 2);
-
-		this.addChild(descText);
-		new Tween(descText)
-			.to({ alpha: 0 }, 4000) // 4 segundos fade out
-			.start()
-			.onComplete(() => {
-				this.removeChild(descText);
-			});
-	}
-
+	/**
+	 * Actualiza la card y también los colores del texto al desbloquear
+	 */
 	public unlock(): void {
 		if (!this.achievement.unlocked) {
 			this.achievement.unlocked = true;
 
-			// Animación de desbloqueo visual
-			new Tween(this).to({ alpha: 1 }, 500).start();
+			// Cambiar textura a dorado
+			this.background.texture = Texture.from("emptyBannerGold");
 
-			// Cambiar marco
-			this.background.texture = Texture.from("achievement1");
-
-			// Restaurar icono
-			this.iconSprite.tint = 0xffffff;
-			this.iconSprite.alpha = 1;
+			// Cambiar colores de texto a gris oscuro
+			this.titleText.style.fill = 0x3a3a3a;
+			this.descriptionText.style.fill = 0x5a5a5a;
+			this.descriptionText.alpha = 1;
 
 			if (this.overlayText) {
 				new Tween(this.overlayText)
 					.to({ alpha: 0 }, 500)
 					.start()
 					.onComplete(() => {
-						if (this.overlayText) {
-							this.background.removeChild(this.overlayText);
-							this.overlayText = undefined;
-						}
+						this.removeChild(this.overlayText);
+						this.overlayText = undefined;
 					});
 			}
 		}
@@ -155,67 +120,81 @@ class AchievementCard extends Container {
 }
 
 /**
- * Escena principal de Logros
+ * Escena de logros que muestra una grid de AchievementCard.
+ * Ahora el contenedor de las cards es scrolleable y se aplica una máscara degradada en la parte inferior.
  */
 export class AchievementsScene extends PixiScene {
-	// Tipado fuerte con el estado de tu juego
-	private achievementsManager: AchievementsManager<RunFallGameState>;
-
+	private achievementsManager: AchievementsManager;
+	// Contenedor original de las cards
 	private cardsContainer: Container = new Container();
+	// Contenedor que actúa como viewport scrollable
 	private scrollContainer: Container = new Container();
 	private backgroundContainer: Container = new Container();
+	private uiContainer: Container = new Container();
+
 	private bleedingBackgroundContainer: Container = new Container();
 	private backButton: Sprite;
+	public static readonly BUNDLES = ["fallrungame", "runfallsfx"];
 
-	public static readonly BUNDLES = ["fallrungame", "sfx"];
-
-	// Scroll vars
+	// Variables para scroll (drag vertical)
 	private isDragging: boolean = false;
 	private dragStartY: number = 0;
 	private contentStartY: number = 0;
+	// Altura del viewport para clamping
 	private viewportHeight: number = 0;
+	// Sprite que sirve de máscara con degradé
 	private scrollMask: Sprite;
+	private scrollHitArea: Sprite; // Nueva propiedad
+
+	// NUEVAS variables para inercia
+	private velocity: number = 0;
+	private friction: number = 0.98; // Qué tan rápido se detiene (0.9 a 0.99)
+	private lastPointerY: number = 0;
 
 	constructor() {
 		super();
 
 		this.cardsContainer.name = "CARDS_CONTAINER";
-		this.addChild(this.bleedingBackgroundContainer, this.backgroundContainer, this.scrollContainer);
-
-		// Máscara
+		// Agregamos fondos, scrollContainer y luego el overlay (si se necesitara en el futuro)
+		this.addChild(this.bleedingBackgroundContainer, this.backgroundContainer, this.scrollContainer, this.uiContainer);
+		// Creamos el sprite de máscara (inicialmente con una textura vacía)
 		this.scrollMask = new Sprite(Texture.EMPTY);
+		this.scrollMask.name = "SCROLL_MASK";
 		this.scrollContainer.mask = this.scrollMask;
 		this.addChild(this.scrollMask);
 
-		// Fondos
+		// Creamos el hit area invisible
+		this.scrollHitArea = new Sprite(Texture.WHITE);
+		this.scrollHitArea.tint = 0x000000;
+		this.scrollHitArea.alpha = 0; // Totalmente invisible
+		this.scrollHitArea.name = "SCROLL_HIT_AREA";
+		// Fondo para la ambientación
 		const bleedBG = Sprite.from("playerSelectBG");
 		bleedBG.anchor.set(0.5);
 		this.bleedingBackgroundContainer.addChild(bleedBG);
 
+		// Fondo principal
 		const background = Sprite.from("playerSelectBG");
 		background.position.set(-background.width * 0.5, -background.height * 0.5);
 		this.backgroundContainer.addChild(background);
 
-		// Eventos Scroll
+		// Configuramos el scrollContainer para detectar drag
 		this.scrollContainer.interactive = true;
 		this.scrollContainer.on("pointerdown", this.onDragStart, this);
 		this.scrollContainer.on("pointermove", this.onDragMove, this);
 		this.scrollContainer.on("pointerup", this.onDragEnd, this);
 		this.scrollContainer.on("pointerupoutside", this.onDragEnd, this);
+
+		// Agregamos las cards al scrollContainer
+		this.scrollContainer.addChild(this.scrollHitArea);
 		this.scrollContainer.addChild(this.cardsContainer);
 
-		// --- INTEGRACIÓN DEL MANAGER ---
-		// Obtenemos la instancia tipada
-		this.achievementsManager = AchievementsManager.getInstance<RunFallGameState>();
-		this.achievementsManager = initRunFallAchievements();
-
-		// Verificación de seguridad en consola
-		console.log("Achievements cargados:", this.achievementsManager.getAll().length);
+		// Obtén la instancia global del AchievementsManager
+		this.achievementsManager = AchievementsManager.getInstance();
 		this.createCards();
 
-		// Escucha eventos
-		this.achievementsManager.on("achievementUnlocked", (achievement: Achievement<RunFallGameState>) => {
-			// 1. Actualizar visualmente la carta
+		// Escucha el evento para actualizar las cards cuando se desbloquee un logro
+		this.achievementsManager.on("achievementUnlocked", (achievement: Achievement) => {
 			for (const child of this.cardsContainer.children) {
 				if (child instanceof AchievementCard && child.achievement.id === achievement.id) {
 					child.unlock();
@@ -223,66 +202,65 @@ export class AchievementsScene extends PixiScene {
 				}
 			}
 
-			// 2. Lógica específica de RunFall (Personaje oculto)
-			this.checkHiddenCharacterUnlock();
+			// 2) check the “meteor_crasher” trio
+			const meteorIds = ["meteor_crasher_1", "meteor_crasher_2", "meteor_crasher_3"];
+			const allMeteor = this.achievementsManager
+				.getAchievements()
+				.filter((a) => meteorIds.includes(a.id))
+				.every((a) => a.unlocked);
+
+			if (allMeteor) {
+				console.log("allMeteor", allMeteor);
+				// unlock character #1
+				CharacterSelectorScene.unlock(1);
+			}
 		});
 
-		// Botón volver
+		// Botón para volver al menú
 		this.backButton = Sprite.from("return");
 		this.backButton.anchor.set(0.5);
-		this.backButton.y = background.height * 0.5 - this.backButton.height;
+		this.backButton.y = background.height * 0.5 - this.backButton.height - 100;
 		this.backButton.eventMode = "static";
 		this.backButton.interactive = true;
 		this.backButton.on("pointertap", () => {
+			SoundLib.playSound(Sounds.CLOSEPOPUP, { volume: 0.04 });
+
 			Manager.changeScene(MenuScene, { transitionClass: FadeColorTransition, transitionParams: [] });
 		});
-		this.backgroundContainer.addChild(this.backButton);
+		this.uiContainer.addChild(this.backButton);
 	}
 
 	/**
-	 * Verifica si se cumple la condición especial de los 3 meteoritos
+	 * Crea y organiza las cards en una grid.
 	 */
-	private checkHiddenCharacterUnlock(): void {
-		const meteorIds = ["meteor_crasher_1", "meteor_crasher_2", "meteor_crasher_3"];
-		// IMPORTANTE: Ahora usamos .getAll() en lugar de .getAchievements()
-		const allMeteor = this.achievementsManager
-			.getAll()
-			.filter((a) => meteorIds.includes(a.id))
-			.every((a) => a.unlocked);
-
-		if (allMeteor) {
-			console.log("¡Trío de meteoritos completado! Desbloqueando personaje...");
-			CharacterSelectorScene.unlock(1);
-		}
-	}
-
 	private createCards(): void {
-		// IMPORTANTE: Cambio de método a .getAll()
-		const achievements = this.achievementsManager.getAll();
+		const achievements = this.achievementsManager.getAchievements();
 		const gap = 120;
-		const columns = 2;
+		const columns = 1;
 
 		achievements.forEach((achievement, index) => {
-			const cardWidth = 150;
+			const cardWidth = 260;
 			const cardHeight = 300;
-			// Pasamos el logro completo (que ahora incluye .icon)
 			const card = new AchievementCard(achievement, cardWidth, cardHeight);
-
 			const col = index % columns;
 			const row = Math.floor(index / columns);
-
 			card.x = col * (cardWidth + gap);
 			card.y = row * (cardHeight + gap);
 			this.cardsContainer.addChild(card);
 		});
 	}
 
+	/**
+	 * Crea una textura degradada usando un canvas.
+	 * La textura es completamente opaca en la mayor parte y se desvanece en la parte inferior.
+	 */
 	private createGradientTexture(width: number, height: number): Texture {
 		const canvas = document.createElement("canvas");
 		canvas.width = width;
 		canvas.height = height;
 		const ctx = canvas.getContext("2d");
 		if (ctx) {
+			// Creamos un degradé vertical que se mantiene opaco hasta el 80% y luego se desvanece
 			const gradient = ctx.createLinearGradient(0, 0, 0, height);
 			gradient.addColorStop(0, "rgba(255,255,255,1)");
 			gradient.addColorStop(0.8, "rgba(255,255,255,1)");
@@ -293,59 +271,109 @@ export class AchievementsScene extends PixiScene {
 		return Texture.from(canvas);
 	}
 
-	// --- Lógica de Scroll (Sin cambios mayores) ---
+	/**
+	 * Eventos para el scroll: inicia el drag.
+	 */
 	private onDragStart(e: FederatedPointerEvent): void {
 		this.isDragging = true;
+		this.velocity = 0; // Resetear velocidad al tocar
 		this.dragStartY = e.data.global.y;
+		this.lastPointerY = e.data.global.y;
 		this.contentStartY = this.cardsContainer.y;
 	}
 
+	/**
+	 * Durante el drag, mueve el contenido verticalmente y hace clamp para no salir del viewport.
+	 */
 	private onDragMove(e: FederatedPointerEvent): void {
 		if (!this.isDragging) {
 			return;
 		}
+
 		const currentY = e.data.global.y;
+
+		// Calcular velocidad instantánea para la inercia
+		this.velocity = currentY - this.lastPointerY;
+		this.lastPointerY = currentY;
+
+		// Movimiento directo del drag
 		const deltaY = currentY - this.dragStartY;
 		this.cardsContainer.y = this.contentStartY + deltaY;
 
+		this.applyConstraints();
+	}
+
+	/**
+	 * Finaliza el drag.
+	 */
+	private onDragEnd(_e: FederatedPointerEvent): void {
+		this.isDragging = false;
+	}
+
+	/**
+	 * Mantiene el contenedor dentro de los límites permitidos.
+	 */
+	private applyConstraints(): void {
 		const contentBounds = this.cardsContainer.getBounds();
+		// Solo aplicamos límites si el contenido es más alto que el área visible
 		if (contentBounds.height > this.viewportHeight) {
 			if (this.cardsContainer.y > 0) {
 				this.cardsContainer.y = 0;
+				this.velocity = 0; // Detener si choca arriba
 			}
-			if (this.cardsContainer.y < this.viewportHeight - contentBounds.height) {
-				this.cardsContainer.y = this.viewportHeight - contentBounds.height;
+			const minHeight = this.viewportHeight - contentBounds.height;
+			if (this.cardsContainer.y < minHeight) {
+				this.cardsContainer.y = minHeight;
+				this.velocity = 0; // Detener si choca abajo
 			}
 		} else {
 			this.cardsContainer.y = 0;
 		}
 	}
 
-	private onDragEnd(_e: FederatedPointerEvent): void {
-		this.isDragging = false;
-	}
-
+	/**
+	 * Ajusta la posición o escala de la grid y actualiza la máscara degradada del scroll según el tamaño de la pantalla.
+	 */
 	public override onResize(newW: number, newH: number): void {
 		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, newW * 0.7, newH * 0.7, 720, 1600, ScaleHelper.FIT);
 		ScaleHelper.setScaleRelativeToIdeal(this.bleedingBackgroundContainer, newW * 3, newH * 2, 720, 1600, ScaleHelper.FILL);
+		ScaleHelper.setScaleRelativeToIdeal(this.uiContainer, newW * 0.7, newH * 0.7, 720, 1600, ScaleHelper.FIT);
+
 		this.x = newW * 0.5;
 		this.y = newH * 0.5;
 
+		// Actualizamos el viewport del scroll (usamos un 70% de newH como altura visible)
 		this.viewportHeight = newH * 0.7;
 
+		// Creamos o actualizamos la textura degradada para la máscara
 		const maskWidth = newW * 0.9;
 		const maskHeight = newH * 0.9;
 		const gradientTexture = this.createGradientTexture(maskWidth, maskHeight);
 		this.scrollMask.texture = gradientTexture;
 		this.scrollMask.width = maskWidth;
 		this.scrollMask.height = maskHeight;
+		// Posicionamos la máscara para que cubra el área deseada (ajusta el offset según necesites)
 		this.scrollMask.position.set(-newW * 0.5, -newH * 0.5);
 
+		// Ajustamos el Hit Area para que cubra toda la pantalla o el área de scroll
+		// Usamos el tamaño de la máscara como referencia
+		this.scrollHitArea.width = newW;
+		this.scrollHitArea.height = newH;
+		this.scrollHitArea.position.set(-newW * 0.5, -newH * 0.5);
+
+		// Actualizamos el scaling de las cards según el nuevo tamaño
 		ScaleHelper.setScaleRelativeToIdeal(this.cardsContainer, newW * 1.2, newH * 1.2, 720, 1600, ScaleHelper.FIT);
 		const containerBounds = this.cardsContainer.getLocalBounds();
-		this.cardsContainer.pivot.set(containerBounds.width * 0.5, containerBounds.height * 0.23);
+		this.cardsContainer.pivot.set(containerBounds.width * 0.5, containerBounds.height * 0.1);
 	}
 
-	// eslint-disable-next-line prettier/prettier
-	public override update(_dt: number): void { }
+	public override update(_dt: number): void {
+		// Si no estamos arrastrando y hay velocidad, aplicamos inercia
+		if (!this.isDragging && Math.abs(this.velocity) > 0.1) {
+			this.cardsContainer.y += this.velocity;
+			this.velocity *= this.friction; // Aplicar rozamiento
+
+			this.applyConstraints();
+		}
+	}
 }

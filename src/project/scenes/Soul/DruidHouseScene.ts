@@ -45,7 +45,7 @@ export class DruidHouseScene extends PixiScene {
 	public exitZoneInteractable: Interactable | null = null;
 
 	// Movimiento
-	private playerSpeed: number = 5;
+	private playerSpeed: number = 1;
 	public movementDirection: string = "idle";
 	private facingDirection: "up" | "down" | "left" | "right" = "up";
 	public static readonly BUNDLES = ["fallrungame", "sfx", "myfriend"];
@@ -55,6 +55,7 @@ export class DruidHouseScene extends PixiScene {
 	private walkableZoneCanvas: HTMLCanvasElement | null = null;
 	private walkableZoneContext: CanvasRenderingContext2D | null = null;
 	private readonly DEBUG_WALKABLE: boolean = false; // Pon esto en TRUE si quieres ver la zona verde
+	private readonly PLAYERSCALE: number = 2.7;
 
 	constructor() {
 		super();
@@ -202,7 +203,7 @@ export class DruidHouseScene extends PixiScene {
 		);
 
 		this.player.playState("idleback");
-		this.player.scale.set(1.3);
+		this.player.scale.set(this.PLAYERSCALE);
 
 		this.player.y = 200;
 
@@ -212,8 +213,8 @@ export class DruidHouseScene extends PixiScene {
 	private createDruidNPC(): void {
 		this.druidNPC = Sprite.from("NPC_monk");
 		this.druidNPC.anchor.set(0.5);
-		this.druidNPC.scale.set(1.2);
-		this.druidNPC.y = -200;
+		this.druidNPC.scale.set(1.9);
+		this.druidNPC.y = 50;
 
 		this.world.addChild(this.druidNPC);
 
@@ -458,7 +459,7 @@ export class DruidHouseScene extends PixiScene {
 		let dx = 0;
 		let dy = 0;
 		let moved = false;
-		let scaleX = 1.3;
+		let scaleX = this.PLAYERSCALE;
 
 		// Input
 		if (Keyboard.shared.isDown("ArrowUp") || Keyboard.shared.isDown("KeyW")) {
@@ -474,7 +475,7 @@ export class DruidHouseScene extends PixiScene {
 		if (Keyboard.shared.isDown("ArrowLeft") || Keyboard.shared.isDown("KeyA")) {
 			dx -= 1;
 			moved = true;
-			scaleX = -1.3;
+			scaleX = -scaleX;
 			this.facingDirection = "left";
 		}
 		if (Keyboard.shared.isDown("ArrowRight") || Keyboard.shared.isDown("KeyD")) {

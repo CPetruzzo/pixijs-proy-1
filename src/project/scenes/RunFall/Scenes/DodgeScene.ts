@@ -13,17 +13,20 @@ import { CollisionManager } from "../Managers/CollisionManager";
 import { SpawnManager } from "../Managers/SpawnManager";
 import { Sounds } from "../Managers/SoundManager";
 import { ObjectsNames } from "../Objects/Objects";
-import { PLAYER_SCALE_RUNFALL, REMOVE_OBJECT_TIME } from "../../../../utils/constants";
+import { COIN_POINTS, PLAYER_SCALE_RUNFALL, REMOVE_OBJECT_TIME } from "../../../../utils/constants";
 import { SettingsPopUp } from "./PopUps/SettingsPopUp";
 import { Tween } from "tweedle.js";
 import { RunFallNameInputPopUp } from "./PopUps/RunFallNameInputPopUp";
-import type { Achievement } from "../Managers/AchievementsManager";
-import { AchievementsManager } from "../../../../engine/achievement/AchievementsManager";
-import type { RunFallGameState } from "../Objects/RunFallAchievements";
+import type { Achievement, AchievementState } from "../Managers/AchievementsManager";
+import { AchievementsManager } from "../Managers/AchievementsManager";
+import { Timer } from "../../../../engine/tweens/Timer";
+import { TutorialManager } from "../Managers/TutorialManager";
+
+const DEBUG_GAMEOVER = false;
 
 export class DodgeScene extends PixiScene {
 	// #region VARIABLES
-	public static readonly BUNDLES = ["fallrungame", "sfx"];
+	public static readonly BUNDLES = ["fallrungame", "runfallsfx"];
 	// objects
 	private scoreText: Text;
 	private healthBar: HealthBar;
@@ -40,7 +43,8 @@ export class DodgeScene extends PixiScene {
 	private playerController: PlayerController;
 	private scoreManager: ScoreManager;
 	private spawnManager: SpawnManager;
-	private achievementsManager: AchievementsManager<RunFallGameState>; // booleans
+	private achievementsManager: AchievementsManager;
+	// booleans
 	public isPaused: boolean = false;
 
 	private uiButton: Sprite;
@@ -48,6 +52,8 @@ export class DodgeScene extends PixiScene {
 
 	private cumulativeCoinsInitial: number = 0;
 	// #endregion VARIABLES
+
+	private tutorialManager: TutorialManager; // Añadir esta línea
 
 	constructor() {
 		super();
@@ -67,7 +73,7 @@ export class DodgeScene extends PixiScene {
 
 		this.background.filters = [];
 
-		this.scoreText = new Text(`Score: 0`, { fontSize: 45, fill: 0xffffff, dropShadow: true, fontFamily: "Daydream" });
+		this.scoreText = new Text(`Score: 0`, { fontSize: 105, fill: 0xffffff, dropShadow: true, fontFamily: "Pixelate-Regular" });
 		this.scoreText.anchor.set(0.5);
 		this.scoreText.position.set(0, -this.background.height * 0.5 + 150);
 		this.backgroundContainer.addChild(this.scoreText);
@@ -102,7 +108,7 @@ export class DodgeScene extends PixiScene {
 				this.openSettingsPopup();
 			}
 		});
-		this.uiButton.position.set(-this.background.width * 0.5 + this.uiButton.width * 0.5, -this.background.height * 0.5 + this.uiButton.height * 0.5);
+		this.uiButton.position.set(-this.background.width * 0.5 + this.uiButton.width * 0.5, -this.background.height * 0.5 + this.uiButton.height * 0.5 + 25);
 		this.backgroundContainer.addChild(this.uiButton);
 
 		this.playerController = new PlayerController(this.player);
@@ -113,9 +119,50 @@ export class DodgeScene extends PixiScene {
 			this.showAchievementNotification(achievement);
 		});
 
+		this.tutorialManager = new TutorialManager();
+		this.addChild(this.tutorialManager); // Añadir a la escena principal
+
+		if (this.tutorialManager.isActive) {
+			this.tutorialManager.spawnNextStep(this.objects, this.background);
+		}
+
 		this.cumulativeCoinsInitial = Number(localStorage.getItem("cumulativeCoins")) || 0;
 		this.player.achievementsState.cumulativeCoinsCollected = this.cumulativeCoinsInitial;
 		console.log("this.player.achievementsState.cumulativeCoinsCollected", this.player.achievementsState.cumulativeCoinsCollected);
+
+		if (DEBUG_GAMEOVER) {
+			new Timer()
+				.to(1000)
+				.start()
+				.onComplete(() => {
+					CollisionManager.gameOver = true;
+				});
+		}
+	}
+
+	private showFloatingText(amount: string, color: number = 0xffff00): void {
+		const floatingText = new Text(amount, {
+			fontSize: 80,
+			fill: color,
+			fontFamily: "Pixelate-Regular",
+			stroke: 0x000000,
+			strokeThickness: 4,
+		});
+
+		floatingText.anchor.set(0.5);
+		// Lo posicionamos justo arriba del jugador
+		// Usamos las coordenadas del player dentro del background
+		floatingText.position.set(this.player.x, this.player.y - 100);
+
+		this.background.addChild(floatingText);
+
+		// Animación: Subir y desvanecerse
+		new Tween(floatingText)
+			.to({ y: floatingText.y - 100, alpha: 0 }, 800)
+			.start()
+			.onComplete(() => {
+				floatingText.destroy(); // Limpieza de memoria
+			});
 	}
 
 	private showAchievementNotification(achievement: Achievement): void {
@@ -209,6 +256,25 @@ export class DodgeScene extends PixiScene {
 					this.removeObject(obj);
 				}
 			} else if (CollisionManager.checkCollision(this.player, obj)) {
+				// Determinar qué texto y color mostrar según el objeto
+				let popupText = "";
+				let popupColor = 0xffffff;
+
+				if (obj.name === ObjectsNames.COIN) {
+					popupText = `+${COIN_POINTS}`; // O el valor que sumen tus monedas
+					popupColor = 0xffd700; // Dorado
+				} else if (obj.name === ObjectsNames.ENEMY) {
+					navigator.vibrate(500);
+				} else if (obj.name === ObjectsNames.POTION) {
+					popupText = "+1HP";
+					popupColor = 0x00ff00; // Verde
+				}
+
+				// Si definimos un texto, lo mostramos
+				if (popupText !== "") {
+					this.showFloatingText(popupText, popupColor);
+				}
+
 				CollisionManager.handleCollision(this.player, obj);
 				obj.handleEvent(this.player);
 				this.removeObject(obj);
@@ -294,31 +360,69 @@ export class DodgeScene extends PixiScene {
 			this.uiButton.visible = false;
 			return;
 		}
+
+		// --- LÓGICA DE TUTORIAL ---
+		if (this.tutorialManager.isActive) {
+			// 1. Verificar si debe pausarse ahora
+			if (this.tutorialManager.checkPauseTrigger()) {
+				this.isPaused = true;
+			}
+
+			// 2. Liberar pausa si el usuario ya hizo clic
+			if (!this.tutorialManager.isWaitingForClick && !this.isPopupOpen) {
+				this.isPaused = false;
+			}
+
+			// 3. Spawning del siguiente objeto del tutorial
+			if (!this.tutorialManager.isWaitingForClick && !this.tutorialManager.currentTutorialObject) {
+				this.tutorialManager.spawnNextStep(this.objects, this.background);
+			} else if (this.tutorialManager.currentTutorialObject) {
+				const obj = this.tutorialManager.currentTutorialObject;
+				// Si el objeto fue recolectado o salió de pantalla, limpiar para el siguiente
+				if (obj.parent === null || obj.y > this.background.height) {
+					this.tutorialManager.currentTutorialObject = null;
+				}
+			}
+		} else {
+			// --- JUEGO NORMAL ---
+			// Asegurar que si el tutorial acaba de terminar, el juego se despause
+			if (this.isPaused && !this.isPopupOpen) {
+				this.isPaused = false;
+			}
+			this.spawnManager.update(dt, this.objects, this.background);
+		}
+
+		// --- BLOQUEO DE ACTUALIZACIÓN ---
 		if (this.isPaused || this.isPopupOpen) {
 			return;
 		}
 
+		// --- MOVIMIENTO Y FÍSICAS ---
+		// Esto es lo que hace que las cosas CAIGAN. Debe ejecutarse siempre que no esté pausado.
 		this.player.update(dt);
-		this.spawnManager.update(dt, this.objects, this.background);
-		this.checkCollisions(dt);
+		this.checkCollisions(dt); // Adentro llama a obj.update(dt)
+
+		// UI y Logros
 		this.scoreText.text = `Score: ${this.scoreManager.getScore()}`;
 		this.playerController.mouseMovements(this.background);
 		this.playerController.onKeyDown(this.background);
 
-		const currentState: RunFallGameState = {
-			coinsCurrent: this.player.achievementsState.coinsCollected,
-			coinsTotal: this.cumulativeCoinsInitial + this.player.achievementsState.coinsCollected,
-			enemiesHit: this.player.achievementsState.enemyCollisions,
-			obstaclesHit: this.player.achievementsState.obstacleCollisions,
-			potions: this.player.achievementsState.potionsCollected,
-			playerDied: this.healthBar.getCurrentHealth() <= 0,
+		const currentState: AchievementState = {
+			score: this.scoreManager.getScore(),
+			lives: this.healthBar.getCurrentHealth(),
+			coinsCollected: this.player.achievementsState.coinsCollected,
+			cumulativeCoinsCollected: this.cumulativeCoinsInitial + this.player.achievementsState.coinsCollected,
+			enemyCollisions: this.player.achievementsState.enemyCollisions,
+			obstacleCollisions: this.player.achievementsState.obstacleCollisions,
+			potionsCollected: this.player.achievementsState.potionsCollected,
 		};
-
 		this.achievementsManager.update(currentState);
 	}
 
 	public override onResize(newW: number, newH: number): void {
 		ScaleHelper.setScaleRelativeToIdeal(this.backgroundContainer, newW * 0.7, newH * 0.7, 720, 1600, ScaleHelper.FIT);
+		ScaleHelper.setScaleRelativeToIdeal(this.tutorialManager, newW * 0.7, newH * 0.7, 720, 1600, ScaleHelper.FIT);
+
 		ScaleHelper.setScaleRelativeToIdeal(this.bleedingBackgroundContainer, newW * 3, newH * 2, 720, 1600, ScaleHelper.FILL);
 		this.x = newW * 0.5;
 		this.y = newH * 0.5;

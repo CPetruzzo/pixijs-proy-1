@@ -48,6 +48,7 @@ export class ToggleCheck extends Toggle {
 		this.button = Sprite.from(options.buttonTexture);
 		this.button.anchor.set(0.5);
 		this.check = Sprite.from(options.checkTexture ?? Texture.EMPTY);
+		this.check.scale.set(1.5);
 		this.check.anchor.set(0.5);
 		this.content.addChild(this.button);
 		this.content.addChild(this.check);
@@ -64,11 +65,15 @@ export class ToggleCheck extends Toggle {
 		this.onToggleOff = options.onToggleOff;
 
 		this.fixAlign();
-		this.value = Boolean(options.startingValue);
+		// Establecemos el valor inicial directamente y ajustamos el alpha en consecuencia,
+		// sin usar la animación switchState() para la inicialización.
+		this._value = Boolean(options.startingValue);
+		this.check.alpha = this._value ? 1 : 0;
 
 		this.locked = options.locked ? true : false;
 
-		this.check.scale.x = this.check.scale.y = this.value ? 1.5 : 0;
+		// La línea original que usaba escala ha sido reemplazada por el ajuste directo de alpha arriba.
+		// this.check.scale.x = this.check.scale.y = this.value ? 1.5 : 0;
 	}
 
 	private onPointerClickCallback(): void {
@@ -89,7 +94,7 @@ export class ToggleCheck extends Toggle {
 		if (this.value) {
 			this.tween = new Tween(this.check).to({ alpha: 1 }, 250).easing(Easing.Elastic.Out);
 		} else {
-			this.tween = new Tween(this.check).to({ alpha: 0.4 }, 250).easing(Easing.Cubic.Out);
+			this.tween = new Tween(this.check).to({ alpha: 0 }, 250).easing(Easing.Cubic.Out);
 		}
 		this.tween.start();
 	}

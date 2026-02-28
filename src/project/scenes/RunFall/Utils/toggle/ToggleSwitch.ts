@@ -157,11 +157,11 @@ export class ToggleSwitch extends Toggle {
 		this.knobTween?.stop();
 		if (this.value) {
 			const duration = Math.abs((this.tweenDuration * (this.knob.x - (this.distance - this.knob.width) / 2)) / this.distance);
-			this.knobTween = new Tween(this.knob).from({ angle: 180 }).to({ angle: 0 }, 350).start();
+			this.knobTween = new Tween(this.knob).from({ angle: 0 }).to({ angle: 0 }, 350).start();
 			this.tween = new Tween(this.knob.position).to({ x: (this.distance - this.knob.width) / 2 }, duration);
 		} else {
 			const duration = Math.abs((this.tweenDuration * (this.knob.x - (-this.distance + this.knob.width) / 2)) / this.distance);
-			this.knobTween = new Tween(this.knob).from({ angle: 0 }).to({ angle: 180 }, 350).start();
+			this.knobTween = new Tween(this.knob).from({ angle: 0 }).to({ angle: 0 }, 350).start();
 			this.tween = new Tween(this.knob.position).to({ x: (-this.distance + this.knob.width) / 2 }, duration);
 		}
 		this.tween.easing(Easing.Quadratic.Out);

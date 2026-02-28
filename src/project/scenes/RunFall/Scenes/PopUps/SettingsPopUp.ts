@@ -46,15 +46,15 @@ export class SettingsPopUp extends PixiScene {
 		this.fadeAndBlocker.scale.set(10);
 
 		// Create background sprite
-		this.background = Sprite.from("emptyBanner");
+		this.background = Sprite.from("pauseBanner");
 		this.background.anchor.set(0.5);
 		this.addChild(this.background);
 
 		this.toggleSwitch = new ToggleSwitch({
 			knobTexture: "soundKnob",
 			backgroundTexture: "soundBG",
-			travelDistance: Texture.from("soundBG").width,
-			tweenDuration: 500,
+			travelDistance: Texture.from("soundBG").width * 0.85,
+			tweenDuration: 300,
 			onToggleOn: () => {
 				// Lógica para activar la música
 				if (!SoundManager.isMusicOn()) {
@@ -73,8 +73,10 @@ export class SettingsPopUp extends PixiScene {
 			},
 			startingValue: SoundManager.isMusicOn(), // Sincroniza el estado inicial del interruptor con la música
 		});
-		this.toggleSwitch.anchor.set(0.5);
-		// this.toggleSwitch.scale.set(0.8);
+		this.toggleSwitch.anchor.set(0, 0.2);
+		this.toggleSwitch.y = -120;
+		this.toggleSwitch.x = 5;
+		this.toggleSwitch.scale.set(0.43);
 	}
 
 	// Método para manejar el clic en el botón de cerrar
@@ -93,19 +95,17 @@ export class SettingsPopUp extends PixiScene {
 		this.background.addChild(this.toggleSwitch);
 
 		// Mostrar el botón de reinicio
-		this.closePopUpButton = Sprite.from("buttonContinue");
+		this.closePopUpButton = Sprite.from("buttonBack");
 		this.closePopUpButton.anchor.set(0.5);
-		this.closePopUpButton.scale.set(0.45);
 		this.closePopUpButton.eventMode = "static";
-		this.closePopUpButton.position.set(this.background.width * 0.5 + this.closePopUpButton.width / 2, this.background.height + 350); // Posiciona el botón según sea necesario
+		this.closePopUpButton.position.set(0, 50); // Posiciona el botón según sea necesario
 		this.closePopUpButton.on("pointertap", this.handleResetClick, this); // Agrega un manejador de eventos al hacer clic en el botón
 		this.background.addChild(this.closePopUpButton); // Agrega el botón al background
 
-		this.menuButton = Sprite.from("buttonBack");
+		this.menuButton = Sprite.from("buttonContinue");
 		this.menuButton.anchor.set(0.5);
-		this.menuButton.scale.set(0.4);
 		this.menuButton.eventMode = "static";
-		this.menuButton.position.set(this.background.width * 0.5 - this.menuButton.width / 2, this.background.height + 350); // Posiciona el botón según sea necesario
+		this.menuButton.position.set(0, 210); // Posiciona el botón según sea necesario
 		this.menuButton.on("pointertap", () => {
 			this.handleResetClickAndLeave();
 		});
@@ -123,8 +123,8 @@ export class SettingsPopUp extends PixiScene {
 		const fadeScale = new Tween(this.fadeAndBlocker).to({ scale: { x: 35, y: 15 } });
 		const fadeAnimation = new Tween(this.fadeAndBlocker).to({ alpha: 1 }, 500);
 		const elasticAnimation = new Tween(this.background)
-			.from({ scale: { x: 7, y: 7 }, y: 15000 })
-			.to({ scale: { x: 7, y: 7 }, y: 0 }, 500)
+			.from({ scale: { x: 12, y: 12 }, y: 15000 })
+			.to({ scale: { x: 12, y: 12 }, y: 0 }, 500)
 			.easing(Easing.Exponential.Out);
 		// Play sound when animation starts
 		elasticAnimation.onStart(() => {
@@ -156,8 +156,8 @@ export class SettingsPopUp extends PixiScene {
 			// Fade out and scale down animations
 			const fadeAnimation = new Tween(this.fadeAndBlocker).to({ alpha: 0 }, 500);
 			const elasticAnimation = new Tween(this.background)
-				.from({ scale: { x: 7, y: 7 }, y: 0 })
-				.to({ scale: { x: 7, y: 7 }, y: 15000 }, 500)
+				.from({ scale: { x: 12, y: 12 }, y: 0 })
+				.to({ scale: { x: 12, y: 12 }, y: 15000 }, 500)
 				.easing(Easing.Exponential.In);
 			// On animation complete, handle the closure
 			fadeAnimation.onComplete(() => {

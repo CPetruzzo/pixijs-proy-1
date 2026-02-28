@@ -1,11 +1,11 @@
-import { Container, Sprite, Text, TextStyle } from "pixi.js";
+import { Container, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import { PixiScene } from "../../../../engine/scenemanager/scenes/PixiScene";
 import { Manager } from "../../../..";
 import { FadeColorTransition } from "../../../../engine/scenemanager/transitions/FadeColorTransition";
 import { Tween, Easing } from "tweedle.js";
 import { ScaleHelper } from "../../../../engine/utils/ScaleHelper";
 import { MenuScene } from "./MenuScene";
-import { AdMob, BannerAdSize, BannerAdPosition } from "@capacitor-community/admob";
+import { AdMobManager } from "../../../../engine/utils/AdMobManager";
 
 export class CharacterSelectorScene extends PixiScene {
 	private backgroundContainer: Container;
@@ -16,7 +16,7 @@ export class CharacterSelectorScene extends PixiScene {
 	private backButton: Sprite;
 	// Banner donde se muestran las descripciones
 	private bannerText: Text;
-	public static readonly BUNDLES = ["fallrungame", "sfx"];
+	public static readonly BUNDLES = ["fallrungame", "runfallsfx"];
 	private bleedingBackgroundContainer: Container = new Container();
 
 	// Espaciado horizontal (en píxeles) para el slider
@@ -25,8 +25,9 @@ export class CharacterSelectorScene extends PixiScene {
 	private static _instance: CharacterSelectorScene | null = null;
 	private static pendingUnlocks: number[] = [];
 
-	private actionButton!: Text;
-
+	// Antes: private actionButton!: Text;
+	private actionButton!: Sprite;
+	private actionButtonText!: Text; // Mantendremos un objeto de texto para el "Unlock Free"
 	constructor() {
 		super();
 
@@ -60,17 +61,16 @@ export class CharacterSelectorScene extends PixiScene {
 
 		// Banner de marco (opcional) que además contendrá los textos descriptivos
 		const frame = Sprite.from("emptyBanner");
-		frame.alpha = 0.8;
-		frame.position.set(-frame.width * 0.5, -frame.height * 0.1);
+		frame.position.set(-frame.width * 0.5, -frame.height * 0.2);
 		this.backgroundContainer.addChild(frame);
 
 		// Creamos el objeto de texto que irá dentro del banner
 		this.bannerText = new Text(
 			"",
 			new TextStyle({
-				fontFamily: "Daydream",
+				fontFamily: "Pixelate-Regular",
 				fill: "#ffffff",
-				fontSize: 40,
+				fontSize: 100,
 				align: "center",
 				wordWrap: true,
 				wordWrapWidth: frame.width - 20,
@@ -85,7 +85,7 @@ export class CharacterSelectorScene extends PixiScene {
 		// Contenedor para el slider de personajes
 		this.sliderContainer = new Container();
 		this.sliderContainer.sortableChildren = true;
-		this.sliderContainer.y = -400;
+		this.sliderContainer.y = -500;
 		this.backgroundContainer.addChild(this.sliderContainer);
 
 		// Carga de sprites de personajes (placeholders)
@@ -147,7 +147,7 @@ export class CharacterSelectorScene extends PixiScene {
 		const leftButton = Sprite.from("leftArrow");
 		leftButton.anchor.set(0.5);
 		leftButton.scale.set(0.5);
-		leftButton.x = -background.width * 0.5 + 50;
+		leftButton.x = -background.width * 0.5 + 80;
 		leftButton.y = -400;
 		leftButton.eventMode = "static";
 		leftButton.interactive = true;
@@ -158,7 +158,7 @@ export class CharacterSelectorScene extends PixiScene {
 		const rightButton = Sprite.from("rightArrow");
 		rightButton.anchor.set(0.5);
 		rightButton.scale.set(0.5);
-		rightButton.x = background.width * 0.5 - 50;
+		rightButton.x = background.width * 0.5 - 80;
 		rightButton.y = -400;
 		rightButton.eventMode = "static";
 		rightButton.interactive = true;
@@ -168,7 +168,7 @@ export class CharacterSelectorScene extends PixiScene {
 		// Botón para volver al menú
 		this.backButton = Sprite.from("return");
 		this.backButton.anchor.set(0.5);
-		this.backButton.y = background.height * 0.5 - this.backButton.height;
+		this.backButton.y = background.height * 0.5 - this.backButton.height - 100;
 		this.backButton.eventMode = "static";
 		this.backButton.interactive = true;
 		this.backButton.on("pointertap", () => {
@@ -182,7 +182,7 @@ export class CharacterSelectorScene extends PixiScene {
 		CharacterSelectorScene.pendingUnlocks.forEach((i) => this.unlockCharacter(i));
 		CharacterSelectorScene.pendingUnlocks = [];
 
-		this.showBannerAd();
+		AdMobManager.showBanner();
 
 		// ─────────────────────────────────────────────────────────────────
 		// 🛠️  DEBUG BUTTONS
@@ -218,19 +218,24 @@ export class CharacterSelectorScene extends PixiScene {
 		// ───────────────────────────────────────────────────────────
 		//  Add the Select/Equipped button
 		// ───────────────────────────────────────────────────────────
+		this.actionButton = new Sprite();
+		this.actionButton.anchor.set(0.5);
+		this.actionButton.position.set(0, background.height * 0.5 - 560);
+		this.actionButton.eventMode = "static";
+		this.backgroundContainer.addChild(this.actionButton);
+
+		// Texto auxiliar solo para cuando el personaje está bloqueado
 		const btnStyle = new TextStyle({
-			fontFamily: "Daydream",
-			fontSize: 28,
+			fontFamily: "Pixelate-Regular",
+			fontSize: 90,
 			fill: "#ffffff",
 			stroke: "#000000",
 			strokeThickness: 4,
 		});
-		this.actionButton = new Text("", btnStyle);
-		this.actionButton.anchor.set(0.5);
-		// position at bottom center, adjust as needed:
-		this.actionButton.position.set(0, background.height * 0.5 - 560);
-		this.actionButton.eventMode = "static";
-		this.backgroundContainer.addChild(this.actionButton);
+		this.actionButtonText = new Text("", btnStyle);
+		this.actionButtonText.anchor.set(0.5);
+		this.actionButtonText.position.y = -800;
+		this.actionButton.addChild(this.actionButtonText);
 
 		// initial update
 		this.updateActionButton();
@@ -260,23 +265,45 @@ export class CharacterSelectorScene extends PixiScene {
 	private updateActionButton(): void {
 		const idx = this.selectedIndex;
 		const container = this.characters[idx] as any;
+
+		// Limpiamos eventos previos
+		this.actionButton.off("pointertap");
+
 		if (!container.unlocked) {
-			// locked: hide
-			this.actionButton.visible = false;
-		} else {
+			// --- PERSONAJE BLOQUEADO ---
 			this.actionButton.visible = true;
-			if (/* equipped? */ idx === this.getEquippedIndex()) {
-				this.actionButton.text = "Equipped";
+			// Usamos la textura de "select" como base para el botón de unlock o una genérica
+			this.actionButton.texture = Texture.from("select");
+			this.actionButtonText.text = "🎥 Unlock Free";
+			this.actionButtonText.visible = true;
+
+			this.actionButton.interactive = true;
+			this.actionButton.alpha = 1.0;
+
+			this.actionButton.once("pointertap", async () => {
+				await AdMobManager.showRewardedAd((_reward) => {
+					this.unlockCharacter(idx);
+					this.updateActionButton();
+				});
+			});
+		} else {
+			// --- PERSONAJE DESBLOQUEADO ---
+			this.actionButtonText.visible = false; // Ocultamos el texto ya que usaremos el sprite
+			this.actionButton.visible = true;
+
+			if (idx === this.getEquippedIndex()) {
+				// ESTADO: EQUIPPED
+				this.actionButton.texture = Texture.from("equipped");
 				this.actionButton.interactive = false;
-				this.actionButton.alpha = 0.6;
+				this.actionButton.alpha = 1; // Un poco transparente para indicar que ya está puesto
 			} else {
-				this.actionButton.text = "Select";
+				// ESTADO: SELECT
+				this.actionButton.texture = Texture.from("select");
 				this.actionButton.interactive = true;
 				this.actionButton.alpha = 1.0;
+
 				this.actionButton.once("pointertap", () => {
-					// equip it
 					this.selectCharacter(idx);
-					// persist equipped
 					localStorage.setItem("equippedCharacter", idx.toString());
 					this.updateActionButton();
 				});
@@ -291,23 +318,6 @@ export class CharacterSelectorScene extends PixiScene {
 		return isNaN(i) || i < 0 || i >= this.characters.length ? 0 : i;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/require-await
-	private async showBannerAd(): Promise<void> {
-		setTimeout(async () => {
-			try {
-				await AdMob.showBanner({
-					adId: "ca-app-pub-3940256099942544/2247696110", // Test ad unit
-					adSize: BannerAdSize.BANNER,
-					position: BannerAdPosition.BOTTOM_CENTER,
-					isTesting: true,
-				});
-				console.log("Banner mostrado correctamente.");
-			} catch (error) {
-				console.error("Error mostrando AdMob Banner:", error);
-			}
-		}, 2000); // Retardo de 2 segundos
-	}
-
 	/**
 	 * Actualiza el contenido del banner según el personaje activo.
 	 * Si el personaje está desbloqueado, se muestran valores (velocidad, vida, otro);
@@ -319,14 +329,14 @@ export class CharacterSelectorScene extends PixiScene {
 			// Valores de ejemplo; actualizá con los datos reales
 			switch (this.selectedIndex) {
 				case 0:
-					this.bannerText.text = "Speed: 200\n\n\nHealth: 3\n";
+					this.bannerText.text = "Speed: 200\n\nHealth: 3\n";
 					break;
 				case 1:
-					this.bannerText.text = "Speed: 200\n\n\nHealth: 5\n";
+					this.bannerText.text = "Speed: 200\n\nHealth: 5\n";
 
 					break;
 				case 2:
-					this.bannerText.text = "Speed: 500\n\n\nHealth: 3\n\n\nRevive: 1\n";
+					this.bannerText.text = "Speed: 500\n\nHealth: 3\n\nRevive: 1\n";
 
 					break;
 
@@ -434,10 +444,19 @@ export class CharacterSelectorScene extends PixiScene {
 	/** Smoothly moves the slider so `selectedIndex = index` */
 	private selectCharacter(index: number): void {
 		const n = this.characters.length;
+		// Si no hay personajes cargados, no hacemos nada
+		if (n === 0) {
+			return;
+		}
+
 		this.selectedIndex = index;
 
 		this.characters.forEach((char, i) => {
-			// relative position to the new center
+			// SEGURIDAD: Si el objeto fue destruido o es null, saltar
+			if (!char || char.destroyed) {
+				return;
+			}
+
 			const offset = (i - index + n) % n;
 			let targetX: number,
 				targetScale = 1.0,
@@ -455,7 +474,6 @@ export class CharacterSelectorScene extends PixiScene {
 				targetAlpha = 0;
 			}
 
-			// animate into place (optional—you can also just set x/alpha/scale instantly)
 			new Tween(char)
 				.to({ x: targetX, alpha: targetAlpha, scale: { x: targetScale, y: targetScale } }, 300)
 				.easing(Easing.Cubic.Out)
@@ -558,5 +576,11 @@ export class CharacterSelectorScene extends PixiScene {
 		} else {
 			CharacterSelectorScene.pendingUnlocks.push(index);
 		}
+	}
+
+	public override destroy(_options?: any): void {
+		AdMobManager.hideBanner();
+		CharacterSelectorScene._instance = null;
+		super.destroy();
 	}
 }

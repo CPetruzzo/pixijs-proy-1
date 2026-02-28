@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/restrict-plus-operands */
 import { Graphics, Container } from "pixi.js";
 import { Keyboard } from "../../engine/input/Keyboard"; // Ajusta la ruta
+import { SoundLib } from "../sound/SoundLib";
 
 export class TopDownMovementController {
+	public static readonly BUNDLES = ["donotdelete"];
+
 	// Configuración de Movimiento
 	public speed: number = 2;
 	public dashSpeed: number = 10;
@@ -85,10 +88,19 @@ export class TopDownMovementController {
 		// --- 2. Lógica de Movimiento ---
 		if (this.isDashing) {
 			this.updateDash(dt);
+			// Opcional: Detener el sonido de caminata durante el dash
+
+			SoundLib.stopMusic("leafwalk");
 		} else {
 			this.updateWalk(dt);
-		}
 
+			// Lógica de Sonido: Si la velocidad es distinta de cero, está caminando
+			if (this.velocity.x !== 0 || this.velocity.y !== 0) {
+				SoundLib.playMusic("leafwalk", { loop: true });
+			} else {
+				SoundLib.stopMusic("leafwalk");
+			}
+		}
 		// --- 3. Físicas ---
 		this.applyMovement();
 
@@ -182,6 +194,7 @@ export class TopDownMovementController {
 	}
 
 	private startDash(): void {
+		SoundLib.playSound("dash", { volume: 0.1, speed: 0.8 });
 		this.isDashing = true;
 		this.canDash = false;
 		this.dashTimer = this.dashDuration;
