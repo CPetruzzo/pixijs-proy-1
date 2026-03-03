@@ -1040,14 +1040,28 @@
     {
       "name": "isometric",
       "assets": {
+		"ambience": "./music/isometric/ambience.mp3",
+		"climbstairs": "./music/isometric/climbstairs.mp3",
+        "crickets": "./music/isometric/crickets.mp3",
+        "ironsmash": "./music/isometric/ironsmash.mp3",
+
         "player": "./img/isometric/player.png",
+        "prisoner": "./img/isometric/prisoner.png",
+		"gate": "./img/isometric/gate.png",
+		"bargate": "./img/isometric/bargate.png",
+		"cleanbucket": "./img/isometric/cleanbucket.png",
+		"gatefront": "./img/isometric/gatefront.png",
         "iso_pared": "./img/isometric/iso_pared.png",
+        "iso_torch": "./img/isometric/iso_torch.png",
         "iso_suelo": "./img/isometric/iso_suelo.png",
         "iso_floor": "./img/isometric/iso_floor.png",
         "iso_top_pared": "./img/isometric/iso_top_pared.png",
-                "iso_stair_up": "./img/isometric/iso_stair_up.png",
-                "iso_stair_down": "./img/isometric/iso_stair_down.png"
-
+        "iso_stair_up": "./img/isometric/iso_stair_up.png",
+        "iso_stair_down": "./img/isometric/iso_stair_down.png",
+		"stairs1": "./img/isometric/stairs.png",
+        "stairs2": "./img/isometric/stairs2.png",
+        "wizardface": "./img/isometric/wizardface.png",
+        "prisonerface": "./img/isometric/prisonerface.png"
       }
     },      
     // ESPERT3D
@@ -1367,6 +1381,24 @@
         "jump05": "./img/bluewizard/2BlueWizardJump/CharaWizardJump_00005.png",
         "jump06": "./img/bluewizard/2BlueWizardJump/CharaWizardJump_00006.png",
         "jump07": "./img/bluewizard/2BlueWizardJump/CharaWizardJump_00007.png",
+
+        "dash00": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00000.png",
+        "dash01": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00001.png",
+        "dash02": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00002.png",
+        "dash03": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00003.png",
+        "dash04": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00004.png",
+        "dash05": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00005.png",
+        "dash06": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00006.png",
+        "dash07": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00007.png",
+        "dash08": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00008.png",
+        "dash09": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00009.png",
+        "dash10": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00010.png",
+        "dash11": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00011.png",
+        "dash12": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00012.png",
+        "dash13": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00013.png",
+        "dash14": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00014.png",
+        "dash15": "./img/bluewizard/2BlueWizardJump/DashEffect/BlueWizardDash_00015.png",
+
         "idle00": "./img/bluewizard/2BlueWizardIdle/Chara - BlueIdle00000.png",
         "idle01": "./img/bluewizard/2BlueWizardIdle/Chara - BlueIdle00001.png",
         "idle02": "./img/bluewizard/2BlueWizardIdle/Chara - BlueIdle00002.png",
@@ -1387,6 +1419,7 @@
         "idle17": "./img/bluewizard/2BlueWizardIdle/Chara - BlueIdle00017.png",
         "idle18": "./img/bluewizard/2BlueWizardIdle/Chara - BlueIdle00018.png",
         "idle19": "./img/bluewizard/2BlueWizardIdle/Chara - BlueIdle00019.png",
+
         "walk00": "./img/bluewizard/2BlueWizardWalk/Chara_BlueWalk00000.png",
         "walk01": "./img/bluewizard/2BlueWizardWalk/Chara_BlueWalk00001.png",
         "walk02": "./img/bluewizard/2BlueWizardWalk/Chara_BlueWalk00002.png",
