@@ -1,10 +1,10 @@
 {
-  "name": "CachoPetruzzo",
+  "name": "cachogames",
   "version": "0.0.1",
   "description": "BunnyBox is a boilerplate/engine for pixijs this engine has been enhanced by Facundo Wegher since 2023. Descendant of the great killabunnies engine",
   "pwa": {
-    "name": "CachoPetruzzo",
-    "short_name": "CachoPetruzzo",
+    "name": "CachoGames",
+    "short_name": "CachoGames",
     "description": "My awesome Progressive Web App!",
     "background_color": "#ee0000"
   },
@@ -15,6 +15,7 @@
     "build:tauri": "tauri build",
     "start:tauri": "tauri dev",
     "build:release": "rimraf ./dist && webpack --config webpack.config.prod.js",
+    "build:release:patagonia": "cross-env GAME_BUNDLE=patagonia rimraf ./dist && webpack --config webpack.config.prod.js",
     "build:debug": "rimraf ./dist && webpack --config webpack.config.dev.js",
     "start": "webpack serve --config webpack.config.dev.js",
     "start:release": "webpack serve --config webpack.config.prod.js",

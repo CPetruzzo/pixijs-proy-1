@@ -13,13 +13,43 @@ const WorkboxPlugin = require('workbox-webpack-plugin');
 const JSONC = require('jsonc-parser');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
+// --- LÓGICA DE FILTRADO DE ASSETS ---
+const selectedBundleName = process.env.GAME_BUNDLE; // Ejemplo: "patagonia"
+const assetsJsoncPath = path.resolve(__dirname, 'src/assets.jsonc');
+const assetsContent = fs.readFileSync(assetsJsoncPath, 'utf8');
+const assetsData = JSONC.parse(assetsContent);
 
-const providePlugin = new webpack.ProvidePlugin({
-    THREE: 'three'
-});
+const copyPatterns = [];
 
-const copyPlugin = new CopyWebpackPlugin({
-    patterns: [{
+if (selectedBundleName) {
+    console.log(`\x1b[32m%s\x1b[0m`, `🚀 Building bundle: ${selectedBundleName}`);
+    
+    // Filtramos los bundles: el seleccionado + los obligatorios
+    const activeBundles = assetsData.filter(b => 
+        b.name === selectedBundleName || b.name === "donotdelete"
+    );
+
+    activeBundles.forEach(bundle => {
+        Object.values(bundle.assets).forEach(assetPath => {
+            // Limpiamos el path (quitamos el ./ inicial)
+            const cleanPath = assetPath.replace(/^\.\//, '');
+            copyPatterns.push({
+                from: path.resolve(__dirname, 'assets', cleanPath),
+                to: cleanPath,
+                noErrorOnMissing: true,
+                // Mantenemos tu lógica de minificar JSONs internos si existen
+                transform: (content, filePath) => {
+                    if (filePath.endsWith('.json')) {
+                        return Buffer.from(JSON.stringify(JSON.parse(content.toString())), 'utf8');
+                    }
+                    return content;
+                }
+            });
+        });
+    });
+} else {
+    // Si no hay bundle seleccionado, copiamos todo (comportamiento original)
+    copyPatterns.push({
         from: 'assets', to: '', globOptions: {
             ignore: ["**/thumbs.db", "**/Thumbs.db"],
         },
@@ -27,19 +57,25 @@ const copyPlugin = new CopyWebpackPlugin({
             if (path.endsWith('.json')) {
                 return Buffer.from(JSON.stringify(JSON.parse(content.toString())), 'utf8');
             }
-
             return content;
         }
-    },
-    {
-        from: "src/assets.jsonc", to: "assets.json",
-        // convert json5 to json
-        transform: function (content, path) {
-            return Buffer.from(JSON.stringify(JSONC.parse(content.toString())), 'utf8');
-        }
-    }]
+    });
+}
+
+// Siempre incluimos el assets.jsonc transformado a json
+copyPatterns.push({
+    from: "src/assets.jsonc", to: "assets.json",
+    transform: function (content) {
+        return Buffer.from(JSON.stringify(JSONC.parse(content.toString())), 'utf8');
+    }
 });
 
+const copyPlugin = new CopyWebpackPlugin({ patterns: copyPatterns });
+// --------------------------------------
+
+const providePlugin = new webpack.ProvidePlugin({
+    THREE: 'three'
+});
 
 const dirMain = path.resolve(__dirname, 'atlas');
 const atlasPackages = [];
@@ -48,11 +84,14 @@ const manifest = [];
 const readDirMain = fs.readdirSync(dirMain);
 
 readDirMain.forEach((dirNext) => {
-    if (fs.lstatSync(dirMain + "/" + dirNext).isDirectory() && fs.readdirSync(dirMain + "/" + dirNext).length > 0) {
+    // OPTIMIZACIÓN ATLAS: Solo empaquetamos el atlas si coincide con el bundle o es común
+    const shouldPackAtlas = !selectedBundleName || dirNext === selectedBundleName || dirNext === "common";
+
+    if (shouldPackAtlas && fs.lstatSync(dirMain + "/" + dirNext).isDirectory() && fs.readdirSync(dirMain + "/" + dirNext).length > 0) {
         const texPackerPlugin = new WebpackFreeTexPacker(path.resolve(dirMain, dirNext), "atlas", {
             textureName: dirNext,
-            width: 2048, //if we can make this smaller, we can make smaller final files
-            height: 2048, //if we can make this smaller, we can make smaller final files
+            width: 2048,
+            height: 2048,
             fixedSize: false,
             powerOfTwo: true,
             padding: 2,
@@ -71,9 +110,7 @@ readDirMain.forEach((dirNext) => {
 });
 
 const texPackerManifest = new CreateFileWebpack({
-    // file name
     outputFile: 'atlas/autoPackedAtlas.json',
-    // content of the file
     content: JSON.stringify(manifest)
 });
 
@@ -87,35 +124,20 @@ const htmlPlugin = new HTMLWebpackPlugin({
 
 const definePlugin = new webpack.DefinePlugin({
     'process.env.DATE': Date.now(),
+    'process.env.GAME_BUNDLE': JSON.stringify(selectedBundleName) // Pasamos la variable al código fuente también
 });
 
+// ... (Resto de los plugins: defaultCompression, pwaManifest, pwaWorker, typeChecker se mantienen igual)
 const defaultCompression = new ImageminPlugin({
     minimizer: {
         implementation: ImageminPlugin.sharpMinify,
         options: {
             encodeOptions: {
-                jpeg: {
-                    // https://sharp.pixelplumbing.com/api-output#jpeg
-                    quality: 90,
-                },
-                webp: {
-                    // https://sharp.pixelplumbing.com/api-output#webp
-                    nearLossless: true,
-                },
-                avif: {
-                    // https://sharp.pixelplumbing.com/api-output#avif
-                    lossless: true,
-                },
-                png: {
-                    // https://sharp.pixelplumbing.com/api-output#png
-                    adaptiveFiltering: true,
-                    quality: 100,
-                    compressionLevel: 7,
-                },
-                gif: {
-                    // https://sharp.pixelplumbing.com/api-output#gif
-                    reoptimise: true
-                },
+                jpeg: { quality: 90 },
+                webp: { nearLossless: true },
+                avif: { lossless: true },
+                png: { adaptiveFiltering: true, quality: 100, compressionLevel: 7 },
+                gif: { reoptimise: true },
             },
         },
     },
@@ -162,44 +184,23 @@ exports.pwaManifest = pwaManifest;
 exports.pwaWorker = pwaWorker;
 exports.typeChecker = typeChecker;
 
-
 exports.config = {
     stats: 'minimal',
     entry: './src/index.ts',
     devServer: {
         compress: true, static: false,
-        client: {
-            logging: "warn",
-            // Can be used only for `errors`/`warnings`
-            //
-            overlay: {
-                errors: false,
-                warnings: false,
-            },
-            progress: true,
-        },
+        client: { logging: "warn", overlay: { errors: false, warnings: false }, progress: true },
         port: 3000, hot: true, host: '0.0.0.0'
     },
-    experiments: {
-        asyncWebAssembly: true,
-        syncWebAssembly: true,
-    },
-    module:
-    {
-
+    experiments: { asyncWebAssembly: true, syncWebAssembly: true },
+    module: {
         rules: [
-            // Typescript
             {
                 test: /\.tsx?$/,
                 loader: 'esbuild-loader',
-                options: {
-                    loader: 'ts',
-                    target: 'es2015'
-                },
+                options: { loader: 'ts', target: 'es2015' },
                 exclude: /node_modules/
             },
-
-            //Shaders
             {
                 test: /\.((frag)|(vert))$/,
                 use: 'raw-loader',
@@ -209,13 +210,9 @@ exports.config = {
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.js'],
-        alias: {
-            root: __dirname,
-            src: path.resolve(__dirname, 'src'),
-        },
+        alias: { root: __dirname, src: path.resolve(__dirname, 'src') },
         fallback: {
-            path: false,
-            fs: false,
+            path: false, fs: false,
             zlib: require.resolve("browserify-zlib"),
             http: require.resolve("stream-http")
         }
@@ -228,11 +225,7 @@ exports.config = {
         typeChecker,
         htmlPlugin,
         definePlugin,
-        // pwaManifest,
-        // pwaWorker,
     ],
-    performance: {
-        hints: false,
-    },
+    performance: { hints: false },
     output: { filename: 'main.js', path: buildPath }
 }

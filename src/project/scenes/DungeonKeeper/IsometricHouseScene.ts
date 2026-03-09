@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/naming-convention */
-import { Container, Sprite, Text, TextStyle, Point, Texture, Graphics, BLEND_MODES, AlphaFilter } from "pixi.js";
+import { Container, Sprite, Text, TextStyle, Point, Texture, Graphics, BLEND_MODES, AlphaFilter, AnimatedSprite } from "pixi.js";
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
 import { Tween } from "tweedle.js";
 import { StateMachineAnimator } from "../../../engine/animation/StateMachineAnimation";
 import { DialogueOverlayManager } from "../../../engine/dialog/DialogueOverlayManager";
 import { InteractableManager } from "../../../engine/utils/InteractableManager";
 import { SoundLib } from "../../../engine/sound/SoundLib";
+import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 
 // Tipos de celda para la lógica de construcción del nivel
 enum TileType {
@@ -86,7 +87,7 @@ const LEVEL_2 = [
 	"..WXXBBXXUXXXXW",
 	"..WXXXXXXXXXXXW",
 	"..WXXXXXXXXXXXW",
-	"..WXWWWWWWWWWWW",
+	"..WWWWWWWWWWWWW",
 	"...............",
 	"...............",
 	"...............",
@@ -160,11 +161,20 @@ export class IsometricHouseScene extends PixiScene {
 
 	private keys: Set<string> = new Set();
 	private lastDashTime: number = 0;
-	private readonly DASH_COOLDOWN: number = 3000;
+	private readonly DASH_COOLDOWN: number = 500;
 	private tileOffsets: Record<string, { x: number; y: number; open: boolean }> = {};
 
 	private prisonerScale = { x: 0.15, y: 0.15 };
+	private uiBottomLeftLayer: Container = new Container();
+	private uiBottomRightLayer: Container = new Container();
+	private lastFacing = { dx: 1, dy: 0 }; // Dirección por defecto
+	private shieldActive = false; // Control para no espamear el escudo
+	private uiTopRightLayer: Container = new Container(); // <--- NUEVA CAPA
 
+	private minimapGraphics: Graphics; // <--- DIBUJADOR DEL MAPA
+	private discoveredTiles: boolean[][][] = []; // <--- MATRIZ DE NIEBLA DE GUERRA
+	// Array para mantener vivos los efectos visuales (magias) en cada frame
+	private activeEffects: { displayObject: Container; gx: number; gy: number; gz: number; zIndexOffset: number }[] = [];
 	constructor() {
 		super();
 		this.initWorld();
@@ -190,8 +200,7 @@ export class IsometricHouseScene extends PixiScene {
 		// BORRAMOS la inicialización de this.playerLayer aquí
 
 		this.uiLayer = new Container();
-		this.addChild(this.uiLayer);
-
+		this.addChild(this.uiLayer, this.uiBottomLeftLayer, this.uiBottomRightLayer, this.uiTopRightLayer);
 		this.setupEvents();
 		this.createPlayer();
 		this.createUI();
@@ -409,6 +418,7 @@ export class IsometricHouseScene extends PixiScene {
 		const prisonerPos = this.gridToScreen(6, 3, 3);
 		this.interactManagers[3].add(prisonerPos.x, prisonerPos.y, () => {
 			// 1. Habla el prisionero
+			this.zoomIn();
 			DialogueOverlayManager.changeTalkerImage("prisonerface");
 			DialogueOverlayManager.talk("Alguien... vino... a... visitarme?");
 
@@ -427,6 +437,7 @@ export class IsometricHouseScene extends PixiScene {
 					// para que si interactúas con una puerta después, no aparezca la cara del prisionero.
 					DialogueOverlayManager.chainEvent(() => {
 						DialogueOverlayManager.changeTalkerImage("wizardface");
+						this.zoomOut();
 					});
 				});
 			});
@@ -498,22 +509,24 @@ export class IsometricHouseScene extends PixiScene {
 	// }
 
 	private initWorld() {
-		// Agrupamos los niveles que dibujaste en texto (asume que creaste LEVEL_2 y 3)
-		// Si no los has creado aún, usa LEVEL_0 para rellenar y no romper el código
 		const mapStrings = [LEVEL_0, LEVEL_1, LEVEL_2, LEVEL_3];
 
 		for (let z = 0; z < this.NUM_LEVELS; z++) {
 			this.grid[z] = [];
+			this.discoveredTiles[z] = []; // <--- INICIALIZAR NIEBLA Z
+
 			const currentMap = mapStrings[z];
 
 			for (let x = 0; x < this.GRID_SIZE; x++) {
 				this.grid[z][x] = [];
-				for (let y = 0; y < this.GRID_SIZE; y++) {
-					// Leemos el caracter de la fila Y, columna X
-					const char = currentMap[y][x];
+				this.discoveredTiles[z][x] = []; // <--- INICIALIZAR NIEBLA X
 
-					// Lo buscamos en el diccionario. Si no existe, ponemos EMPTY por defecto.
+				for (let y = 0; y < this.GRID_SIZE; y++) {
+					const char = currentMap[y][x];
 					this.grid[z][x][y] = TILE_MAP[char] || TileType.EMPTY;
+
+					// <--- AL EMPEZAR, NADIE VIO ESTA CASILLA
+					this.discoveredTiles[z][x][y] = false;
 				}
 			}
 		}
@@ -626,6 +639,240 @@ export class IsometricHouseScene extends PixiScene {
 				}
 			}
 		}
+
+		// --- NUEVO: Dibujar magias en curso con la profundidad correcta ---
+		for (const eff of this.activeEffects) {
+			// Recalculamos la profundidad por si la magia se está moviendo (ej. Tornado)
+			const baseZ = (eff.gx + eff.gy) * 100 + eff.gz * 10000 + eff.gx * 2;
+			eff.displayObject.zIndex = baseZ + eff.zIndexOffset;
+			this.dungeonLayer.addChild(eff.displayObject);
+		}
+	}
+
+	// --- HELPERS PARA MANEJAR EFECTOS ---
+	private addEffect(displayObject: Container, gx: number, gy: number, gz: number, zOffset: number = 50) {
+		const effect = { displayObject, gx, gy, gz, zIndexOffset: zOffset };
+		this.activeEffects.push(effect);
+		return effect;
+	}
+
+	private removeEffect(effect: any) {
+		const index = this.activeEffects.indexOf(effect);
+		if (index > -1) {
+			this.activeEffects.splice(index, 1);
+		}
+		effect.displayObject.destroy();
+	}
+
+	// --- HABILIDADES ---
+	private useSkillQ() {
+		// Disparo Rojo (1 celda adelante)
+		const tgx = this.player.gx + this.lastFacing.dx;
+		const tgy = this.player.gy + this.lastFacing.dy;
+
+		// --- NUEVO: Comprobar si le damos al prisionero ---
+		// Primero nos aseguramos de no revisar fuera de los límites del mapa
+		if (tgx >= 0 && tgx < this.GRID_SIZE && tgy >= 0 && tgy < this.GRID_SIZE) {
+			const targetTile = this.grid[this.player.gz][tgx][tgy];
+
+			if (targetTile === TileType.PRISONER) {
+				// 1. Habla el prisionero
+				DialogueOverlayManager.changeTalkerImage("prisonerface");
+				DialogueOverlayManager.talk("Esto es... estoy... LIBRE!");
+
+				// 2. Encadenamos el temblor y la reacción del jugador
+				DialogueOverlayManager.chainEvent(() => {
+					// Temblor de pantalla más largo (2000ms) y un poco más fuerte (20)
+					this.triggerScreenShake(10000, 20);
+
+					DialogueOverlayManager.changeTalkerImage("wizardface");
+					DialogueOverlayManager.talk("Qué... está pasando?!");
+				});
+			}
+		}
+
+		const pos = this.gridToScreen(tgx, tgy, this.player.gz);
+
+		const gfx = new AnimatedSprite([
+			Texture.from("smallhit00"),
+			Texture.from("smallhit01"),
+			Texture.from("smallhit02"),
+			Texture.from("smallhit03"),
+			Texture.from("smallhit04"),
+			Texture.from("smallhit05"),
+			Texture.from("smallhit06"),
+			Texture.from("smallhit07"),
+			Texture.from("smallhit08"),
+			Texture.from("smallhit09"),
+			Texture.from("smallhit10"),
+			Texture.from("smallhit11"),
+			Texture.from("smallhit12"),
+			Texture.from("smallhit13"),
+			Texture.from("smallhit14"),
+		]);
+
+		gfx.scale.set(0.13);
+		// Le asignamos la posición en la grilla isométrica
+		gfx.position.set(pos.x - 3, pos.y + 1);
+
+		// Centramos el punto de origen del sprite para que no se dibuje desde una esquina
+		gfx.anchor.set(0.5, 0.5);
+
+		// Ajustar la velocidad de la animación
+		gfx.animationSpeed = 0.3;
+
+		gfx.play();
+		SoundLib.playSound("skillQ", { end: 2, volume: 0.1 });
+		const effect = this.addEffect(gfx, tgx, tgy, this.player.gz);
+
+		// Tu Tween se encarga de destruirlo a los 500ms
+		new Tween(gfx)
+			.to({}, 500)
+			.onComplete(() => this.removeEffect(effect))
+			.start();
+	}
+	private useSkillW() {
+		// Ataque en Área (Cruz)
+		const dirs = [
+			{ dx: 1, dy: 0 },
+			{ dx: -1, dy: 0 },
+			{ dx: 0, dy: 1 },
+			{ dx: 0, dy: -1 },
+		];
+
+		for (const d of dirs) {
+			const tgx = this.player.gx + d.dx;
+			const tgy = this.player.gy + d.dy;
+			const pos = this.gridToScreen(tgx, tgy, this.player.gz);
+
+			const gfx = new Graphics();
+			gfx.beginFill(0xffaa00, 0.8).drawCircle(0, 0, 15).endFill();
+			gfx.position.set(pos.x, pos.y);
+
+			const effect = this.addEffect(gfx, tgx, tgy, this.player.gz);
+
+			new Tween(gfx)
+				.to({ alpha: 0, scale: { x: 1.5, y: 1.5 } }, 400)
+				.onComplete(() => this.removeEffect(effect))
+				.start();
+		}
+	}
+
+	private useSkillE() {
+		// Disparo Azul (1 celda adelante)
+		const tgx = this.player.gx + this.lastFacing.dx;
+		const tgy = this.player.gy + this.lastFacing.dy;
+		const pos = this.gridToScreen(tgx, tgy, this.player.gz);
+
+		const gfx = new Graphics();
+		gfx.beginFill(0x0000ff, 0.8).drawCircle(0, 0, 15).endFill();
+		gfx.position.set(pos.x, pos.y);
+
+		const effect = this.addEffect(gfx, tgx, tgy, this.player.gz);
+
+		new Tween(gfx)
+			.to({ alpha: 0, y: pos.y - 20 }, 300)
+			.onComplete(() => this.removeEffect(effect))
+			.start();
+	}
+
+	private useSkillR() {
+		// Tornado (Avanza 2 celdas)
+		const tgx1 = this.player.gx + this.lastFacing.dx;
+		const tgy1 = this.player.gy + this.lastFacing.dy;
+		const pos1 = this.gridToScreen(tgx1, tgy1, this.player.gz);
+
+		const tgx2 = this.player.gx + this.lastFacing.dx * 2;
+		const tgy2 = this.player.gy + this.lastFacing.dy * 2;
+		const pos2 = this.gridToScreen(tgx2, tgy2, this.player.gz);
+
+		const gfx = new Graphics();
+		gfx.beginFill(0xcccccc, 0.8).drawEllipse(0, -15, 15, 25).endFill();
+		gfx.position.set(pos1.x, pos1.y);
+
+		const effect = this.addEffect(gfx, tgx1, tgy1, this.player.gz, 60);
+
+		// Animar la posición física en pantalla
+		new Tween(gfx.position).to({ x: pos2.x + this.T_HEIGHT_HALF, y: pos2.y }, 600).start();
+
+		// Animar la posición lógica (gx, gy) para que el Z-Index cambie en pleno vuelo
+		new Tween(effect)
+			.to({ gx: tgx2, gy: tgy2 }, 600)
+			.onComplete(() => {
+				new Tween(gfx)
+					.to({ alpha: 0, scale: { x: 0, y: 0 } }, 200)
+					.onComplete(() => this.removeEffect(effect))
+					.start();
+			})
+			.start();
+	}
+
+	private useSkill1() {
+		// Curar
+		const gfx = new AnimatedSprite([
+			Texture.from("heal00"),
+			Texture.from("heal01"),
+			Texture.from("heal02"),
+			Texture.from("heal03"),
+			Texture.from("heal04"),
+			Texture.from("heal05"),
+			Texture.from("heal06"),
+			Texture.from("heal07"),
+			Texture.from("heal08"),
+			Texture.from("heal09"),
+			Texture.from("heal10"),
+			Texture.from("heal11"),
+			Texture.from("heal12"),
+			Texture.from("heal13"),
+			Texture.from("heal14"),
+		]);
+		gfx.gotoAndPlay(0);
+		gfx.loop = true;
+		gfx.scale.set(1);
+
+		// Centramos el punto de origen del sprite para que no se dibuje desde una esquina
+		gfx.anchor.set(0.5, 0.7);
+
+		// Opcional: Ajustar la velocidad de la animación (1 es normal, 0.5 es la mitad, etc.)
+		gfx.animationSpeed = 1;
+
+		gfx.play();
+		SoundLib.playSound("skillQ", { end: 2 });
+
+		// Como esto va al jugador, lo atachamos directo a su Container
+		this.animator.addChild(gfx);
+
+		new Tween(gfx)
+			.to({ y: -60, alpha: 0 }, 1000)
+			.onComplete(() => gfx.destroy())
+			.start();
+	}
+
+	private useSkill2() {
+		// Escudo (Dura 2 segundos)
+		if (this.shieldActive) {
+			return;
+		}
+		this.shieldActive = true;
+
+		const shield = new Graphics();
+		shield.beginFill(0x00ffff, 0.3);
+		shield.lineStyle(2, 0x00ffff, 0.8);
+		shield.drawCircle(0, -95, 150);
+		shield.endFill();
+
+		this.animator.addChild(shield);
+
+		// Lo destruimos a los 2000 milisegundos (2 segundos)
+		setTimeout(() => {
+			new Tween(shield)
+				.to({ alpha: 0 }, 200)
+				.onComplete(() => {
+					shield.destroy();
+					this.shieldActive = false;
+				})
+				.start();
+		}, 1800);
 	}
 
 	private updateTileSprite(type: TileType, x: number, y: number, alpha: number, gx: number, gy: number, gz: number) {
@@ -844,6 +1091,9 @@ export class IsometricHouseScene extends PixiScene {
 			return;
 		}
 
+		// --- NUEVO: Guardar la dirección hacia donde intentamos movernos/mirar ---
+		this.lastFacing = { dx, dy };
+
 		// --- PASO 1: Calcular la primera casilla ---
 		const nx1 = this.player.gx + dx;
 		const ny1 = this.player.gy + dy;
@@ -968,23 +1218,26 @@ export class IsometricHouseScene extends PixiScene {
 		}
 		// --- LÓGICA DE MOVIMIENTO Y DASH CONTINUO ---
 		if (DialogueOverlayManager.isOpen) {
+			this.uiBottomLeftLayer.alpha = 0;
 			this.keys.clear(); // Evitar que el jugador se siga moviendo si se abre un diálogo
 		} else if (!this.isMoving) {
+			this.uiBottomLeftLayer.alpha = 1;
+
 			let dx = 0,
 				dy = 0;
 
 			// Evaluamos direcciones usando los códigos universales (KeyW, ArrowUp, etc.)
-			if (this.keys.has("KeyW") || this.keys.has("ArrowUp")) {
+			if (this.keys.has("ArrowUp")) {
 				dy = -1;
-			} else if (this.keys.has("KeyS") || this.keys.has("ArrowDown")) {
+			} else if (this.keys.has("ArrowDown")) {
 				dy = 1;
 			}
 
 			// Evitamos movimiento diagonal estricto priorizando el eje Y si ambos están presionados
 			if (dy === 0) {
-				if (this.keys.has("KeyA") || this.keys.has("ArrowLeft")) {
+				if (this.keys.has("ArrowLeft")) {
 					dx = -1;
-				} else if (this.keys.has("KeyD") || this.keys.has("ArrowRight")) {
+				} else if (this.keys.has("ArrowRight")) {
 					dx = 1;
 				}
 			}
@@ -996,6 +1249,8 @@ export class IsometricHouseScene extends PixiScene {
 
 				this.movePlayer(dx, dy, canDash);
 			}
+		} else {
+			this.uiBottomLeftLayer.alpha = 1;
 		}
 
 		// const targetPos = this.gridToScreen(this.player.gx, this.player.gy, this.player.gz);
@@ -1022,6 +1277,7 @@ export class IsometricHouseScene extends PixiScene {
 			}
 		}
 		this.renderDungeon();
+		this.updateMinimap(); // <--- AÑADE ESTA LÍNEA AL FINAL
 	}
 
 	private setupEvents() {
@@ -1031,6 +1287,28 @@ export class IsometricHouseScene extends PixiScene {
 		window.addEventListener("keydown", (e) => {
 			if (!DialogueOverlayManager.isOpen) {
 				this.keys.add(e.code);
+
+				// --- NUEVO: Disparar habilidades de la UI ---
+				switch (e.code) {
+					case "KeyQ":
+						this.useSkillQ();
+						break;
+					case "KeyW":
+						this.useSkillW();
+						break;
+					case "KeyA":
+						this.useSkillE();
+						break;
+					case "KeyR":
+						this.useSkillR();
+						break;
+					case "Digit1":
+						this.useSkill1();
+						break;
+					case "Digit2":
+						this.useSkill2();
+						break;
+				}
 			}
 		});
 
@@ -1085,10 +1363,114 @@ export class IsometricHouseScene extends PixiScene {
 		this.uiText = new Text(`Piso: 0`, style);
 		this.uiText.position.set(20, 20);
 		this.uiLayer.addChild(this.uiText);
+
+		const baseUI = Sprite.from("baseUI");
+		baseUI.anchor.set(0.5);
+		baseUI.position.set(baseUI.width / 2, -baseUI.height / 2);
+		this.uiBottomLeftLayer.addChild(baseUI);
+
+		const icons = Sprite.from("icons");
+		icons.anchor.set(0.5);
+		icons.position.set(baseUI.x + baseUI.width / 2 + icons.width / 2, -icons.height / 2);
+		this.uiBottomLeftLayer.addChild(icons);
+
+		// --- NUEVO: CREAR GRÁFICOS DEL MINIMAPA ---
+		this.minimapGraphics = new Graphics();
+		this.uiTopRightLayer.addChild(this.minimapGraphics);
+	}
+
+	private updateMinimap() {
+		const z = this.player.gz;
+		// Usamos math.round por si el jugador está en medio de una animación (TWEEN)
+		const px = Math.round(this.player.renderGx);
+		const py = Math.round(this.player.renderGy);
+
+		// 1. ACTUALIZAR NIEBLA DE GUERRA (Visión circular de 5 casillas)
+		for (let dx = -5; dx <= 5; dx++) {
+			for (let dy = -5; dy <= 5; dy++) {
+				// Fórmula de distancia Euclidiana para hacer un círculo
+				if (Math.sqrt(dx * dx + dy * dy) <= 5.5) {
+					const nx = px + dx;
+					const ny = py + dy;
+					// Si está dentro de los límites del mapa, lo marcamos como visto
+					if (nx >= 0 && nx < this.GRID_SIZE && ny >= 0 && ny < this.GRID_SIZE) {
+						this.discoveredTiles[z][nx][ny] = true;
+					}
+				}
+			}
+		}
+
+		// 2. DIBUJAR MINIMAPA
+		this.minimapGraphics.clear();
+
+		const tileSize = 8; // Tamaño en píxeles de cada cuadrito
+		const mapSize = this.GRID_SIZE * tileSize;
+
+		// Fondo semi-transparente estilo "pergamino/UI oscura"
+		this.minimapGraphics.beginFill(0x1a1a24, 0.8);
+		this.minimapGraphics.lineStyle(3, 0x4a4a55, 1);
+		this.minimapGraphics.drawRect(-10, -10, mapSize + 20, mapSize + 20);
+		this.minimapGraphics.endFill();
+
+		// Dibujar las casillas descubiertas
+		this.minimapGraphics.lineStyle(0);
+		for (let x = 0; x < this.GRID_SIZE; x++) {
+			for (let y = 0; y < this.GRID_SIZE; y++) {
+				if (this.discoveredTiles[z][x][y]) {
+					const tile = this.grid[z][x][y];
+					if (tile === TileType.EMPTY) {
+						continue;
+					}
+
+					// Asignar colores según el tipo de Tile
+					let color = 0x444444; // Suelo normal (Gris)
+					if (tile === TileType.WALL) {
+						color = 0x888888;
+					} // Pared (Gris claro)
+					else if (tile === TileType.WOOD_FLOOR || tile === TileType.BED) {
+						color = 0x6e5239;
+					} // Madera
+					else if (tile === TileType.STAIRS_UP) {
+						color = 0x00ff00;
+					} // Escalera subir (Verde)
+					else if (tile === TileType.STAIRS_DOWN) {
+						color = 0xffaa00;
+					} // Escalera bajar (Naranja)
+					else if (tile === TileType.GATE || tile === TileType.BARGATE) {
+						color = 0xaa5500;
+					} // Puertas
+					else if (tile === TileType.PRISONER) {
+						color = 0xff0000;
+					} // Enemigos/NPCs (Rojo)
+
+					this.minimapGraphics.beginFill(color, 1);
+					this.minimapGraphics.drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
+					this.minimapGraphics.endFill();
+				}
+			}
+		}
+
+		// 3. DIBUJAR AL JUGADOR (Un puntito Cyan encima de todo)
+		this.minimapGraphics.beginFill(0x00ffff, 1);
+		this.minimapGraphics.drawCircle(px * tileSize + tileSize / 2, py * tileSize + tileSize / 2, tileSize / 2);
+		this.minimapGraphics.endFill();
 	}
 
 	public override onResize(_newW: number, _newH: number): void {
 		this.worldContainer.x = _newW / 2;
 		this.worldContainer.y = _newH / 2;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.uiBottomLeftLayer, _newW, _newH, 1920, 1080, ScaleHelper.FIT);
+		this.uiBottomLeftLayer.y = _newH;
+
+		ScaleHelper.setScaleRelativeToIdeal(this.uiBottomRightLayer, _newW, _newH, 1920, 1080, ScaleHelper.FIT);
+		this.uiBottomRightLayer.y = _newH;
+		this.uiBottomRightLayer.x = _newW;
+
+		// --- NUEVO: ESCALAR Y POSICIONAR MINIMAPA ARRIBA A LA DERECHA ---
+		ScaleHelper.setScaleRelativeToIdeal(this.uiTopRightLayer, _newW, _newH, 1920, 1080, ScaleHelper.FIT);
+		// El "200" depende del tamaño que te ocupe el minimapa visualmente
+		this.uiTopRightLayer.x = _newW - 200 * this.uiTopRightLayer.scale.x;
+		this.uiTopRightLayer.y = 50 * this.uiTopRightLayer.scale.y;
 	}
 }

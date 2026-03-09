@@ -98,7 +98,13 @@ export class DungeonScene3D extends PixiScene {
 	// ... dentro de la clase DungeonScene3D ...
 
 	// Actualiza el tipo de selectedTool
-	private selectedTool: TileType | "MINE" | "SELL" | "GRAB" | "VIEW_INFO" = "MINE";
+	// En la parte superior, actualiza el tipo selectedTool
+	private selectedTool: TileType | "MINE" | "SELL" | "GRAB" | "VIEW_INFO" | "POSSESS" = "MINE";
+
+	// Nuevas propiedades privadas en la clase DungeonScene3D
+	private possessedMinion: Minion | null = null;
+	private keys: Record<string, boolean> = {};
+	private savedCameraState = { distance: 0, angles: { x: 0, y: 0 }, target: { x: 0, y: 0, z: 0 } };
 	private selectionVisual: Mesh3D;
 	private grabbedMinion: Minion | null = null;
 	private unitBarContainer: Container; // Nuevo contenedor para las caras de los monstruos	private selectionVisual: Mesh3D;
@@ -144,7 +150,8 @@ export class DungeonScene3D extends PixiScene {
 	private readonly DEBUG_TILE_SETTINGS = true; // Cambia a false para ocultar todo el sistema
 	private debugInfoPanel: Container;
 	private debugInfoText: Text;
-
+	private readonly MOUSE_SENSITIVITY = 0.15;
+	private readonly LOOK_LIMIT = 0; // Límite para no poder mirar "atrás" por arriba o abajo
 	constructor() {
 		super();
 		this.worldContainer = this.addChild(new Container3D());
@@ -900,6 +907,12 @@ export class DungeonScene3D extends PixiScene {
 		this.eventMode = "static";
 
 		window.addEventListener("keydown", (e) => {
+			this.keys[e.code] = true;
+
+			// Salir de posesión con Escape
+			if (e.code === "Escape" && this.possessedMinion) {
+				this.exitPossession();
+			}
 			if (e.code === "Space" || e.code === "KeyC") {
 				const centerPos = Math.floor(this.GRID_SIZE / 2) * this.TILE_SIZE;
 
@@ -913,6 +926,10 @@ export class DungeonScene3D extends PixiScene {
 					.easing(Easing.Quadratic.Out) // Comienza rápido y frena suave
 					.start();
 			}
+		});
+
+		window.addEventListener("keyup", (e) => {
+			this.keys[e.code] = false;
 		});
 
 		this.on("pointerdown", (e) => {
@@ -1063,6 +1080,16 @@ export class DungeonScene3D extends PixiScene {
 			this.isSelecting = false;
 			this.selectionAreaVisual.visible = false;
 		});
+		// Escuchar el movimiento del mouse para la cámara
+		window.addEventListener("mousemove", (e) => {
+			if (this.possessedMinion) {
+				// Rotación Horizontal (Yaw)
+				cameraControl.angles.y -= e.movementX * this.MOUSE_SENSITIVITY;
+
+				// Rotación Vertical (Pitch) con límites para no dar la vuelta completa
+				cameraControl.angles.x = Math.max(-this.LOOK_LIMIT, Math.min(this.LOOK_LIMIT, cameraControl.angles.x + e.movementY * this.MOUSE_SENSITIVITY));
+			}
+		});
 	}
 
 	private getGridCoords(mousePos: Point) {
@@ -1126,6 +1153,14 @@ export class DungeonScene3D extends PixiScene {
 				}
 			}
 			return; // IMPORTANTE: Detenemos aquí para no procesar minas o construcciones
+		}
+
+		if (this.selectedTool === "POSSESS") {
+			const found = this.minions.find((m) => m.gx === coordsEnd.gx && m.gz === coordsEnd.gz);
+			if (found) {
+				this.enterPossession(found);
+			}
+			return;
 		}
 
 		const minX = Math.max(0, Math.min(start.gx, coordsEnd.gx));
@@ -1193,6 +1228,44 @@ export class DungeonScene3D extends PixiScene {
 				}
 			}
 		}
+	}
+
+	private enterPossession(minion: Minion) {
+		if (this.possessedMinion) {
+			return;
+		}
+
+		// Guardar estado original
+		this.savedCameraState = {
+			distance: cameraControl.distance,
+			angles: { x: cameraControl.angles.x, y: cameraControl.angles.y },
+			target: { ...cameraControl.target },
+		};
+
+		this.possessedMinion = minion;
+		this.possessedMinion.state = "IDLE";
+		this.possessedMinion.path = [];
+
+		cameraControl.distance = 0.1;
+		this.uiLayer.visible = false;
+	}
+
+	private exitPossession() {
+		if (!this.possessedMinion) {
+			return;
+		}
+
+		// Liberar mouse
+		document.exitPointerLock?.();
+
+		// Restaurar cámara
+		cameraControl.distance = this.savedCameraState.distance;
+		cameraControl.angles.x = this.savedCameraState.angles.x;
+		cameraControl.angles.y = this.savedCameraState.angles.y;
+		cameraControl.target = this.savedCameraState.target;
+
+		this.possessedMinion = null;
+		this.uiLayer.visible = true;
 	}
 
 	private showTileDebugReport(x: number, z: number) {
@@ -1547,6 +1620,13 @@ heartLabel.position.set(drawX, drawZ);
 		super.update(dt);
 		Group.shared.update();
 
+		if (this.possessedMinion) {
+			this.handlePossessionMovement(dt);
+			// La cámara sigue al personaje
+			cameraControl.target.x = this.possessedMinion.visual.position.x;
+			cameraControl.target.y = 1.3;
+			cameraControl.target.z = this.possessedMinion.visual.position.z;
+		}
 		if (this.isDiscoverySequencePlaying) {
 			return;
 		}
@@ -1564,8 +1644,10 @@ heartLabel.position.set(drawX, drawZ);
 		}
 
 		// 3. Actualización de Minions (Una sola vez por frame)
+		// ACTUALIZACIÓN DE MINIONS:
 		this.minions.forEach((m) => {
-			if (m !== this.grabbedMinion) {
+			// IMPORTANTE: Si está poseído o agarrado, NO ejecutar updateMinion
+			if (m !== this.grabbedMinion && m !== this.possessedMinion) {
 				this.updateMinion(m, dt);
 			}
 		});
@@ -1595,6 +1677,68 @@ heartLabel.position.set(drawX, drawZ);
 		this.processSmokeEffects(dt);
 		this.processAppearingMeshes();
 		this.processDebris(dt); // Nueva línea
+	}
+
+	private handlePossessionMovement(dt: number) {
+		const m = this.possessedMinion;
+		const speed = 0.01 * dt;
+
+		// Calculamos los vectores de dirección basados en el ángulo actual de la cámara (Yaw)
+		// El ángulo de Pixi3D suele estar desplazado 90 grados respecto al círculo trigonométrico estándar
+		const angleRad = (cameraControl.angles.y - 90) * (Math.PI / 180);
+
+		// Vector Adelante (Forward)
+		const forwardX = Math.cos(angleRad);
+		const forwardZ = Math.sin(angleRad);
+
+		// Vector Derecha (Right) - Es el perpendicular al Forward
+		const rightX = Math.cos(angleRad + Math.PI / 2);
+		const rightZ = Math.sin(angleRad + Math.PI / 2);
+
+		let moveX = 0;
+		let moveZ = 0;
+
+		// W / S: Adelante y Atrás
+		if (this.keys["KeyW"]) {
+			moveX += forwardX * speed;
+			moveZ += forwardZ * speed;
+		}
+		if (this.keys["KeyS"]) {
+			moveX -= forwardX * speed;
+			moveZ -= forwardZ * speed;
+		}
+
+		// A / D: Movimiento Lateral (Strafe)
+		if (this.keys["KeyA"]) {
+			moveX += rightX * speed;
+			moveZ += rightZ * speed;
+		}
+		if (this.keys["KeyD"]) {
+			moveX -= rightX * speed;
+			moveZ -= rightZ * speed;
+		}
+
+		const nextX = m.visual.position.x + moveX;
+		const nextZ = m.visual.position.z + moveZ;
+
+		// Colisión con el Grid
+		const nextGx = Math.round(nextX / this.TILE_SIZE);
+		const nextGz = Math.round(nextZ / this.TILE_SIZE);
+		const tile = this.grid[nextGx]?.[nextGz];
+
+		if (tile !== undefined && tile !== TileType.WALL && tile !== TileType.GOLD_WALL) {
+			m.visual.position.x = nextX;
+			m.visual.position.z = nextZ;
+			m.gx = nextGx;
+			m.gz = nextGz;
+		}
+
+		// Actualizar el target de la cámara a la "cara" del minion
+		cameraControl.target.x = m.visual.position.x;
+		cameraControl.target.y = 1.3; // Un poco más bajo para sensación de criatura
+		cameraControl.target.z = m.visual.position.z;
+
+		this.revealArea(m.gx, m.gz);
 	}
 
 	private updateMinion(m: Minion, dt: number) {
@@ -1991,6 +2135,7 @@ heartLabel.position.set(drawX, drawZ);
 		const tools = [
 			{ type: "MINE", label: "PICAR", color: 0x555555 },
 			{ type: "GRAB", label: "MANO", color: 0x228822 },
+			{ type: "POSSESS", label: "POSEER", color: 0xaa00ff },
 			{ type: "SELL", label: "VENDER (50%)", color: 0x882222 },
 			...Object.entries(ROOM_CONFIG).map(([type, cfg]) => ({
 				type: Number(type),
@@ -2000,9 +2145,10 @@ heartLabel.position.set(drawX, drawZ);
 		];
 
 		tools.forEach((t, i) => {
-			const btn = new Graphics().beginFill(t.color).drawRoundedRect(0, 0, 130, 40, 5).endFill();
+			// Reducimos altura de 40 a 32 y espaciado a 38
+			const btn = new Graphics().beginFill(t.color).drawRoundedRect(0, 0, 130, 32, 5).endFill();
 			btn.x = 20;
-			btn.y = 70 + i * 50;
+			btn.y = 60 + i * 38;
 			btn.eventMode = "static";
 			btn.on("pointerdown", (e) => {
 				e.stopPropagation();
@@ -2013,13 +2159,12 @@ heartLabel.position.set(drawX, drawZ);
 				btn.alpha = 0.6;
 			});
 
-			const txt = new Text(t.label, { fill: 0xffffff, fontSize: 11, fontWeight: "bold" });
+			const txt = new Text(t.label, { fill: 0xffffff, fontSize: 10, fontWeight: "bold" });
 			txt.anchor.set(0.5);
-			txt.position.set(65, 20);
+			txt.position.set(65, 16); // Centrado en la nueva altura
 			btn.addChild(txt);
 			this.uiLayer.addChild(btn);
 		});
-
 		// Dentro de createUI()
 		this.debugText = new Text("", { fill: "#ffffff", fontSize: 14 });
 		this.debugText.position.set(20, 500);
