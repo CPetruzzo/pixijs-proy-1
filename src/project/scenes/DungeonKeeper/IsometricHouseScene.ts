@@ -9,6 +9,9 @@ import { DialogueOverlayManager } from "../../../engine/dialog/DialogueOverlayMa
 import { InteractableManager } from "../../../engine/utils/InteractableManager";
 import { SoundLib } from "../../../engine/sound/SoundLib";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
+import { Timer } from "../../../engine/tweens/Timer";
+import { Manager } from "../../..";
+import { TopDownHouseScene } from "./TopDownHouseScene";
 
 // Tipos de celda para la lógica de construcción del nivel
 enum TileType {
@@ -24,96 +27,97 @@ enum TileType {
 	CLEANBUCKET = 9,
 	TORCH = 10,
 	PRISONER = 11,
+	PORTAL = 12, // <--- NUEVO
 }
 
-const TILE_MAP: Record<string, TileType> = {
-	".": TileType.EMPTY,
-	F: TileType.FLOOR,
-	W: TileType.WALL,
-	U: TileType.STAIRS_UP,
-	D: TileType.STAIRS_DOWN,
-	B: TileType.BED,
-	X: TileType.WOOD_FLOOR,
-	G: TileType.GATE,
-	I: TileType.BARGATE,
-	C: TileType.CLEANBUCKET,
-	T: TileType.TORCH,
-	P: TileType.PRISONER,
-};
+// const TILE_MAP: Record<string, TileType> = {
+// 	".": TileType.EMPTY,
+// 	F: TileType.FLOOR,
+// 	W: TileType.WALL,
+// 	U: TileType.STAIRS_UP,
+// 	D: TileType.STAIRS_DOWN,
+// 	B: TileType.BED,
+// 	X: TileType.WOOD_FLOOR,
+// 	G: TileType.GATE,
+// 	I: TileType.BARGATE,
+// 	C: TileType.CLEANBUCKET,
+// 	T: TileType.TORCH,
+// 	P: TileType.PRISONER,
+// };
 
-// Nivel 0: Sótano (15x15)
-const LEVEL_0 = [
-	"...............",
-	"...............",
-	"..WWGWWW.......", // <--- y=2 (Aquí ves tu puerta 'G' en x=4)
-	"..WFFFFW.......", // <--- y=3
-	"..WFFFFW.......", // <--- y=4
-	"..WFFFFW.......", // <--- y=5
-	"..WFFFFW.......", // <--- y=6
-	"..WWUWWW.......", // <--- y=7 (Aquí ves tu escalera 'U' en x=4)
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-];
+// // Nivel 0: Sótano (15x15)
+// const LEVEL_0 = [
+// 	"...............",
+// 	"...............",
+// 	"..WWGWWW.......", // <--- y=2 (Aquí ves tu puerta 'G' en x=4)
+// 	"..WFFFFW.......", // <--- y=3
+// 	"..WFFFFW.......", // <--- y=4
+// 	"..WFFFFW.......", // <--- y=5
+// 	"..WFFFFW.......", // <--- y=6
+// 	"..WWUWWW.......", // <--- y=7 (Aquí ves tu escalera 'U' en x=4)
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// ];
 
-// Nivel 1: Sala
-const LEVEL_1 = [
-	"...............",
-	"...............",
-	"..WWWWWWWWWWWWW",
-	"..WXUXIFFFXXXXW",
-	"..WXXXTXXFXXXXW",
-	"..WWWWWXXFXXXXW",
-	"..WFFFXXXFXXXXW",
-	"..TFDFFFFFXXXXW",
-	"..WFFFXXXXXXXXW",
-	"..WXXXXXXXXXXXW",
-	"..TXXXXXXCXXXXW",
-	"..WXXXXXXXXXXXW",
-	"..WXXXXXXXXXXXW",
-	"..WXXXXXXXXXXXW",
-	"..WWWWWWWWWWWWW",
-];
+// // Nivel 1: Sala
+// const LEVEL_1 = [
+// 	"...............",
+// 	"...............",
+// 	"..WWWWWWWWWWWWW",
+// 	"..WXUXIFFFXXXXW",
+// 	"..WXXXTXXFXXXXW",
+// 	"..WWWWWXXFXXXXW",
+// 	"..WFFFXXXFXXXXW",
+// 	"..TFDFFFFFXXXXW",
+// 	"..WFFFXXXXXXXXW",
+// 	"..WXXXXXXXXXXXW",
+// 	"..TXXXXXXCXXXXW",
+// 	"..WXXXXXXXXXXXW",
+// 	"..WXXXXXXXXXXXW",
+// 	"..WXXXXXXXXXXXW",
+// 	"..WWWWWWWWWWWWW",
+// ];
 
-const LEVEL_2 = [
-	"...............",
-	"...............",
-	"..WWWWWWWWWWWWW",
-	"..WXDXXXXXXXXXW",
-	"..WXXBBXXUXXXXW",
-	"..WXXXXXXXXXXXW",
-	"..WXXXXXXXXXXXW",
-	"..WWWWWWWWWWWWW",
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-];
+// const LEVEL_2 = [
+// 	"...............",
+// 	"...............",
+// 	"..WWWWWWWWWWWWW",
+// 	"..WXDXXXXXXXXXW",
+// 	"..WXXBBXXUXXXXW",
+// 	"..WXXXXXXXXXXXW",
+// 	"..WXXXXXXXXXXXW",
+// 	"..WWWWWWWWWWWWW",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// ];
 
-const LEVEL_3 = [
-	"...............",
-	"...............",
-	"....WWWWWWWT...",
-	"....TXXXXXXW...",
-	"....WXPXXDXW...",
-	"....WXXXXXXW...",
-	"....TXXXXXXW...",
-	"....WWWWWWWT...",
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-	"...............",
-];
+// const LEVEL_3 = [
+// 	"...............",
+// 	"...............",
+// 	"....WWWWWWWT...",
+// 	"....TXXXXXXW...",
+// 	"....WXPXXDXW...",
+// 	"....WXXXXXXW...",
+// 	"....TXXXXXXW...",
+// 	"....WWWWWWWT...",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// 	"...............",
+// ];
 
 interface Entity {
 	gx: number;
@@ -131,7 +135,7 @@ interface Entity {
  */
 export class IsometricHouseScene extends PixiScene {
 	private readonly GRID_SIZE = 15;
-	private readonly NUM_LEVELS = 4;
+	private readonly NUM_LEVELS = 5;
 	private readonly T_WIDTH_HALF = 40;
 	private readonly T_HEIGHT_HALF = 24;
 	private readonly LEVEL_HEIGHT = 60;
@@ -175,43 +179,120 @@ export class IsometricHouseScene extends PixiScene {
 	private discoveredTiles: boolean[][][] = []; // <--- MATRIZ DE NIEBLA DE GUERRA
 	// Array para mantener vivos los efectos visuales (magias) en cada frame
 	private activeEffects: { displayObject: Container; gx: number; gy: number; gz: number; zIndexOffset: number }[] = [];
-	constructor() {
-		super();
-		this.initWorld();
 
+	private portalConfig: Record<string, { targetZ: number; targetX: number; targetY: number }> = {
+		// Clave: "NivelOrigen_X_Y"
+		"0_4_3": {
+			targetZ: 4, // El índice del nuevo nivel (level-1.png)
+			targetX: 7, // La coordenada X de destino
+			targetY: 13, // La coordenada Y de destino (al fondo del pasillo)
+		},
+		// Opcional: Portal de regreso desde level-1 a level0
+		"4_7_13": {
+			targetZ: 0,
+			targetX: 4,
+			targetY: 3,
+		},
+	};
+
+	private levelNames: Record<number, string> = {
+		0: "Sótano - Celda",
+		1: "Planta Baja",
+		2: "Entrepiso",
+		3: "Prisionero",
+		4: "Pasillo Profundo", // Nombre para el mapa level-1.png
+	};
+
+	public savedPos: { gx: number; gy: number; gz: number };
+
+	constructor(startPos?: { gx: number; gy: number; gz: number } | any) {
+		super();
+		// 1. Inicializamos lo básico que NO depende del mapa
 		this.worldContainer = new Container();
 		this.addChild(this.worldContainer);
-		this.zoomOut();
-		// --- CAMBIO: Inicializar un manager por nivel ---
+
+		if (startPos) {
+			// Guardar para usar en createPlayer()
+			this.savedPos = startPos;
+		}
+
 		this.interactManagers = [];
 		for (let i = 0; i < this.NUM_LEVELS; i++) {
 			this.interactManagers.push(new InteractableManager(this.worldContainer));
 		}
-		this.dungeonLayer = new Container();
-		this.dungeonLayer.sortableChildren = true; // <--- Añadir esta línea
-		this.worldContainer.addChild(this.dungeonLayer);
 
-		SoundLib.playMusic("crickets", { loop: true, volume: 0.3 });
-		SoundLib.playMusic("ambience", { loop: true, volume: 0.3 });
-		this.createLighting(); // <--- AÑADE ESTA LÍNEA AQUÍ
-		this.createTorchLights(); // <--- AÑADE ESTO AQUÍ
-		DialogueOverlayManager.init(this); // <--- INICIALIZAR DIÁLOGO
-		DialogueOverlayManager.changeTalkerImage("wizardface");
-		// BORRAMOS la inicialización de this.playerLayer aquí
+		this.dungeonLayer = new Container();
+		this.dungeonLayer.sortableChildren = true;
+		this.worldContainer.addChild(this.dungeonLayer);
 
 		this.uiLayer = new Container();
 		this.addChild(this.uiLayer, this.uiBottomLeftLayer, this.uiBottomRightLayer, this.uiTopRightLayer);
+
+		// 2. LLAMAMOS A LA CARGA ASÍNCRONA
+		this.startScene();
+		this.zoomOut();
+	}
+
+	private changeRoom(targetZ: number, targetX: number, targetY: number) {
+		this.isMoving = true; // Bloqueamos el movimiento para evitar inputs durante la transición
+
+		// 1. Fade Out (Oscurecer la escena)
+		new Tween(this.worldContainer)
+			.to({ alpha: 0 }, 0) // Bajé el tiempo a 500ms para que sea más dinámico
+			.onComplete(() => {
+				// --- TODO ESTO OCURRE CUANDO LA PANTALLA ESTÁ EN NEGRO ---
+
+				// 2. Cambiar posición lógica del jugador
+				this.player.gz = targetZ;
+				this.player.gx = targetX;
+				this.player.gy = targetY;
+
+				// Actualizar la posición visual y de renderizado inmediatamente
+				const pos = this.gridToScreen(targetX, targetY, targetZ);
+				this.player.visualX = pos.x;
+				this.player.visualY = pos.y;
+				this.player.renderGx = targetX; //
+				this.player.renderGy = targetY; //
+				this.player.renderGz = targetZ; //
+
+				// 3. Forzar el refresco de la mazmorra y re-centrar la cámara
+				this.renderDungeon();
+				this.centerCameraOnPlayer();
+
+				new Timer()
+					.to(500)
+					.start()
+					.onComplete(() => {
+						// 4. Fade In (Volver a mostrar la escena ya en el nuevo lugar)
+						new Tween(this.worldContainer)
+							.to({ alpha: 1 }, 0) //
+							.onComplete(() => {
+								this.isMoving = false; // Liberamos el movimiento recién al final de todo
+							})
+							.start();
+					});
+			})
+			.start();
+	}
+
+	// NUEVO MÉTODO PARA ORDENAR LA CARGA
+	private async startScene() {
+		await this.initWorld(); // <--- ESPERAMOS a que los mapas carguen
+
+		// 3. Una vez cargado el mapa, recién ahí creamos lo que depende de él
+		this.createLighting();
+		this.createTorchLights(); // <--- Ahora this.grid ya tendrá datos
+		DialogueOverlayManager.init(this);
+		DialogueOverlayManager.changeTalkerImage("wizardface");
+
 		this.setupEvents();
 		this.createPlayer();
 		this.createUI();
-
-		this.setupInteractions(); // <--- CREAR LOS PUNTOS DE INTERACCIÓN
-
+		this.setupInteractions();
 		this.centerCameraOnPlayer();
 
-		// --- NUEVO: Tween para la respiración del prisionero ---
-		// Se ensancha sutilmente (X) y se encoje un poco (Y) simulando el pecho al respirar
 		new Tween(this.prisonerScale).to({ x: 0.153, y: 0.147 }, 1500).repeat(Infinity).yoyo(true).start();
+		SoundLib.playMusic("crickets", { loop: true, volume: 0.3 });
 	}
 
 	private triggerScreenShake(duration: number = 300, initialIntensity: number = 10, _onComplete?: any) {
@@ -508,41 +589,68 @@ export class IsometricHouseScene extends PixiScene {
 	// 	this.grid[3][5][4] = TileType.STAIRS_DOWN;
 	// }
 
-	private initWorld() {
-		const mapStrings = [LEVEL_0, LEVEL_1, LEVEL_2, LEVEL_3];
+	// BACKUP
+	// private initWorld() {
+	// 	const mapStrings = [LEVEL_0, LEVEL_1, LEVEL_2, LEVEL_3];
 
+	// 	for (let z = 0; z < this.NUM_LEVELS; z++) {
+	// 		this.grid[z] = [];
+	// 		this.discoveredTiles[z] = []; // <--- INICIALIZAR NIEBLA Z
+
+	// 		const currentMap = mapStrings[z];
+
+	// 		for (let x = 0; x < this.GRID_SIZE; x++) {
+	// 			this.grid[z][x] = [];
+	// 			this.discoveredTiles[z][x] = []; // <--- INICIALIZAR NIEBLA X
+
+	// 			for (let y = 0; y < this.GRID_SIZE; y++) {
+	// 				const char = currentMap[y][x];
+	// 				this.grid[z][x][y] = TILE_MAP[char] || TileType.EMPTY;
+
+	// 				// <--- AL EMPEZAR, NADIE VIO ESTA CASILLA
+	// 				this.discoveredTiles[z][x][y] = false;
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	private async initWorld() {
+		// En lugar de usar los arrays de strings LEVEL_0, etc.
+		const levelFiles = [
+			"./img/isometric/maps/level0.png",
+			"./img/isometric/maps/level1.png",
+			"./img/isometric/maps/level2.png",
+			"./img/isometric/maps/level3.png",
+			"./img/isometric/maps/level-1.png",
+		];
 		for (let z = 0; z < this.NUM_LEVELS; z++) {
-			this.grid[z] = [];
-			this.discoveredTiles[z] = []; // <--- INICIALIZAR NIEBLA Z
+			this.grid[z] = await this.loadLevelFromImage(levelFiles[z]);
 
-			const currentMap = mapStrings[z];
-
+			// Inicializar niebla de guerra igual que antes
+			this.discoveredTiles[z] = [];
 			for (let x = 0; x < this.GRID_SIZE; x++) {
-				this.grid[z][x] = [];
-				this.discoveredTiles[z][x] = []; // <--- INICIALIZAR NIEBLA X
-
-				for (let y = 0; y < this.GRID_SIZE; y++) {
-					const char = currentMap[y][x];
-					this.grid[z][x][y] = TILE_MAP[char] || TileType.EMPTY;
-
-					// <--- AL EMPEZAR, NADIE VIO ESTA CASILLA
-					this.discoveredTiles[z][x][y] = false;
-				}
+				this.discoveredTiles[z][x] = new Array(this.GRID_SIZE).fill(false);
 			}
 		}
 	}
 
 	private createPlayer() {
-		const pos = this.gridToScreen(4, 4, 0);
+		const startGX = this.savedPos?.gx ?? 4;
+		const startGY = this.savedPos?.gy ?? 4;
+		const startGZ = this.savedPos?.gz ?? 0;
+
+		const pos = this.gridToScreen(startGX, startGY, startGZ);
+
 		this.player = {
-			gx: 4,
-			gy: 4,
-			gz: 0,
-			renderGx: 4,
-			renderGy: 4,
-			renderGz: 0, // Empezamos en la misma posición
+			gx: startGX,
+			gy: startGY,
+			gz: startGZ,
 			visualX: pos.x,
 			visualY: pos.y,
+			// Solo para IsometricHouseScene:
+			renderGx: startGX,
+			renderGy: startGY,
+			renderGz: startGZ,
 		};
 
 		this.animator = new StateMachineAnimator();
@@ -615,8 +723,9 @@ export class IsometricHouseScene extends PixiScene {
 					// 1. Dibujamos el tile (si existe)
 					if (tile !== TileType.EMPTY) {
 						const pos = this.gridToScreen(x, y, z);
-						const isAbove = z > this.player.gz;
-						const alpha = isAbove ? 0.01 : 1.0;
+						// Cambia estas líneas en renderDungeon
+						const isCurrentFloor = z === this.player.gz;
+						const alpha = isCurrentFloor ? 1.0 : 0.0; // Los demás son invisibles
 
 						this.updateTileSprite(tile, pos.x, pos.y, alpha, x, y, z);
 					}
@@ -1123,7 +1232,7 @@ export class IsometricHouseScene extends PixiScene {
 			const nz2 = finalZ;
 
 			// Si el segundo paso es válido, confirmamos el dash
-			if (this.isValidMove(nx2, ny2, nz2)) {
+			if (this.isValidDashMove(nx2, ny2, nz2)) {
 				isDashing = true;
 				finalX = nx2;
 				finalY = ny2;
@@ -1151,8 +1260,7 @@ export class IsometricHouseScene extends PixiScene {
 		this.player.gx = finalX;
 		this.player.gy = finalY;
 		this.player.gz = finalZ;
-		this.uiText.text = `Piso: ${this.player.gz}`;
-
+		this.uiText.text = `Lugar: ${this.levelNames[this.player.gz] || "Desconocido"}`;
 		const targetPos = this.gridToScreen(finalX, finalY, finalZ);
 		this.isMoving = true;
 
@@ -1177,6 +1285,16 @@ export class IsometricHouseScene extends PixiScene {
 			.onComplete(() => {
 				this.isMoving = false;
 				this.animator.playState("idle");
+
+				// REVISAR SI PISAMOS UN PORTAL
+				const currentTile = this.grid[this.player.gz][this.player.gx][this.player.gy];
+				if (currentTile === TileType.PORTAL) {
+					const portalKey = `${this.player.gz}_${this.player.gx}_${this.player.gy}`;
+					const dest = this.portalConfig[portalKey];
+					if (dest) {
+						this.changeRoom(dest.targetZ, dest.targetX, dest.targetY);
+					}
+				}
 			})
 			.start();
 	}
@@ -1200,7 +1318,31 @@ export class IsometricHouseScene extends PixiScene {
 		return tile !== TileType.WALL && tile !== TileType.EMPTY && tile !== TileType.GATE && tile !== TileType.BARGATE && tile !== TileType.TORCH && tile !== TileType.PRISONER;
 	}
 
+	private isValidDashMove(x: number, y: number, z: number): boolean {
+		if (x < 0 || x >= this.GRID_SIZE || y < 0 || y >= this.GRID_SIZE) {
+			return false;
+		}
+		const tile = this.grid[z][x][y];
+
+		// --- VERIFICAR SI LA REJA ESTÁ ABIERTA ---
+		if (tile === TileType.BARGATE) {
+			const key = `${z}_${x}_${y}`;
+			// Si la reja está registrada y su estado es 'open', permitimos pasar
+			if (this.tileOffsets[key] && this.tileOffsets[key].open) {
+				return true;
+			}
+		}
+
+		// Añadimos && tile !== TileType.GATE para bloquear el paso
+		return tile !== TileType.WALL && tile !== TileType.GATE && tile !== TileType.BARGATE && tile !== TileType.TORCH && tile !== TileType.PRISONER;
+	}
+
 	public override update(_dt: number): void {
+		// Si todavía no se cargó el mapa o el jugador, salimos para no romper nada
+		if (!this.animator || !this.grid || this.grid.length === 0) {
+			return;
+		}
+
 		super.update(_dt);
 		this.animator.update(_dt);
 
@@ -1358,6 +1500,52 @@ export class IsometricHouseScene extends PixiScene {
 		this.worldContainer.pivot.y += (this.player.visualY - this.worldContainer.pivot.y) * 0.02;
 	}
 
+	private createPerspectiveSwitcher() {
+		const container = new Container();
+
+		// Fondo del botón/popup
+		const bg = new Graphics().beginFill(0x222222, 0.9).lineStyle(2, 0xffffff, 0.5).drawRoundedRect(0, 0, 160, 45, 10).endFill();
+
+		const text = new Text("VISTA TOP-DOWN", {
+			fill: "#ffffff",
+			fontSize: 14,
+			fontWeight: "bold",
+		});
+		text.anchor.set(0.5);
+		text.position.set(80, 22.5);
+
+		container.addChild(bg, text);
+		container.eventMode = "static";
+		container.cursor = "pointer";
+
+		// Efecto Hover
+		container.on("pointerover", () => {
+			bg.tint = 0x444444;
+		});
+		container.on("pointerout", () => {
+			bg.tint = 0xffffff;
+		});
+
+		// Acción de cambio
+		container.on("pointertap", () => {
+			// OPCIONAL: Guardar estado actual antes de salir
+			// Manager.showScene(new TopDownHouseScene(this.player.gx, this.player.gy, this.player.gz));
+			Manager.changeScene(TopDownHouseScene as any, {
+				sceneParams: [
+					{
+						gx: this.player.gx,
+						gy: this.player.gy,
+						gz: this.player.gz,
+					},
+				],
+			});
+		});
+
+		// Posicionamiento (abajo a la derecha, arriba de los iconos)
+		container.position.set(20, 60); // Ajusta según tu UI
+		this.uiLayer.addChild(container);
+	}
+
 	private createUI() {
 		const style = new TextStyle({ fill: "#ffffff", fontSize: 18, fontWeight: "bold" });
 		this.uiText = new Text(`Piso: 0`, style);
@@ -1377,6 +1565,8 @@ export class IsometricHouseScene extends PixiScene {
 		// --- NUEVO: CREAR GRÁFICOS DEL MINIMAPA ---
 		this.minimapGraphics = new Graphics();
 		this.uiTopRightLayer.addChild(this.minimapGraphics);
+
+		this.createPerspectiveSwitcher();
 	}
 
 	private updateMinimap() {
@@ -1454,6 +1644,67 @@ export class IsometricHouseScene extends PixiScene {
 		this.minimapGraphics.beginFill(0x00ffff, 1);
 		this.minimapGraphics.drawCircle(px * tileSize + tileSize / 2, py * tileSize + tileSize / 2, tileSize / 2);
 		this.minimapGraphics.endFill();
+	}
+
+	private async loadLevelFromImage(url: string): Promise<TileType[][]> {
+		return new Promise((resolve) => {
+			const img = new Image();
+			img.src = url;
+			img.onload = () => {
+				const canvas = document.createElement("canvas");
+				canvas.width = this.GRID_SIZE;
+				canvas.height = this.GRID_SIZE;
+				const ctx = canvas.getContext("2d")!;
+				ctx.drawImage(img, 0, 0);
+
+				const imageData = ctx.getImageData(0, 0, this.GRID_SIZE, this.GRID_SIZE).data;
+				const levelData: TileType[][] = [];
+
+				for (let x = 0; x < this.GRID_SIZE; x++) {
+					levelData[x] = [];
+					for (let y = 0; y < this.GRID_SIZE; y++) {
+						// Obtenemos los componentes RGBA del píxel
+						const i = (y * this.GRID_SIZE + x) * 4;
+						const r = imageData[i];
+						const g = imageData[i + 1];
+						const b = imageData[i + 2];
+
+						levelData[x][y] = this.getColorMapping(r, g, b);
+					}
+				}
+				resolve(levelData);
+			};
+		});
+	}
+
+	private getColorMapping(r: number, g: number, b: number): TileType {
+		const hex = ((r << 16) | (g << 8) | b).toString(16).padStart(6, "0").toUpperCase();
+
+		switch (hex) {
+			case "808080":
+				return TileType.WALL;
+			case "FF00FF":
+				return TileType.PORTAL; // Magenta para portales
+			case "FFFFFF":
+				return TileType.FLOOR;
+			case "8B4513":
+				return TileType.WOOD_FLOOR;
+			case "FF0000":
+				return TileType.PRISONER;
+			case "FFFF00":
+				return TileType.TORCH;
+			case "00FFF0":
+				return TileType.BARGATE;
+			case "00FF00":
+				return TileType.STAIRS_UP;
+			case "0000FF":
+				return TileType.STAIRS_DOWN;
+			case "FFA500":
+				return TileType.GATE;
+			case "000000":
+			default:
+				return TileType.EMPTY;
+		}
 	}
 
 	public override onResize(_newW: number, _newH: number): void {

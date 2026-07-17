@@ -7,10 +7,14 @@ import { World, RigidBodyDesc, ColliderDesc, Ray } from "@dimforge/rapier3d";
 import { cameraControl } from "../../../index";
 import { Keyboard } from "../../../engine/input/Keyboard";
 import { PerlinNoise } from "../../../utils/PerlinNoise";
+import { Graphics } from "pixi.js";
 
-const CHUNK_SIZE = 32;
-const WORLD_HEIGHT = 12;
-const CAMERA_LERP = 0.1;
+// AJUSTES DE CHUNKS
+const CHUNK_SIZE = 10; // Tamaño 16 es más estable para rendimiento por bloques individuales
+const RENDER_DISTANCE = 1; // Radio de chunks (Cargará un área de 5x5 chunks)
+const PRELOAD_DISTANCE = 2; // Cargamos datos de un anillo extra
+const WORLD_HEIGHT = 26;
+const CAMERA_LERP = 1;
 const DEBUG_SELECTION_CUBE = true;
 
 enum BlockType {
@@ -32,8 +36,9 @@ const BLOCK_COLORS: any = {
 
 export class VoxelWorldScene extends PixiScene {
 	private world: World;
-	private blocks: Uint8Array;
-	private wallHealth: Float32Array;
+	private chunkData: Map<string, Uint8Array> = new Map();
+	private activeChunks: Set<string> = new Set();
+
 	private visualBlocks: Map<string, Mesh3D> = new Map();
 	private physicsBlocks: Map<string, RigidBody> = new Map();
 	private debris: { mesh: Mesh3D; vel: { x: number; y: number; z: number }; life: number }[] = [];
@@ -44,152 +49,244 @@ export class VoxelWorldScene extends PixiScene {
 	private selectedMaterial: BlockType = BlockType.GRASS;
 	private mouseX = 0;
 	private mouseY = 0;
-	private noise = new PerlinNoise(1337); // seed
+	private noise = new PerlinNoise(1337);
 
-	// NUEVO: Feedback visual
 	private selectionCube: Mesh3D;
+	private lastPlayerChunk = { cx: Infinity, cz: Infinity };
+	private chunkBuildQueue: { cx: number; cz: number }[] = [];
+	private blocksToUpdateQueue: { gx: number; gy: number; gz: number }[] = [];
+	private readonly BLOCKS_PER_FRAME = 150; // Ajusta este número según el rendimiento
 
+	// ... dentro de la clase VoxelWorldScene
+	private miningProgress = 0; // De 0 a 1
+	private isMouseDown = false;
+	private currentMiningTarget: { bx: number; by: number; bz: number } | null = null;
+	private miningGraphics: Graphics; // El círculo UI
+
+	// Ajustes de minado
+	private readonly MINING_SPEED = 0.01; // Cuánto progresa por frame (~0.8s para romper)
 	constructor() {
 		super();
 		this.world = new World({ x: 0, y: -9.81, z: 0 });
-		this.blocks = new Uint8Array(CHUNK_SIZE * WORLD_HEIGHT * CHUNK_SIZE);
-		this.wallHealth = new Float32Array(CHUNK_SIZE * WORLD_HEIGHT * CHUNK_SIZE).fill(100);
 		this.aimControl = cameraControl;
-
+		this.sortableChildren = true; // Permite que el zIndex funcione
 		this.setupLights();
 		this.setupCamera();
-		this.generateTerrain();
-		this.renderOptimizedChunk();
+
+		// 1. Creamos al jugador primero
 		this.createPlayer();
 		this.createSelectionCube();
 
+		// 2. Generación inicial inmediata para que no caiga al vacío
+		this.updateWorldChunks();
+
+		this.setupEventListeners();
+
+		this.miningGraphics = new Graphics();
+		this.miningGraphics.zIndex = 1000; // Un valor alto para que siempre esté al frente
+		this.addChild(this.miningGraphics); // PixiScene permite mezclar 2D y 3D
+	}
+
+	private setupEventListeners() {
 		window.addEventListener("pointerdown", (e) => {
 			if (e.button === 0) {
-				this.handleInteraction(true);
-			}
+				this.isMouseDown = true;
+			} // Click izquierdo para minar
 			if (e.button === 2) {
 				this.handleInteraction(false);
+			} // Click derecho construcción instantánea
+		});
+		window.addEventListener("pointerup", (e) => {
+			if (e.button === 0) {
+				this.isMouseDown = false;
+				this.resetMining();
 			}
 		});
-		window.addEventListener("contextmenu", (e) => e.preventDefault());
-
 		window.addEventListener("pointermove", (e) => {
 			this.mouseX = e.clientX;
 			this.mouseY = e.clientY;
 		});
+		window.addEventListener("contextmenu", (e) => e.preventDefault());
+	}
+	private resetMining() {
+		this.miningProgress = 0;
+		this.currentMiningTarget = null;
+		this.miningGraphics.clear();
+	}
+	// --- SISTEMA DE COORDENADAS ---
+
+	private getChunkCoords(gx: number, gz: number) {
+		return {
+			cx: Math.floor(gx / CHUNK_SIZE),
+			cz: Math.floor(gz / CHUNK_SIZE),
+		};
 	}
 
-	private setBlock(x: number, y: number, z: number, type: BlockType) {
-		if (x < 0 || x >= CHUNK_SIZE || y < 0 || y >= WORLD_HEIGHT || z < 0 || z >= CHUNK_SIZE) {
+	private getBlockIndex(lx: number, y: number, lz: number) {
+		return lx + y * CHUNK_SIZE + lz * CHUNK_SIZE * WORLD_HEIGHT;
+	}
+
+	// --- GESTIÓN DE CHUNKS ---
+
+	private generateChunk(cx: number, cz: number) {
+		const key = `${cx},${cz}`;
+		if (this.chunkData.has(key)) {
 			return;
 		}
 
-		const idx = this.getIndex(x, y, z);
-		this.blocks[idx] = type;
-	}
+		const data = new Uint8Array(CHUNK_SIZE * WORLD_HEIGHT * CHUNK_SIZE);
+		const noiseScale = 0.05;
 
-	private generateTree(x: number, y: number, z: number) {
-		const trunkHeight = 3 + Math.floor(Math.random() * 2);
+		for (let lx = 0; lx < CHUNK_SIZE; lx++) {
+			for (let lz = 0; lz < CHUNK_SIZE; lz++) {
+				const gx = cx * CHUNK_SIZE + lx;
+				const gz = cz * CHUNK_SIZE + lz;
 
-		// Tronco
-		for (let i = 1; i <= trunkHeight; i++) {
-			this.setBlock(x, y + i, z, BlockType.WOOD);
-		}
-
-		// Hojas (copa simple cúbica)
-		const top = y + trunkHeight;
-
-		for (let lx = -2; lx <= 2; lx++) {
-			for (let lz = -2; lz <= 2; lz++) {
-				for (let ly = -2; ly <= 0; ly++) {
-					const dist = Math.abs(lx) + Math.abs(lz);
-
-					if (dist <= 3) {
-						this.setBlock(x + lx, top + ly, z + lz, BlockType.LEAVES);
-					}
-				}
-			}
-		}
-	}
-
-	private setupLights() {
-		const dirLight = new Light();
-		dirLight.type = LightType.directional;
-		dirLight.intensity = 2;
-		dirLight.rotationQuaternion.setEulerAngles(45, 30, 0);
-		LightingEnvironment.main.lights.push(dirLight);
-	}
-
-	private setupCamera() {
-		this.aimControl.distance = 12;
-		this.aimControl.angles.x = 30;
-	}
-
-	private generateTerrain() {
-		const baseHeight = 5;
-		const heightScale = 5;
-		const noiseScale = 0.08;
-
-		for (let x = 0; x < CHUNK_SIZE; x++) {
-			for (let z = 0; z < CHUNK_SIZE; z++) {
-				const nx = x * noiseScale;
-				const nz = z * noiseScale;
-
-				const noise1 = this.noise.noise2D(nx, nz);
-				const noise2 = this.noise.noise2D(nx * 2, nz * 2) * 0.5;
-				const noise3 = this.noise.noise2D(nx * 4, nz * 4) * 0.25;
-
-				const finalNoise = noise1 + noise2 + noise3;
-				const normalized = (finalNoise + 1.75) / 3.5;
-
-				const height = Math.floor(baseHeight + normalized * heightScale);
+				const n = this.noise.noise2D(gx * noiseScale, gz * noiseScale);
+				const height = Math.floor(8 + n * 4);
 
 				for (let y = 0; y < WORLD_HEIGHT; y++) {
-					const idx = this.getIndex(x, y, z);
-
+					const idx = this.getBlockIndex(lx, y, lz);
 					if (y > height) {
-						this.blocks[idx] = BlockType.AIR;
+						data[idx] = BlockType.AIR;
 					} else if (y === height) {
-						this.blocks[idx] = BlockType.GRASS;
+						data[idx] = BlockType.GRASS;
 					} else if (y > height - 3) {
-						this.blocks[idx] = BlockType.DIRT;
+						data[idx] = BlockType.DIRT;
 					} else {
-						this.blocks[idx] = BlockType.STONE;
+						data[idx] = BlockType.STONE;
 					}
 				}
+			}
+		}
+		this.chunkData.set(key, data);
+	}
 
-				// 5% probabilidad de árbol
-				if (Math.random() < 0.01) {
-					this.generateTree(x, height, z);
+	private updateWorldChunks() {
+		if (!this.playerBody) {
+			return;
+		}
+
+		const pos = this.playerBody.translation();
+		const { cx: pCX, cz: pCZ } = this.getChunkCoords(pos.x, pos.z);
+
+		// CRÍTICO: Si el jugador no ha cambiado de chunk, no calculamos nada
+		if (pCX === this.lastPlayerChunk.cx && pCZ === this.lastPlayerChunk.cz) {
+			return;
+		}
+		this.lastPlayerChunk = { cx: pCX, cz: pCZ };
+
+		const chunksToRender = new Set<string>();
+
+		// PASO 1: Pre-generar datos (Sigue igual, es rápido)
+		for (let x = -PRELOAD_DISTANCE; x <= PRELOAD_DISTANCE; x++) {
+			for (let z = -PRELOAD_DISTANCE; z <= PRELOAD_DISTANCE; z++) {
+				const cx = pCX + x;
+				const cz = pCZ + z;
+				const key = `${cx},${cz}`;
+				if (!this.chunkData.has(key)) {
+					this.generateChunk(cx, cz);
+				}
+			}
+		}
+
+		// PASO 2: Identificar chunks para la cola de renderizado
+		for (let x = -RENDER_DISTANCE; x <= RENDER_DISTANCE; x++) {
+			for (let z = -RENDER_DISTANCE; z <= RENDER_DISTANCE; z++) {
+				const cx = pCX + x;
+				const cz = pCZ + z;
+				const key = `${cx},${cz}`;
+				chunksToRender.add(key);
+
+				if (!this.activeChunks.has(key)) {
+					// En lugar de renderChunk(cx, cz) de golpe, lo mandamos a la cola
+					this.chunkBuildQueue.push({ cx, cz });
+					this.activeChunks.add(key);
+				}
+			}
+		}
+
+		// PASO 3: Limpieza
+		this.activeChunks.forEach((key) => {
+			if (!chunksToRender.has(key)) {
+				const [cx, cz] = key.split(",").map(Number);
+				this.unloadChunk(cx, cz);
+				this.activeChunks.delete(key);
+				// Limpiamos también si estaba en cola de espera
+				this.chunkBuildQueue = this.chunkBuildQueue.filter((c) => `${c.cx},${c.cz}` !== key);
+			}
+		});
+	}
+	private processQueue() {
+		// 1. Si hay chunks nuevos, pasamos sus bloques a la cola de bloques
+		if (this.chunkBuildQueue.length > 0 && this.blocksToUpdateQueue.length === 0) {
+			const { cx, cz } = this.chunkBuildQueue.shift()!;
+			for (let lx = 0; lx < CHUNK_SIZE; lx++) {
+				for (let lz = 0; lz < CHUNK_SIZE; lz++) {
+					for (let y = 0; y < WORLD_HEIGHT; y++) {
+						this.blocksToUpdateQueue.push({
+							gx: cx * CHUNK_SIZE + lx,
+							gy: y,
+							gz: cz * CHUNK_SIZE + lz,
+						});
+					}
+				}
+			}
+		}
+
+		// 2. Procesamos solo N bloques en este frame
+		let processed = 0;
+		while (processed < this.BLOCKS_PER_FRAME && this.blocksToUpdateQueue.length > 0) {
+			const b = this.blocksToUpdateQueue.shift()!;
+			this.updateBlockVisibility(b.gx, b.gy, b.gz);
+			processed++;
+		}
+	}
+
+	private unloadChunk(cx: number, cz: number) {
+		for (let lx = 0; lx < CHUNK_SIZE; lx++) {
+			for (let lz = 0; lz < CHUNK_SIZE; lz++) {
+				for (let y = 0; y < WORLD_HEIGHT; y++) {
+					const key = `${cx * CHUNK_SIZE + lx},${y},${cz * CHUNK_SIZE + lz}`;
+					this.removeBlockFromScene(key);
 				}
 			}
 		}
 	}
 
-	private getIndex(x: number, y: number, z: number) {
-		return x + y * CHUNK_SIZE + z * CHUNK_SIZE * WORLD_HEIGHT;
-	}
+	// --- HELPERS DE BLOQUES ---
 
-	private getBlock(x: number, y: number, z: number): BlockType {
-		if (x < 0 || x >= CHUNK_SIZE || y < 0 || y >= WORLD_HEIGHT || z < 0 || z >= CHUNK_SIZE) {
+	private getBlock(gx: number, gy: number, gz: number): BlockType {
+		const { cx, cz } = this.getChunkCoords(gx, gz);
+		const data = this.chunkData.get(`${cx},${cz}`);
+		if (!data || gy < 0 || gy >= WORLD_HEIGHT) {
 			return BlockType.AIR;
 		}
-		return this.blocks[this.getIndex(x, y, z)];
+
+		const lx = ((gx % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+		const lz = ((gz % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+		return data[this.getBlockIndex(lx, gy, lz)];
 	}
 
-	private renderOptimizedChunk() {
-		for (let x = 0; x < CHUNK_SIZE; x++) {
-			for (let y = 0; y < WORLD_HEIGHT; y++) {
-				for (let z = 0; z < CHUNK_SIZE; z++) {
-					this.updateBlockVisibility(x, y, z);
-				}
-			}
+	private setBlock(gx: number, gy: number, gz: number, type: BlockType) {
+		const { cx, cz } = this.getChunkCoords(gx, gz);
+		const data = this.chunkData.get(`${cx},${cz}`);
+		if (!data) {
+			return;
+		} // Si el chunk no existe, no hacemos nada (o podríamos generarlo)
+
+		if (gy < 0 || gy >= WORLD_HEIGHT) {
+			return;
 		}
+
+		const lx = ((gx % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+		const lz = ((gz % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+		data[this.getBlockIndex(lx, gy, lz)] = type;
 	}
 
-	private updateBlockVisibility(x: number, y: number, z: number) {
-		const type = this.getBlock(x, y, z);
-		const key = `${x},${y},${z}`;
+	private updateBlockVisibility(gx: number, gy: number, gz: number) {
+		const type = this.getBlock(gx, gy, gz);
+		const key = `${gx},${gy},${gz}`;
 
 		if (type === BlockType.AIR) {
 			this.removeBlockFromScene(key);
@@ -197,28 +294,29 @@ export class VoxelWorldScene extends PixiScene {
 		}
 
 		const isExposed =
-			this.getBlock(x, y + 1, z) === BlockType.AIR ||
-			this.getBlock(x, y - 1, z) === BlockType.AIR ||
-			this.getBlock(x + 1, y, z) === BlockType.AIR ||
-			this.getBlock(x - 1, y, z) === BlockType.AIR ||
-			this.getBlock(x, y, z + 1) === BlockType.AIR ||
-			this.getBlock(x, y, z - 1) === BlockType.AIR;
+			this.getBlock(gx, gy + 1, gz) === BlockType.AIR ||
+			this.getBlock(gx, gy - 1, gz) === BlockType.AIR ||
+			this.getBlock(gx + 1, gy, gz) === BlockType.AIR ||
+			this.getBlock(gx - 1, gy, gz) === BlockType.AIR ||
+			this.getBlock(gx, gy, gz + 1) === BlockType.AIR ||
+			this.getBlock(gx, gy, gz - 1) === BlockType.AIR;
 
 		if (isExposed && !this.visualBlocks.has(key)) {
 			const block = Mesh3D.createCube();
-			block.scale.set(0.5); // 🔥 IMPORTANTE
-
+			block.scale.set(0.5);
 			const mat = new StandardMaterial();
-			mat.baseColor = Color.fromHex(BLOCK_COLORS[type]);
+			mat.baseColor = Color.fromHex(BLOCK_COLORS[type] || 0xffffff);
+
+			// --- NUEVO: Habilitar transparencia ---
+			mat.alphaMode = StandardMaterialAlphaMode.blend;
+
 			block.material = mat;
-			block.position.set(x, y, z);
+			block.position.set(gx, gy, gz);
 			this.addChild(block);
 			this.visualBlocks.set(key, block);
 
-			const bodyDesc = RigidBodyDesc.fixed().setTranslation(x, y, z);
-			const body = this.world.createRigidBody(bodyDesc);
-			const colliderDesc = ColliderDesc.cuboid(0.5, 0.5, 0.5);
-			this.world.createCollider(colliderDesc, body);
+			const body = this.world.createRigidBody(RigidBodyDesc.fixed().setTranslation(gx, gy, gz));
+			this.world.createCollider(ColliderDesc.cuboid(0.5, 0.5, 0.5), body);
 			this.physicsBlocks.set(key, body);
 		} else if (!isExposed) {
 			this.removeBlockFromScene(key);
@@ -239,69 +337,7 @@ export class VoxelWorldScene extends PixiScene {
 		}
 	}
 
-	private createSelectionCube() {
-		this.selectionCube = Mesh3D.createCube();
-
-		this.selectionCube.scale.set(0.51); // apenas más grande que 0.5
-
-		const mat = new StandardMaterial();
-		mat.baseColor = new Color(1, 1, 1, 0.25);
-		mat.unlit = true;
-		mat.alphaMode = StandardMaterialAlphaMode.blend;
-
-		// 🔥 Esto es CLAVE
-		mat.depthMask = false;
-
-		this.selectionCube.material = mat;
-		this.selectionCube.visible = DEBUG_SELECTION_CUBE;
-
-		this.addChild(this.selectionCube);
-	}
-
-	private updateSelection() {
-		if (!this.aimControl || !this.aimControl.camera) {
-			return null;
-		}
-
-		const cam = this.aimControl.camera;
-
-		const pixiRay = cam.screenToRay(this.mouseX, this.mouseY, {
-			width: window.innerWidth,
-			height: window.innerHeight,
-		});
-
-		if (!pixiRay) {
-			return null;
-		}
-
-		// 🔥 Convertimos Ray de Pixi → Ray de Rapier
-		const origin = pixiRay.origin;
-		const direction = pixiRay.direction;
-
-		const rapierRay = new Ray({ x: origin.x, y: origin.y, z: origin.z }, { x: direction.x, y: direction.y, z: direction.z });
-
-		const hit = this.world.castRayAndGetNormal(rapierRay, 20, true, undefined, undefined, undefined, this.playerBody);
-
-		if (hit) {
-			const point = {
-				x: origin.x + direction.x * hit.toi,
-				y: origin.y + direction.y * hit.toi,
-				z: origin.z + direction.z * hit.toi,
-			};
-
-			const bx = Math.round(point.x - hit.normal.x * 0.1);
-			const by = Math.round(point.y - hit.normal.y * 0.1);
-			const bz = Math.round(point.z - hit.normal.z * 0.1);
-
-			this.selectionCube.visible = true;
-			this.selectionCube.position.set(bx, by, bz);
-
-			return { bx, by, bz, normal: hit.normal };
-		}
-
-		this.selectionCube.visible = false;
-		return null;
-	}
+	// --- INTERACCIÓN ---
 
 	private handleInteraction(isMining: boolean) {
 		const target = this.updateSelection();
@@ -309,65 +345,58 @@ export class VoxelWorldScene extends PixiScene {
 			return;
 		}
 
-		const { bx, by, bz, normal } = target;
-
-		let actualX = bx;
-		let actualY = by;
-		let actualZ = bz;
-
+		let { bx, by, bz } = target;
 		if (!isMining) {
-			// Si construimos, sumamos la normal de la cara tocada
-			actualX += Math.round(normal.x);
-			actualY += Math.round(normal.y);
-			actualZ += Math.round(normal.z);
-		}
-
-		const idx = this.getIndex(actualX, actualY, actualZ);
-
-		// Validar límites del mundo
-		if (actualX < 0 || actualX >= CHUNK_SIZE || actualY < 0 || actualY >= WORLD_HEIGHT || actualZ < 0 || actualZ >= CHUNK_SIZE) {
-			return;
+			bx += Math.round(target.normal.x);
+			by += Math.round(target.normal.y);
+			bz += Math.round(target.normal.z);
 		}
 
 		if (isMining) {
-			if (this.blocks[idx] !== BlockType.AIR) {
-				this.wallHealth[idx] -= 100;
-				this.spawnDebris(actualX, actualY, actualZ);
-				if (this.wallHealth[idx] <= 0) {
-					this.blocks[idx] = BlockType.AIR;
-					this.removeBlockFromScene(`${actualX},${actualY},${actualZ}`);
-					this.updateNeighbors(actualX, actualY, actualZ);
-				}
-			}
+			this.setBlock(bx, by, bz, BlockType.AIR);
+			this.removeBlockFromScene(`${bx},${by},${bz}`);
+			this.spawnDebris(bx, by, bz, this.getBlock(bx, by, bz));
 		} else {
-			if (this.blocks[idx] === BlockType.AIR) {
-				this.blocks[idx] = this.selectedMaterial;
-				this.wallHealth[idx] = 100;
-				this.updateBlockVisibility(actualX, actualY, actualZ);
-				this.updateNeighbors(actualX, actualY, actualZ);
-			}
+			this.setBlock(bx, by, bz, this.selectedMaterial);
+			this.updateBlockVisibility(bx, by, bz);
 		}
+		this.updateNeighbors(bx, by, bz);
 	}
 
-	private spawnDebris(x: number, y: number, z: number) {
-		for (let i = 0; i < 4; i++) {
-			const p = Mesh3D.createCube();
-			p.scale.set(0.05 + Math.random() * 0.1);
-			p.position.set(x + (Math.random() - 0.5) * 0.5, y + 0.5, z + (Math.random() - 0.5) * 0.5);
-			const mat = new StandardMaterial();
-			mat.baseColor = Color.fromHex(BLOCK_COLORS[this.getBlock(x, y, z)] || 0x888888);
-			p.material = mat;
-			this.addChild(p);
-			this.debris.push({
-				mesh: p,
-				vel: { x: (Math.random() - 0.5) * 0.1, y: 0.1 + Math.random() * 0.1, z: (Math.random() - 0.5) * 0.1 },
-				life: 1.0,
-			});
+	private updateBlocksAlpha() {
+		if (!this.playerBody) {
+			return;
 		}
+
+		const pPos = this.playerBody.translation();
+		// Definimos el radio máximo basado en tu RENDER_DISTANCE
+		const maxDist = RENDER_DISTANCE * CHUNK_SIZE;
+		// Empezamos el fade al 60% de la distancia total para que sea suave
+		// const minDist = maxDist * 0.6;
+		const minDist = maxDist;
+
+		this.visualBlocks.forEach((mesh) => {
+			const dx = mesh.position.x - pPos.x;
+			const dz = mesh.position.z - pPos.z;
+			// Distancia euclidiana en el plano XZ (radial)
+			const dist = Math.sqrt(dx * dx + dz * dz);
+
+			let alpha = 1;
+			if (dist > minDist) {
+				alpha = 1 - (dist - minDist) / (maxDist - minDist);
+			}
+
+			// Clamp del valor entre 0 y 1 y aplicación al material
+			const finalAlpha = Math.max(0, Math.min(1, alpha));
+
+			if (mesh.material instanceof StandardMaterial) {
+				mesh.material.baseColor.a = finalAlpha;
+			}
+		});
 	}
 
 	private updateNeighbors(x: number, y: number, z: number) {
-		const neighbors = [
+		const dirs = [
 			[1, 0, 0],
 			[-1, 0, 0],
 			[0, 1, 0],
@@ -375,14 +404,36 @@ export class VoxelWorldScene extends PixiScene {
 			[0, 0, 1],
 			[0, 0, -1],
 		];
-		neighbors.forEach(([dx, dy, dz]) => this.updateBlockVisibility(x + dx, y + dy, z + dz));
+		dirs.forEach(([dx, dy, dz]) => this.updateBlockVisibility(x + dx, y + dy, z + dz));
+	}
+
+	// --- CONFIGURACIÓN ESCENA ---
+
+	private setupLights() {
+		const dirLight = new Light();
+		dirLight.type = LightType.directional;
+		dirLight.intensity = 2;
+		dirLight.rotationQuaternion.setEulerAngles(45, 30, 0);
+		LightingEnvironment.main.lights.push(dirLight);
+
+		const dirLight2 = new Light();
+		dirLight2.type = LightType.directional;
+		dirLight2.intensity = 5;
+		dirLight2.rotationQuaternion.setEulerAngles(-120, 30, 0);
+		LightingEnvironment.main.lights.push(dirLight2);
+	}
+
+	private setupCamera() {
+		this.aimControl.distance = 12;
+		this.aimControl.angles.x = 30;
 	}
 
 	private createPlayer() {
-		const playerBodyDesc = RigidBodyDesc.dynamic().setTranslation(8, 15, 8).setLinearDamping(0.5);
+		const playerBodyDesc = RigidBodyDesc.dynamic().setTranslation(8, 20, 8).setLinearDamping(0.5);
 		playerBodyDesc.lockRotations();
 		this.playerBody = this.world.createRigidBody(playerBodyDesc);
 		this.world.createCollider(ColliderDesc.capsule(0.5, 0.4), this.playerBody);
+
 		this.playerMesh = Mesh3D.createCube();
 		this.playerMesh.scale.set(0.6, 1.6, 0.6);
 		const playerMat = new StandardMaterial();
@@ -391,57 +442,68 @@ export class VoxelWorldScene extends PixiScene {
 		this.addChild(this.playerMesh);
 	}
 
-	public override update(_dt: number): void {
-		// Solo actualizamos si el cuerpo físico existe
-		if (!this.playerBody) {
-			return;
+	private createSelectionCube() {
+		this.selectionCube = Mesh3D.createCube();
+		this.selectionCube.scale.set(0.51);
+		const mat = new StandardMaterial();
+		mat.baseColor = new Color(1, 1, 1, 0.25);
+		mat.unlit = true;
+		mat.alphaMode = StandardMaterialAlphaMode.blend;
+		mat.depthMask = false;
+		this.selectionCube.material = mat;
+		this.selectionCube.visible = DEBUG_SELECTION_CUBE;
+		this.addChild(this.selectionCube);
+	}
+
+	private updateSelection() {
+		if (!this.aimControl || !this.aimControl.camera) {
+			return null;
+		}
+		const cam = this.aimControl.camera;
+		const pixiRay = cam.screenToRay(this.mouseX, this.mouseY, { width: window.innerWidth, height: window.innerHeight });
+		if (!pixiRay) {
+			return null;
 		}
 
-		this.handleInput();
+		const rapierRay = new Ray(pixiRay.origin, pixiRay.direction);
+		const hit = this.world.castRayAndGetNormal(rapierRay, 20, true, undefined, undefined, undefined, this.playerBody);
 
-		// Guardamos la selección para no calcularla dos veces si el usuario hace click
-		this.world.step();
-		this.updateSelection();
-
-		const t = this.playerBody.translation();
-
-		// Sincronización visual:
-		// Tanto el collider como el Mesh3D de cubo se originan en su centro.
-		// Simplemente igualamos posiciones para que coincidan perfectamente.
-		this.playerMesh.position.set(t.x, t.y, t.z);
-
-		// La cámara sigue al jugador (un poco arriba para simular los ojos)
-		if (this.aimControl && this.aimControl.target) {
-			const target = this.aimControl.target;
-			target.x += (t.x - target.x) * CAMERA_LERP;
-			target.y += (t.y + 0.5 - target.y) * CAMERA_LERP; // Altura de la vista
-			target.z += (t.z - target.z) * CAMERA_LERP;
+		if (hit) {
+			const bx = Math.round(pixiRay.origin.x + pixiRay.direction.x * hit.toi - hit.normal.x * 0.1);
+			const by = Math.round(pixiRay.origin.y + pixiRay.direction.y * hit.toi - hit.normal.y * 0.1);
+			const bz = Math.round(pixiRay.origin.z + pixiRay.direction.z * hit.toi - hit.normal.z * 0.1);
+			this.selectionCube.visible = true;
+			this.selectionCube.position.set(bx, by, bz);
+			return { bx, by, bz, normal: hit.normal };
 		}
+		this.selectionCube.visible = false;
+		return null;
+	}
 
-		for (let i = this.debris.length - 1; i >= 0; i--) {
-			const p = this.debris[i];
-			p.mesh.position.x += p.vel.x;
-			p.mesh.position.y += p.vel.y;
-			p.mesh.position.z += p.vel.z;
-			p.vel.y -= 0.01;
-			p.life -= 0.02;
-			if (p.life <= 0) {
-				this.removeChild(p.mesh);
-				p.mesh.destroy();
-				this.debris.splice(i, 1);
-			}
+	private spawnDebris(x: number, y: number, z: number, type: BlockType) {
+		for (let i = 0; i < 3; i++) {
+			const p = Mesh3D.createCube();
+			p.scale.set(0.1);
+			p.position.set(x, y, z);
+			const mat = new StandardMaterial();
+			mat.baseColor = Color.fromHex(BLOCK_COLORS[type] || 0xffffff);
+			p.material = mat;
+			this.addChild(p);
+			this.debris.push({
+				mesh: p,
+				vel: { x: (Math.random() - 0.5) * 0.1, y: 0.15, z: (Math.random() - 0.5) * 0.1 },
+				life: 1.0,
+			});
 		}
-		this.visualBlocks.forEach((b) => {
-			if (b.scale.x < 0.5) {
-				b.scale.set(b.scale.x + 0.05);
-			}
-		});
 	}
 
 	private handleInput() {
-		if (!this.playerBody) {
-			return;
+		const currentVel = this.playerBody.linvel();
+		let velY = currentVel.y;
+		if (Keyboard.shared.justPressed("Space") && Math.abs(velY) < 0.2) {
+			velY = 12;
 		}
+
 		if (Keyboard.shared.isDown("Digit1")) {
 			this.selectedMaterial = BlockType.GRASS;
 		}
@@ -467,15 +529,109 @@ export class VoxelWorldScene extends PixiScene {
 			dirX += 1;
 		}
 
-		// eslint-disable-next-line @typescript-eslint/restrict-plus-operands
 		const cameraRad = (this.aimControl.angles.y + 180) * (Math.PI / 180);
 		const velX = (Math.sin(cameraRad) * dirZ + Math.cos(cameraRad) * dirX) * 7;
 		const velZ = (Math.cos(cameraRad) * dirZ - Math.sin(cameraRad) * dirX) * 7;
-		const currentVel = this.playerBody.linvel();
-		let velY = currentVel.y;
-		if (Keyboard.shared.justPressed("Space") && Math.abs(velY) < 0.1) {
-			velY = 6;
-		}
+
 		this.playerBody.setLinvel({ x: velX, y: velY, z: velZ }, true);
+	}
+
+	public override update(_dt: number): void {
+		if (!this.playerBody) {
+			return;
+		}
+
+		this.updateWorldChunks(); // Solo hace lógica pesada al cruzar fronteras
+		this.processQueue(); // Procesa un poquito de carga visual en cada frame
+		this.handleInput();
+		this.world.step();
+		this.updateSelection();
+
+		this.updateBlocksAlpha();
+
+		const t = this.playerBody.translation();
+		this.playerMesh.position.set(t.x, t.y, t.z);
+		this.handleMiningProgress(); // <--- Nueva función
+		this.drawMiningUI(); // <--- Nueva función
+		if (this.aimControl.target) {
+			const target = this.aimControl.target;
+			target.x += (t.x - target.x) * CAMERA_LERP;
+			target.y += (t.y + 0.5 - target.y) * CAMERA_LERP;
+			target.z += (t.z - target.z) * CAMERA_LERP;
+		}
+
+		// Partículas de rotura
+		for (let i = this.debris.length - 1; i >= 0; i--) {
+			const p = this.debris[i];
+			p.mesh.position.x += p.vel.x;
+			p.mesh.position.y += p.vel.y;
+			p.mesh.position.z += p.vel.z;
+			p.vel.y -= 0.01;
+			p.life -= 0.03;
+			if (p.life <= 0) {
+				this.removeChild(p.mesh);
+				p.mesh.destroy();
+				this.debris.splice(i, 1);
+			}
+		}
+	}
+
+	private drawMiningUI() {
+		this.miningGraphics.clear();
+		if (this.miningProgress <= 0) {
+			return;
+		}
+		// Opcional: Esto asegura que el círculo no se "meta" dentro de los bloques 3D
+		// si el motor intenta hacer pruebas de profundidad.
+		this.miningGraphics.position.set(0, 0);
+		// Dibujamos en la posición del mouse
+		const x = this.mouseX;
+		const y = this.mouseY;
+		const outerRadius = 30;
+		const innerRadius = outerRadius * this.miningProgress;
+
+		// Círculo exterior (fijo y sutil)
+		this.miningGraphics.lineStyle(2, 0xffffff, 0.3);
+		this.miningGraphics.drawCircle(x, y, outerRadius);
+
+		// Círculo interior (crece con el progreso)
+		// Cambia de color de blanco a verde según se completa
+		const color = this.miningProgress > 0.8 ? 0x55ff55 : 0xffffff;
+		this.miningGraphics.lineStyle(4, color, 0.8);
+		this.miningGraphics.drawCircle(x, y, innerRadius);
+	}
+
+	private handleMiningProgress() {
+		if (!this.isMouseDown) {
+			return;
+		}
+
+		const target = this.updateSelection(); // Reutilizamos tu raycast actual
+
+		if (target) {
+			// ¿Estamos mirando al mismo bloque que el frame anterior?
+			if (this.currentMiningTarget && target.bx === this.currentMiningTarget.bx && target.by === this.currentMiningTarget.by && target.bz === this.currentMiningTarget.bz) {
+				this.miningProgress += this.MINING_SPEED;
+
+				if (this.miningProgress >= 1) {
+					this.executeMining(target.bx, target.by, target.bz);
+					this.resetMining();
+				}
+			} else {
+				// Si movemos la cámara a otro bloque, reiniciamos el progreso
+				this.miningProgress = 0;
+				this.currentMiningTarget = { bx: target.bx, by: target.by, bz: target.bz };
+			}
+		} else {
+			this.resetMining();
+		}
+	}
+
+	private executeMining(bx: number, by: number, bz: number) {
+		const type = this.getBlock(bx, by, bz);
+		this.setBlock(bx, by, bz, BlockType.AIR);
+		this.removeBlockFromScene(`${bx},${by},${bz}`);
+		this.spawnDebris(bx, by, bz, type);
+		this.updateNeighbors(bx, by, bz);
 	}
 }

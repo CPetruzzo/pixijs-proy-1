@@ -62,6 +62,23 @@ export class GameplayScene extends PixiScene {
 	// En la sección de propiedades de la clase GameplayScene
 	private smokeDisplacementSprite: Sprite;
 	private smokeDisplacementFilter: DisplacementFilter;
+
+	private readonly GLOSSARY_DATA: Record<string, { title: string; desc: string }> = {
+		BOMBEROS: { title: "BOMBEROS", desc: "Reduce la intensidad del fuego en -2. Debes seleccionar un foco primero." },
+		HIDROAVION: { title: "HIDROAVIÓN", desc: "Ataque aéreo masivo. Reduce la intensidad en -5. Requiere un foco seleccionado." },
+		DENUNCIA: { title: "DENUNCIA", desc: "Aporta 1 prueba de corrupción. Objetivo clave para el Político Ético." },
+		PEDIDO_INFORME: { title: "PEDIDO DE INFORME", desc: "Aumenta la conciencia (+5). Tiene 50% de probabilidad de otorgar +1 carta el próximo turno si la justicia avanza." },
+		POST_VIRAL: { title: "POST VIRAL", desc: "Genera conciencia social básica (+1) compartiendo información." },
+		VIDEO_DRONE: { title: "VIDEO DRONE", desc: "Muestra la devastación desde el aire, generando mayor impacto social (+3)." },
+		MANIFESTACION: { title: "MANIFESTACIÓN", desc: "Frena a la inmobiliaria. Su impacto en conciencia depende de la visibilidad actual (hasta +15)." },
+		REDES_SOCIALES: { title: "REDES SOCIALES", desc: "Contrarresta la desinformación, bloqueando las acciones del Político Corrupto por un turno." },
+		COIMA: {
+			title: "COIMA",
+			desc: "Te ofrecen una coima, podés tirar la carta o aceptarla, depende de tu integridad (aceptarla reduce en 5 la visibilidad de los incendios ya que se enfocan en vos, aceptás la coima y 1 prueba se... desaparece).",
+		},
+		REFORESTAR: { title: "REFORESTAR", desc: "Recupera 500 hectáreas de bosque perdido mediante la plantación de especies nativas." },
+	};
+
 	constructor() {
 		super();
 		this.addChild(this.worldContainer);
@@ -97,6 +114,78 @@ export class GameplayScene extends PixiScene {
 		}, 3000);
 	}
 
+	private showGlossary(): void {
+		const bg = new Graphics().beginFill(0x000000, 0.95).drawRect(-2048, -1536, 4096, 3072).endFill();
+		bg.eventMode = "static"; // Bloquea clics al fondo
+		this.overlayContainer.addChild(bg);
+
+		const container = new Container();
+		const panel = new Graphics().beginFill(0x1a1a1a).lineStyle(4, 0x3498db).drawRoundedRect(-700, -600, 1400, 1200, 30).endFill();
+		container.addChild(panel);
+
+		const title = new Text("GUÍA DE ACCIONES", { fill: 0x3498db, fontSize: 50, fontWeight: "900" });
+		title.anchor.set(0.5);
+		title.y = -520;
+		container.addChild(title);
+
+		const descPanel = new Graphics().beginFill(0x000000, 0.5).drawRoundedRect(-650, 200, 1300, 250, 20).endFill();
+		container.addChild(descPanel);
+
+		const detailTitle = new Text("Selecciona una carta para ver detalles", { fill: 0x3498db, fontSize: 32, fontWeight: "bold" });
+		detailTitle.anchor.set(0.5);
+		detailTitle.y = 260;
+		container.addChild(detailTitle);
+
+		const detailDesc = new Text("", { fill: 0xffffff, fontSize: 26, align: "center", wordWrap: true, wordWrapWidth: 1200 });
+		detailDesc.anchor.set(0.5);
+		detailDesc.y = 350;
+		container.addChild(detailDesc);
+
+		// Crear cuadrícula de cartas
+		const cardTypes = Object.keys(this.GLOSSARY_DATA);
+		cardTypes.forEach((type, i) => {
+			const cardIcon = new Container();
+			const iconBg = new Graphics().beginFill(0x333333).lineStyle(2, 0xffffff).drawRoundedRect(-80, -110, 160, 220, 10).endFill();
+			const img = Sprite.from(this.getTextureForType(type));
+			img.anchor.set(0.5);
+			img.width = 140;
+			img.height = 170;
+			img.y = -15;
+
+			cardIcon.addChild(iconBg, img);
+			cardIcon.x = (i % 5) * 250 - 500;
+			cardIcon.y = Math.floor(i / 5) * 300 - 200;
+
+			cardIcon.eventMode = "static";
+			cardIcon.cursor = "pointer";
+			cardIcon.on("pointertap", () => {
+				SoundLib.playSound("click", {});
+				detailTitle.text = this.GLOSSARY_DATA[type].title;
+				detailDesc.text = this.GLOSSARY_DATA[type].desc;
+				new Tween(cardIcon.scale).to({ x: 1.1, y: 1.1 }, 100).yoyo(true).repeat(1).start();
+			});
+
+			container.addChild(cardIcon);
+		});
+
+		const closeBtn = new Container();
+		const btnBg = new Graphics().beginFill(0xe74c3c).drawRoundedRect(-150, -40, 300, 80, 15).endFill();
+		const btnText = new Text("CERRAR", { fill: 0xffffff, fontSize: 24, fontWeight: "bold" });
+		btnText.anchor.set(0.5);
+		closeBtn.addChild(btnBg, btnText);
+		closeBtn.y = 520;
+		closeBtn.eventMode = "static";
+		closeBtn.cursor = "pointer";
+		closeBtn.on("pointertap", () => {
+			SoundLib.playSound("tap1", {});
+			this.overlayContainer.removeChildren();
+		});
+		container.addChild(closeBtn);
+
+		this.overlayContainer.addChild(container);
+		this.overlayContainer.visible = true;
+		this.overlayContainer.alpha = 1;
+	}
 	// --- CONFIGURACIÓN DE EFECTOS VISUALES ATMOSFÉRICOS ---
 
 	private setupVisualEffects(): void {
@@ -257,7 +346,7 @@ export class GameplayScene extends PixiScene {
 		const bg = new Graphics().beginFill(0x000000, 0.9).drawRect(-2048, -1536, 4096, 3072).endFill();
 		this.overlayContainer.addChild(bg);
 		const container = new Container();
-		const panel = new Graphics().beginFill(0x1a1a1a).lineStyle(4, 0xffaa00).drawRoundedRect(-800, -800, 1600, 1600, 30).endFill();
+		// const panel = new Graphics().beginFill(0x1a1a1a).lineStyle(4, 0xffaa00).drawRoundedRect(-800, -800, 1600, 1600, 30).endFill();
 		const title = new Text("INSTRUCCIONES", { fill: 0xffaa00, fontSize: 50, fontWeight: "900" });
 		title.anchor.set(0.5);
 		title.y = -690;
@@ -279,12 +368,18 @@ export class GameplayScene extends PixiScene {
 		const content = new Text(instructions.join("\n\n"), { fill: 0xffffff, fontSize: 35, wordWrap: true, wordWrapWidth: 1200, lineHeight: 40 });
 		content.anchor.set(0.5, 0);
 		content.y = -570;
+
+		const instrucciones = Sprite.from("instrucciones");
+		instrucciones.anchor.set(0.5);
+		container.addChild(instrucciones);
+
 		const btn = new Container();
-		const btnBg = new Graphics().beginFill(0x2ecc71).drawRoundedRect(-150, -40, 300, 80, 15).endFill();
+		const btnBg = new Graphics().beginFill(0x2ecc71).drawRoundedRect(-230, -40, 420, 80, 15).endFill();
 		const btnText = new Text("ENTENDIDO", { fill: 0xffffff, fontSize: 24, fontWeight: "bold" });
 		btnText.anchor.set(0.5);
 		btn.addChild(btnBg, btnText);
-		btn.y = 780;
+		btn.y = 600;
+		btn.alpha = 0.001;
 		btn.eventMode = "static";
 		btn.cursor = "pointer";
 		btn.on("pointertap", () => {
@@ -292,14 +387,18 @@ export class GameplayScene extends PixiScene {
 			this.overlayContainer.removeChild(container);
 			this.showRoleSelection();
 		});
-		container.addChild(panel, title, content, btn);
+		container.addChild(
+			// panel, title, content,
+			btn
+		);
 		this.overlayContainer.addChild(container);
-		container.scale.set(0.8);
+		// container.scale.set(0.8);
 		container.alpha = 0;
 		new Tween(container).to({ scale: 1, alpha: 1 }, 500).easing(Easing.Back.Out).start();
 	}
 
 	private showRestartButton(): void {
+		this.endTurnBtn.visible = false;
 		const btn = new Container();
 		const btnBg = new Graphics().beginFill(0x3498db).lineStyle(3, 0xffffff).drawRoundedRect(-200, -40, 400, 80, 15).endFill();
 		const btnText = new Text("REINICIAR PARTIDA", { fill: 0xffffff, fontSize: 28, fontWeight: "bold" });
@@ -343,7 +442,6 @@ export class GameplayScene extends PixiScene {
 		this.setupPlayers();
 		this.setupUI();
 		this.updateEvidenceUI();
-		this.overlayContainer.visible = true;
 		this.overlayContainer.alpha = 1;
 		this.showHowToPlay();
 	}
@@ -720,6 +818,19 @@ export class GameplayScene extends PixiScene {
 			this.endTurnBtn
 		);
 		this.updateHectareasUI();
+
+		// Dentro de setupUI, después de crear endTurnBtn:
+		const glossaryBtn = new Container();
+		const gBtnBg = new Graphics().beginFill(0x3498db).drawRoundedRect(-80, -30, 160, 60, 10).endFill();
+		const gBtnText = new Text("GUÍA", { fill: 0xffffff, fontSize: 20, fontWeight: "bold" });
+		gBtnText.anchor.set(0.5);
+		glossaryBtn.addChild(gBtnBg, gBtnText);
+		glossaryBtn.position.set(400, 400); // Al lado del botón de finalizar turno
+		glossaryBtn.eventMode = "static";
+		glossaryBtn.cursor = "pointer";
+		glossaryBtn.on("pointertap", () => this.showGlossary());
+
+		this.uiContainer.addChild(glossaryBtn);
 	}
 
 	private updateEvidenceUI(): void {
@@ -746,10 +857,24 @@ export class GameplayScene extends PixiScene {
 		title.anchor.set(0.5);
 		title.y = -450;
 		this.overlayContainer.addChild(title);
-		const roles: { id: PlayerRole; title: string; desc: string; color: number }[] = [
-			{ id: "BRIGADISTA", title: "EL BRIGADISTA", desc: "Objetivo: Extinguir focos.\nAliados: Ciudadanos y Políticos Éticos.", color: 0xe67e22 },
-			{ id: "POLITICO_BUENO", title: "UN POLÍTICO ÉTICO", desc: "Objetivo: 5 pruebas de corrupción.\nAliados: Brigadistas accionan.", color: 0x3498db },
-			{ id: "CIUDADANO", title: "LA CIUDADANÍA", desc: "Objetivo: 100% Conciencia Social.\nAliados: Todos luchan juntos.", color: 0x2ecc71 },
+		const roles: { id: PlayerRole; title: string; spr: string; sprPosY: number; desc: string; color: number }[] = [
+			{
+				id: "BRIGADISTA",
+				title: "EL BRIGADISTA",
+				spr: "brigadista",
+				sprPosY: -200,
+				desc: "Objetivo: Extinguir focos.\nAliados: Ciudadanos y Políticos Éticos.",
+				color: 0xe67e22,
+			},
+			{
+				id: "POLITICO_BUENO",
+				title: "UN POLÍTICO ÉTICO",
+				spr: "politico",
+				sprPosY: 100,
+				desc: "Objetivo: 5 pruebas de corrupción.\nAliados: Brigadistas accionan.",
+				color: 0x3498db,
+			},
+			{ id: "CIUDADANO", title: "LA CIUDADANÍA", spr: "ciudadania", sprPosY: 400, desc: "Objetivo: 100% Conciencia Social.\nAliados: Todos luchan juntos.", color: 0x2ecc71 },
 		];
 		roles.forEach((role, i) => {
 			const card = new Container();
@@ -765,7 +890,15 @@ export class GameplayScene extends PixiScene {
 			card.eventMode = "static";
 			card.cursor = "pointer";
 			card.on("pointertap", () => this.startGameAs(role.id));
-			this.overlayContainer.addChild(card);
+
+			const card1 = Sprite.from(role.spr);
+			card1.anchor.set(0.5);
+			card1.y = role.sprPosY;
+			card1.eventMode = "static";
+			card1.cursor = "pointer";
+			card1.on("pointertap", () => this.startGameAs(role.id));
+
+			this.overlayContainer.addChild(card1);
 		});
 	}
 

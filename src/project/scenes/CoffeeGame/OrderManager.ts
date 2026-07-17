@@ -26,7 +26,7 @@ export class OrderManager extends EventEmitter {
 
 	private elapsedSinceLast = 0;
 	private spawnInterval = 8;
-	private difficulty = 1;
+	private difficulty = 2;
 
 	private style = new TextStyle({
 		fill: "#f4e4c2",

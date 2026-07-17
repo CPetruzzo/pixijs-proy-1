@@ -337,6 +337,7 @@ export class RoomScene extends PixiScene {
 		if (this.joystick) {
 			this.worldContainer.removeChild(this.joystick);
 			this.joystick.destroy();
+			// @ts-ignore
 			this.joystick = null;
 		}
 

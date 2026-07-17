@@ -3,7 +3,7 @@ import { DialogueOverlayManager } from "../../engine/dialog/DialogueOverlayManag
 // ... tus otros imports ...
 
 export class DialogueScene extends PixiScene {
-	public static readonly BUNDLES = ["myfriend"];
+	public static readonly BUNDLES = ["myfriend", "donotdelete"];
 	constructor() {
 		super();
 
@@ -33,7 +33,7 @@ export class DialogueScene extends PixiScene {
 			// Aquí podrías reproducir un sonido o animar algo
 			DialogueOverlayManager.changeTalkerImage("playerface");
 		});
-		DialogueOverlayManager.talk("Traqui, he vuelto a la normalidad, solo era una muestra", { speed: 50 }); // Más lento
+		DialogueOverlayManager.talk("Traqui, he vuelto a la normalidad, solo era una muestra", { speed: 500 }); // Más lento
 
 		// EJEMPLO 3: Callback final
 		DialogueOverlayManager.chainEvent(() => {

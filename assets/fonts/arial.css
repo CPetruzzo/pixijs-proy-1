@@ -35,3 +35,8 @@
     src: url('CrossroadsPersonalUseRegular-owql0.ttf') format('truetype');
 }
 
+@font-face {
+    font-family: 'alarm clock';
+    src: url('alarm clock.ttf');
+    src: url('alarm clock.ttf') format('truetype');
+}

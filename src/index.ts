@@ -29,7 +29,9 @@ import { ROTATE } from "./utils/constants";
 import { setInitialScene } from "./project/scenes/InitialScene";
 import { AdMobManager } from "./engine/utils/AdMobManager";
 
-settings.RENDER_OPTIONS.hello = false;
+if (settings.RENDER_OPTIONS) {
+	settings.RENDER_OPTIONS.hello = false;
+}
 
 DEFAULTS.safetyCheckFunction = (obj: any) => !obj?.destroyed;
 
@@ -60,9 +62,13 @@ const app = initializeApp(firebaseConfig);
 // Inicialización de Firestore
 export const db = getDatabase(app);
 
-document.getElementById("pixi-content").style.background = "#" + "000000"; // app.renderer.backgroundColor.toString(16);
-document.getElementById("pixi-content").appendChild(pixiSettings.view);
-document.getElementById("pixi-content").style.cursor = "pointer";
+const pixiContent = document.getElementById("pixi-content");
+if (!pixiContent) {
+	throw new Error("Element with id 'pixi-content' not found");
+}
+pixiContent.style.background = "#" + "000000"; // app.renderer.backgroundColor.toString(16);
+pixiContent.appendChild(pixiSettings.view);
+pixiContent.style.cursor = "pointer";
 
 preventDrag(); // prevents scrolling by dragging.
 preventKeys(); // prevents scrolling by keyboard keys. (usually required for latam)

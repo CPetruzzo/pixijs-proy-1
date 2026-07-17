@@ -81,6 +81,14 @@
           }
         },
         {
+          "name": "alarm clock",
+          "srcs": "./fonts/alarm clock.ttf",
+          "data": {
+            "family": "alarm clock",
+            "weight": ["normal", "bold"]
+          }
+        },
+        {
           "name": "Spirituality",
           "srcs": "./fonts/Spirituality.ttf",
           "data": {
@@ -107,8 +115,13 @@
         {
           "name": "defaultSDFFont",
           "srcs": "./fonts/roundedelegance.json"
-        }
-      ]
+        },
+        // Esta línea captura TODOS los archivos dentro de la carpeta fonts
+        // Incluyendo .woff2, .woff, .ttf, .otf y los .json de fuentes SDF
+        {
+          "name": "engineFonts",
+          "srcs": "./fonts/" 
+        }      ]
     },
     {
       "name": "sfx",
@@ -188,6 +201,20 @@
         "dirty_street": "models/dirty_street/scene.gltf",
         "streetwall": "models/street-art-wall-camden-london/scene.gltf"
 
+      }
+    },
+    {
+      "name": "estudio-assets",
+      "assets": {
+        "studybg": "./img/estudio/studybg.png",
+        "coffee": "./img/estudio/coffee.png",
+        "cursorpointer": "./img/estudio/cursorpointer.png",
+        "book": "./img/estudio/book.png",
+        "uiRight": "./img/estudio/uiRight.png",
+        "clock": "./img/estudio/clock.png",
+        "introSoul": "./music/soul/introSoul.mp3",
+        "tablet2": "./img/estudio/tablet2.png",
+        "immersivecontrol": "./sfx/runfall/immersivecontrol.mp3"
       }
     },
     {
@@ -1046,6 +1073,13 @@
         "ironsmash": "./music/isometric/ironsmash.mp3",
         "skillQ": "./music/isometric/skillQ.mp3",
 
+        // levels
+        "level-1": "./img/isometric/maps/level-1.png",
+        "level0": "./img/isometric/maps/level0.png",
+        "level1": "./img/isometric/maps/level1.png",
+        "level2": "./img/isometric/maps/level2.png",
+        "level3": "./img/isometric/maps/level3.png",
+
 		//skillQ
         "smallhit00": "./img/isometric/Effect_SmallHit_1/Effect_SmallHit_1_000.png",
         "smallhit01": "./img/isometric/Effect_SmallHit_1/Effect_SmallHit_1_001.png",
@@ -1107,6 +1141,12 @@
       "assets": {
         "espert3d": "./models/espert/espert.glb"
       }
+    },    // ESPERT3D
+    {
+      "name": "car3d",
+      "assets": {
+        "impala": "models/impala/impala.gltf"
+      }
     },
         // PATAGONIA
     {
@@ -1135,6 +1175,10 @@
         "corrupcion": "./img/ardelapatagonia/corrupcion.png",
         "hidroavion": "./img/ardelapatagonia/hidroavion.png",
         "topUI": "./img/ardelapatagonia/topUI.png",
+        "instrucciones": "./img/ardelapatagonia/instrucciones.png",
+        "brigadista": "./img/ardelapatagonia/brigadista.png",
+        "ciudadania": "./img/ardelapatagonia/ciudadania.png",
+        "politico": "./img/ardelapatagonia/politico.png",
         "finalizar": "./img/ardelapatagonia/finalizar.png",
         "displacement_map_repeat": "./img/ardelapatagonia/displacement_map_repeat.jpg",
 
@@ -1144,7 +1188,12 @@
     {
       "name": "donotdelete",
       "assets": {
+        "grass": "./img/donotdelete/grass.png", 
+        "mountain": "./img/donotdelete/mountain.png", 
+        "water": "./img/donotdelete/water.png",
         "speak": "./sfx/donotdelete/speak.mp3",
+                  "cachogames": "./preloader/cachogames.jpg", 
+          "background": "./preloader/background.jpg",
         "dash":"./sfx/donotdelete/dash.mp3"
       }
     },

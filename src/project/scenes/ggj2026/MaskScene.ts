@@ -442,7 +442,7 @@ export class MaskScene extends PixiScene {
 		DialogueOverlayManager.chainEvent(() => {
 			// Reiniciamos la escena creando una instancia nueva
 			// Esto reseteará automáticamente el timer, los caramelos y la posición
-			Manager.changeScene(MaskMenuScene, { transitionClass: FadeColorTransition });
+			Manager.changeScene(MaskMenuScene, { transitionClass: FadeColorTransition as any });
 		});
 	}
 

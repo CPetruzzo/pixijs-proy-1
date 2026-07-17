@@ -14,33 +14,49 @@ const JSONC = require('jsonc-parser');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 // --- LÓGICA DE FILTRADO DE ASSETS ---
-const selectedBundleName = process.env.GAME_BUNDLE; // Ejemplo: "patagonia"
+const selectedBundleName = process.env.GAME_BUNDLE; 
 const assetsJsoncPath = path.resolve(__dirname, 'src/assets.jsonc');
 const assetsContent = fs.readFileSync(assetsJsoncPath, 'utf8');
 const assetsData = JSONC.parse(assetsContent);
 
 const copyPatterns = [];
+const allBundles = assetsData.bundles || [];
 
 if (selectedBundleName) {
-    console.log(`\x1b[32m%s\x1b[0m`, `🚀 Building bundle: ${selectedBundleName}`);
-    
-    // Filtramos los bundles: el seleccionado + los obligatorios
-    const activeBundles = assetsData.filter(b => 
-        b.name === selectedBundleName || b.name === "donotdelete"
+    const requestedBundles = selectedBundleName.split(',').map(name => name.trim());
+    console.log(`\x1b[32m%s\x1b[0m`, `🚀 Building bundles: ${requestedBundles.join(', ')}`);
+    console.log(`copiar la carpeta de fuentes porque seguro no entraron en el bundle`);
+
+    // Filtramos los bundles solicitados + initialLoad (donde están las fuentes) [cite: 8, 94]
+    const activeBundles = allBundles.filter(b => 
+        requestedBundles.includes(b.name) || b.name === "initialLoad" 
     );
 
     activeBundles.forEach(bundle => {
-        Object.values(bundle.assets).forEach(assetPath => {
-            // Limpiamos el path (quitamos el ./ inicial)
+        // Soporte para formato Array (initialLoad) u Objeto (patagonia) [cite: 8, 94]
+        const assetsEntries = Array.isArray(bundle.assets) 
+            ? bundle.assets.map(a => a.srcs) 
+            : Object.values(bundle.assets);
+
+        assetsEntries.forEach(assetPath => {
+            if (!assetPath) return;
+
             const cleanPath = assetPath.replace(/^\.\//, '');
+            
+            // Verificamos si la ruta contiene un glob (ej: {woff2,ttf} o *)
+            const isGlob = cleanPath.includes('{') || cleanPath.includes('*');
+
             copyPatterns.push({
-                from: path.resolve(__dirname, 'assets', cleanPath),
-                to: cleanPath,
+                context: path.resolve(__dirname, 'assets'),
+                from: cleanPath,
+                // Si es un glob, mandamos el resultado a la CARPETA padre para no perder la estructura.
+                // Si es un archivo directo, usamos la ruta completa para asegurar su posición.
+                to: isGlob ? path.dirname(cleanPath) + '/' : cleanPath,
                 noErrorOnMissing: true,
-                // Mantenemos tu lógica de minificar JSONs internos si existen
                 transform: (content, filePath) => {
                     if (filePath.endsWith('.json')) {
-                        return Buffer.from(JSON.stringify(JSON.parse(content.toString())), 'utf8');
+                        try { return Buffer.from(JSON.stringify(JSON.parse(content.toString())), 'utf8'); }
+                        catch (e) { return content; }
                     }
                     return content;
                 }
@@ -48,18 +64,8 @@ if (selectedBundleName) {
         });
     });
 } else {
-    // Si no hay bundle seleccionado, copiamos todo (comportamiento original)
-    copyPatterns.push({
-        from: 'assets', to: '', globOptions: {
-            ignore: ["**/thumbs.db", "**/Thumbs.db"],
-        },
-        transform: function (content, path) {
-            if (path.endsWith('.json')) {
-                return Buffer.from(JSON.stringify(JSON.parse(content.toString())), 'utf8');
-            }
-            return content;
-        }
-    });
+    // Modo por defecto: Copia toda la carpeta assets manteniendo la estructura
+    copyPatterns.push({ from: 'assets', to: '', globOptions: { ignore: ["**/thumbs.db"] } });
 }
 
 // Siempre incluimos el assets.jsonc transformado a json

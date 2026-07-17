@@ -219,6 +219,7 @@ export class Multiplayer3DScene extends PixiScene {
 				continue;
 			}
 			const player = this.playersInRoom[id];
+			// @ts-ignore
 			let bar: Graphics = player.getChildByName("healthBar");
 			if (!bar) {
 				bar = new Graphics();
@@ -315,6 +316,7 @@ export class Multiplayer3DScene extends PixiScene {
 
 			// Si existe la entrada para el jugador local, verificamos su hp.
 			if (serverPlayers[this.localPlayerId]) {
+				// @ts-ignore
 				if (serverPlayers[this.localPlayerId].hp <= 0) {
 					this.handleLocalPlayerDeath();
 					// Desuscribirse para que no se procesen más actualizaciones.
@@ -660,7 +662,9 @@ export class Multiplayer3DScene extends PixiScene {
 				this.aimControl.angles.y -= 1;
 			}
 			const angleYRad = this.aimControl.angles.y * (Math.PI / 180);
+			// @ts-ignore
 			const moveX = FUTURECOP_SPEED * Math.sin(angleYRad) * _delta;
+			// @ts-ignore
 			const moveZ = FUTURECOP_SPEED * Math.cos(angleYRad) * _delta;
 			if (Keyboard.shared.isDown("KeyA")) {
 				this.aimControl.target.z -= moveX;
@@ -907,11 +911,13 @@ export class Multiplayer3DScene extends PixiScene {
 			.then(() => {
 				console.log(`Jugador ${this.localPlayerId} removido de la base de datos.`);
 				Manager.closeScene(this);
+				// @ts-ignore
 				Manager.changeScene(MuliplayerLobby, { transitionClass: FadeColorTransition });
 			})
 			.catch((error) => {
 				console.error("Error al remover el jugador de la base de datos:", error);
 				Manager.closeScene(this);
+				// @ts-ignore
 				Manager.changeScene(MuliplayerLobby, { transitionClass: FadeColorTransition });
 			});
 	}

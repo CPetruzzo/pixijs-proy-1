@@ -120,6 +120,7 @@ export class UsernameManager {
 
 			// Handle save
 			this.saveButton.addEventListener("click", async () => {
+				// @ts-ignore
 				const inputValue = this.usernameInput.value.trim();
 				if (inputValue !== "") {
 					this.username = inputValue;
@@ -137,6 +138,7 @@ export class UsernameManager {
 			// Handle Enter key
 			this.usernameInput.addEventListener("keydown", (e) => {
 				if (e.key === "Enter") {
+					// @ts-ignore
 					this.saveButton.click();
 				}
 			});

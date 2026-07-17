@@ -46,7 +46,7 @@ export class PianoGameScene extends PixiScene {
 	private readonly WHITE_KEY_HEIGHT = 200;
 	private readonly BLACK_KEY_WIDTH = 30;
 	private readonly BLACK_KEY_HEIGHT = 120;
-	public static readonly BUNDLES = ["music"];
+	public static readonly BUNDLES = ["music", "musicGame"];
 	private pianoBG: Sprite;
 	private sheetMusic: SheetMusicScroll;
 
@@ -58,21 +58,20 @@ export class PianoGameScene extends PixiScene {
 		}).toDestination();
 		this.synth.volume.value = -8;
 
-		this.pianoBG = Sprite.from("pianoGTold");
+		this.pianoBG = Sprite.from("pianoSapuris");
 		this.pianoBG.scale.set(0.382);
 		this.pianoBG.anchor.set(0.5);
 		this.addChild(this.mainContainer);
 		this.mainContainer.addChild(this.pianoBG);
-		this.mainContainer.addChild(this.pianoContainer);
-		this.mainContainer.addChild(this.uiContainer);
-		this.mainContainer.addChild(this.menuContainer);
 
-		this.setupInitialState();
-
-		const pianoBG = Sprite.from("pianoGT");
+		const pianoBG = Sprite.from("pianoSapuris");
 		pianoBG.scale.set(0.382);
 		pianoBG.anchor.set(0.5);
 		this.mainContainer.addChild(pianoBG);
+		this.mainContainer.addChild(this.pianoContainer);
+		this.mainContainer.addChild(this.uiContainer);
+		this.mainContainer.addChild(this.menuContainer);
+		this.setupInitialState();
 
 		const emptyScroll = Sprite.from("emptyScroll");
 		emptyScroll.scale.set(0.375);

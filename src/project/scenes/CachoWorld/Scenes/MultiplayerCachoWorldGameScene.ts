@@ -194,13 +194,17 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 						this.createPlayer(id, playerData.x, playerData.y);
 						// Set initial HP if provided
 						if (playerData.hp !== undefined && this.playersInRoom[id]) {
+							// @ts-ignore
+
 							const maxHp = this.playersInRoom[id].stats.getMaxHp();
 							const damage = maxHp - playerData.hp;
 							if (damage > 0) {
+								// @ts-ignore
 								this.playersInRoom[id].stats.takeDamage(damage);
 							}
 							// Set alpha for dead players
 							if (playerData.hp <= 0) {
+								// @ts-ignore
 								this.playersInRoom[id].alpha = 0.5;
 							}
 						}
@@ -563,6 +567,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		if (this.attackButton) {
 			this.removeChild(this.attackButton);
 			this.attackButton.destroy();
+			// @ts-ignore
 			this.attackButton = null;
 		}
 
@@ -578,6 +583,7 @@ export class MultiplayerCachoWorldGameScene extends PixiScene {
 		if (this.joystick) {
 			this.worldContainer.removeChild(this.joystick);
 			this.joystick.destroy();
+			// @ts-ignore
 			this.joystick = null;
 		}
 

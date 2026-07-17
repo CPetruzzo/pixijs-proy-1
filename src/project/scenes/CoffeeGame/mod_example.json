@@ -1,0 +1,20 @@
+{
+  "name": "Mod Halloween",
+  "settings": {
+    "gameTime": 60,
+    "pointsPerOrder": 50,
+    "hygienePenalty": 30
+  },
+  "ingredients": [
+    { 
+      "id": "ojo", 
+      "label": "Ojo de Zombie", 
+      "url": "https://img.icons8.com/color/96/zombie-eye.png" 
+    },
+    { 
+      "id": "pocion", 
+      "label": "Poción Verde", 
+      "url": "https://img.icons8.com/color/96/magic-potion.png" 
+    }
+  ]
+}

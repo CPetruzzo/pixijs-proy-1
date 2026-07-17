@@ -9,7 +9,7 @@ import { Assets, Graphics } from "pixi.js";
 
 // Ajustes de Jugabilidad
 const PLAYER_SPEED = 10;
-const JUMP_FORCE = 8; // Un poco más de fuerza para que se sienta bien
+const JUMP_FORCE = 18; // Un poco más de fuerza para que se sienta bien
 const CAMERA_OFFSET_Y = 5;
 const CAMERA_LERP = 0.1;
 
@@ -122,67 +122,86 @@ export class PlayerControllerScene extends PixiScene {
 		this.debugGraphics.drawCircle(t.x, t.z, 0.5);
 	}
 
+	// ... (resto de tus imports se mantienen igual)
+
 	private handlePlayerInput(_deltaSec: number): void {
-		// Rotación de cámara
+		// 1. Obtener la velocidad actual del cuerpo físico
+		const currentLinVel = this.playerBody.linvel();
+
+		// 2. Determinar si estamos en el suelo (con una pequeña tolerancia)
+		// Usamos un umbral pequeño para la velocidad vertical
+		const isGrounded = Math.abs(currentLinVel.y) < 0.1;
+
+		let velX = currentLinVel.x;
+		let velZ = currentLinVel.z;
+		let velY = currentLinVel.y;
+
+		// --- LÓGICA DE MOVIMIENTO (Solo si está en el suelo) ---
+		if (isGrounded) {
+			let dirX = 0;
+			let dirZ = 0;
+
+			if (Keyboard.shared.isDown("KeyW")) {
+				dirZ -= 1;
+			}
+			if (Keyboard.shared.isDown("KeyS")) {
+				dirZ += 1;
+			}
+			if (Keyboard.shared.isDown("KeyA")) {
+				dirX -= 1;
+			}
+			if (Keyboard.shared.isDown("KeyD")) {
+				dirX += 1;
+			}
+
+			// Rotación de cámara
+			// eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+			const cameraRad = (this.aimControl.angles.y + 180) * (Math.PI / 180);
+			const sin = Math.sin(cameraRad);
+			const cos = Math.cos(cameraRad);
+
+			const forwardX = sin;
+			const forwardZ = cos;
+			const rightX = cos;
+			const rightZ = -sin;
+
+			// Calcular nueva intención de movimiento
+			const moveX = forwardX * dirZ + rightX * dirX;
+			const moveZ = forwardZ * dirZ + rightZ * dirX;
+
+			const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
+			if (length > 0.01) {
+				velX = (moveX / length) * PLAYER_SPEED;
+				velZ = (moveZ / length) * PLAYER_SPEED;
+			} else {
+				// Si no hay input en el suelo, frenamos (o aplicamos fricción)
+				velX = 0;
+				velZ = 0;
+			}
+
+			// --- LÓGICA DE SALTO ---
+			if (Keyboard.shared.justPressed("Space")) {
+				velY = JUMP_FORCE;
+				// Al saltar, velX y velZ ya tienen el valor del movimiento actual,
+				// que se preservará en los siguientes frames porque isGrounded será false.
+			}
+		} else {
+			// --- LÓGICA EN EL AIRE ---
+			// No actualizamos velX ni velZ basándonos en el teclado.
+			// Simplemente dejamos que mantengan su valor actual (inercia).
+			// Si quieres que el aire frene un poco el avance, podrías multiplicar por un factor:
+			// velX *= 0.99;
+		}
+
+		// 3. Aplicar la velocidad final
+		this.playerBody.setLinvel({ x: velX, y: velY, z: velZ }, true);
+
+		// Rotación de cámara (esto siempre funciona)
 		if (Keyboard.shared.isDown("ArrowLeft")) {
 			this.aimControl.angles.y += 1;
 		}
 		if (Keyboard.shared.isDown("ArrowRight")) {
 			this.aimControl.angles.y -= 1;
 		}
-
-		let dirX = 0;
-		let dirZ = 0;
-
-		// --- TU LÓGICA INVERTIDA ---
-		if (Keyboard.shared.isDown("KeyW")) {
-			dirZ -= 1; // Adelante (Z negativo es "hacia el fondo" en Pixi3D estándar)
-		}
-		if (Keyboard.shared.isDown("KeyS")) {
-			dirZ += 1; // Atrás
-		}
-		if (Keyboard.shared.isDown("KeyA")) {
-			dirX -= 1; // Izquierda
-		}
-		if (Keyboard.shared.isDown("KeyD")) {
-			dirX += 1; // Derecha
-		}
-
-		// Cálculo de vectores relativo a la cámara
-		// eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-		const cameraRad = (this.aimControl.angles.y + 180) * (Math.PI / 180);
-		const sin = Math.sin(cameraRad);
-		const cos = Math.cos(cameraRad);
-
-		// Vectores base
-		const forwardX = sin;
-		const forwardZ = cos;
-		const rightX = cos;
-		const rightZ = -sin;
-
-		// Composición final
-		let velX = forwardX * dirZ + rightX * dirX;
-		let velZ = forwardZ * dirZ + rightZ * dirX;
-
-		// Normalizar diagonal
-		const length = Math.sqrt(velX * velX + velZ * velZ);
-		if (length > 0.01) {
-			velX = (velX / length) * PLAYER_SPEED;
-			velZ = (velZ / length) * PLAYER_SPEED;
-		} else {
-			velX = 0;
-			velZ = 0;
-		}
-
-		// Salto
-		const currentLinVel = this.playerBody.linvel();
-		let velY = currentLinVel.y;
-
-		// Pequeña tolerancia para detectar suelo (0.1)
-		if (Keyboard.shared.justPressed("Space") && Math.abs(velY) < 0.2) {
-			velY = JUMP_FORCE;
-		}
-
-		this.playerBody.setLinvel({ x: velX, y: velY, z: velZ }, true);
 	}
 }

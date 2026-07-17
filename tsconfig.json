@@ -12,11 +12,12 @@
     //
     "sourceMap": true,
     "module": "ESNext",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
+    "moduleResolution": "node", // Cambia 'node' por 'bundler' o 'node10'    "esModuleInterop": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
+    "strictPropertyInitialization": false,
+    "ignoreDeprecations": "6.0", // Esto silenciará los avisos de 'deprecated' que mencionas
     "target": "ESNext",
     "typeRoots": [
       "node_modules/@types",

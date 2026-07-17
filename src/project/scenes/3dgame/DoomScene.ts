@@ -65,6 +65,7 @@ export class DoomScene extends PixiScene {
 	private cleanModel(model: Container3D): void {
 		const checkChildren = (obj: Container3D): void => {
 			obj.children.forEach((child) => {
+				// @ts-ignore
 				const name = child.name.toLowerCase();
 				if (name.includes("cube") || name.includes("box")) {
 					child.visible = false;

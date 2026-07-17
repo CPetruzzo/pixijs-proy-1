@@ -1,13 +1,15 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/naming-convention */
 import { PixiScene } from "../../../engine/scenemanager/scenes/PixiScene";
-import { Container, Sprite, Text, TextStyle, Graphics } from "pixi.js";
+import { Container, Sprite, Text, TextStyle, Graphics, Texture } from "pixi.js";
 import { Ingredient } from "./Ingredient";
 import { OrderManager } from "./OrderManager";
 import { Station } from "./Station";
 import { ScaleHelper } from "../../../engine/utils/ScaleHelper";
 import { addGoToMenuButton } from "../../../utils/GoToMenuButton";
 import { DEBUG } from "../../../flags";
+import type { GameConfig } from "./ModManager";
+import { ModManager } from "./ModManager"; // 1. Importar el ModManager
 
 export class CoffeeShopScene extends PixiScene {
 	private gameContainer = new Container();
@@ -23,26 +25,48 @@ export class CoffeeShopScene extends PixiScene {
 	private hygieneScoreText: Text;
 	private violationsText: Text;
 	private feedbackText: Text;
+	private comboText: Text;
 
-	private timeLeft = 10; // 3 minutos
+	private instructionsPanel: Container;
+	private helpBtn: Container;
+
+	// 2. Obtener la configuración actual del ModManager
+	private config: GameConfig = ModManager.instance.getConfig();
+
+	private timeLeft: number;
 	public static readonly BUNDLES = ["coffee"];
 	private deliverBtn: Sprite;
+	private trashCan: Sprite;
 
 	private score = 0;
+	private combo = 0;
 	private hygieneScore = 100;
 	private violations = 0;
 	private gameOver = false;
 
 	private feedbackMessages: Record<string, string> = {
-		"station-dirty": "⚠️ ¡Estación sucia! Límpiala antes de usar",
-		"ingredient-spoiled": "⚠️ ¡Ingrediente en mal estado! No lo uses",
-		"temperature-abuse": "⚠️ ¡Temperatura inadecuada! Mantén refrigerados",
-		"order-complete": "✅ ¡Pedido entregado correctamente!",
-		"order-expired": "❌ ¡Se venció un pedido!",
+		"station-dirty": "⚠️ ¡Estación sucia! Límpiala",
+		"ingredient-spoiled": "⚠️ ¡Ingrediente podrido!",
+		"temperature-abuse": "⚠️ ¡Pérdida de frío!",
+		"order-complete": "✅ ¡Pedido servido!",
+		"order-expired": "❌ ¡Cliente se fue!",
+		"trash": "🗑️ Desechado",
 	};
+
+	private readonly STYLE_HUD = new TextStyle({
+		fill: "#f4e4c2",
+		fontFamily: '"Lucida Sans Unicode", "Lucida Grande", sans-serif',
+		fontSize: 34,
+		fontWeight: "bolder",
+		stroke: "#3f2b1d",
+		strokeThickness: 5,
+	});
 
 	constructor() {
 		super();
+		// 3. Inicializar el tiempo desde el mod
+		this.timeLeft = this.config.gameTime;
+
 		this.addChild(this.gameContainer);
 		this.addChild(this.uiTopRightContainer);
 		this.addChild(this.uiLeftContainer);
@@ -50,279 +74,342 @@ export class CoffeeShopScene extends PixiScene {
 		const bg = Sprite.from("mock-up4");
 		bg.anchor.set(0.5);
 		this.gameContainer.addChild(bg);
-		bg.interactive = false;
-		bg.eventMode = "none";
 
-		// OrderManager
 		this.orderMgr = new OrderManager(this.uiTopRightContainer);
 
-		this.orderMgr.on("orderComplete", (_type: string) => {
-			this.score += 10;
-			this.scoreText.text = `Puntaje: ${this.score}`;
-			this.showFeedback("order-complete");
-		});
-
-		this.orderMgr.on("orderReady", (type: string) => {
-			console.log(`Pedido de ${type} listo para entregar`);
-		});
-
-		this.orderMgr.on("orderExpired", () => {
-			this.violations++;
-			this.hygieneScore = Math.max(0, this.hygieneScore - 10);
-			this.updateHygieneUI();
-			this.showFeedback("order-expired");
-		});
-
-		// Estaciones
-		const coffeeStation = new Station("café", 550, 15);
-		const sandwichStation = new Station("sandwich", 480, 230);
-		this.stations.push(coffeeStation, sandwichStation);
-		this.stations.forEach((s) => this.gameContainer.addChild(s));
-
-		// Ingredientes
-		const ingKeys = ["jamon", "pan", "agua", "granos"];
-		ingKeys.forEach((key, i) => {
-			const ing = new Ingredient(key, -300 + i * 180, 400);
-			this.ingredients.push(ing);
-			this.gameContainer.addChild(ing);
-
-			// Manejar violaciones de higiene
-			ing.on("hygieneviolation", (violationType: string) => {
-				console.log(`⚠️ Violación de higiene: ${violationType}`);
-				this.violations++;
-				this.hygieneScore = Math.max(0, this.hygieneScore - 15);
-				this.score = Math.max(0, this.score - 10);
-				this.updateHygieneUI();
-				this.scoreText.text = `Puntaje: ${this.score}`;
-				this.showFeedback(violationType);
-			});
-
-			ing.on("served", (stationType: string) => {
-				console.log(`Ingrediente servido: ${key} -> ${stationType}`);
-				if (this.orderMgr.tryServe(stationType, key)) {
-					console.log(`✅ Punto sumado! Puntaje: ${this.score + 10}`);
-					this.score += 10;
-					// Bonus por buenas prácticas
-					if (this.hygieneScore >= 80) {
-						this.score += 2;
-					}
-				} else {
-					console.log(`❌ Ingrediente incorrecto`);
-					this.score = Math.max(0, this.score - 5);
-				}
-				this.scoreText.text = `Puntaje: ${this.score}`;
-			});
-		});
-
-		// UI: estilos
-		const style = new TextStyle({
-			fill: "#f4e4c2",
-			fontFamily: '"Lucida Sans Unicode", "Lucida Grande", sans-serif',
-			fontSize: 36,
-			fontWeight: "bolder",
-			stroke: "#3f2b1d",
-			strokeThickness: 4,
-		});
-
-		this.scoreText = new Text("Puntaje: 0", style);
-		this.scoreText.anchor.set(0, 0.5);
-		this.scoreText.position.set(-700, -450);
-
-		this.timeText = new Text("Tiempo: 180", style);
-		this.timeText.anchor.set(0, 0.5);
-		this.timeText.position.set(-700, -375);
-
-		this.hygieneScoreText = new Text("Higiene: 100%", { ...style, fill: "#00FF00" });
-		this.hygieneScoreText.anchor.set(0, 0.5);
-		this.hygieneScoreText.position.set(-700, -300);
-
-		this.violationsText = new Text("Violaciones: 0", style);
-		this.violationsText.anchor.set(0, 0.5);
-		this.violationsText.position.set(-700, -225);
-
-		this.gameContainer.addChild(this.scoreText, this.timeText, this.hygieneScoreText, this.violationsText);
-
-		// Feedback text
-		this.feedbackText = new Text("", {
-			...style,
-			fontSize: 28,
-		});
-		this.feedbackText.anchor.set(0.5);
-		this.feedbackText.position.set(0, -450);
-		this.feedbackText.alpha = 0;
-		this.gameContainer.addChild(this.feedbackText);
-
-		// Botón "Entregar"
-		this.deliverBtn = Sprite.from("ready");
-		this.deliverBtn.anchor.set(0.5);
-		this.deliverBtn.scale.set(0.2);
-		this.deliverBtn.x = 600;
-		this.deliverBtn.y = -360;
-		this.deliverBtn.interactive = true;
-		this.deliverBtn.cursor = "pointer";
-		this.deliverBtn.on("pointerdown", () => {
-			this.orderMgr.deliverReady();
-		});
-		this.uiTopRightContainer.addChild(this.deliverBtn);
-
-		// Panel de instrucciones
-		this.createInstructionsPanel();
+		this.setupEvents();
+		this.createStations();
+		this.createIngredients();
+		this.createTrashCan();
+		this.createUI();
 
 		if (DEBUG) {
 			addGoToMenuButton(this);
 		}
 	}
 
-	private createInstructionsPanel(): void {
-		const panel = new Graphics();
-		panel.beginFill(0x000000, 0.7);
-		panel.drawRoundedRect(0, 0, 400, 350, 10);
-		panel.endFill();
-		panel.position.set(-750, 50);
-		this.uiLeftContainer.addChild(panel);
+	private setupEvents(): void {
+		this.orderMgr.on("orderComplete", () => {
+			this.combo++;
+			const bonus = this.combo > 2 ? this.combo * 2 : 0;
+			// 4. Usar puntos configurados por el mod
+			const points = this.config.pointsPerOrder + bonus;
+			this.score += points;
 
-		const titleStyle = new TextStyle({
-			fill: "#FFD700",
-			fontSize: 24,
-			fontWeight: "bold",
+			this.updateScoreUI();
+			this.showFeedback("order-complete");
+			this.spawnFloatingText(`+${points} PTS`, 0, -200, 0x00FF00);
 		});
 
-		const textStyle = new TextStyle({
-			fill: "#FFFFFF",
-			fontSize: 16,
-			wordWrap: true,
-			wordWrapWidth: 380,
-			lineHeight: 22,
+		this.orderMgr.on("orderExpired", () => {
+			this.combo = 0;
+			this.violations++;
+			// 5. Usar penalización de higiene del mod
+			this.hygieneScore = Math.max(0, this.hygieneScore - this.config.hygienePenalty);
+			this.updateHygieneUI();
+			this.updateScoreUI();
+			this.showFeedback("order-expired");
+			this.spawnFloatingText("¡EXPIRADO!", 0, -200, 0xFF0000);
+		});
+	}
+
+	private createStations(): void {
+		const coffeeStation = new Station("café", 550, 15);
+		const sandwichStation = new Station("sandwich", 480, 230);
+		this.stations.push(coffeeStation, sandwichStation);
+		this.stations.forEach((s) => this.gameContainer.addChild(s));
+	}
+
+	private createIngredients(): void {
+		// 6. Usar la lista de ingredientes que viene del mod
+		const ingredientsData = this.config.ingredients;
+
+		ingredientsData.forEach((ingData, i) => {
+			// Usamos el id del ingrediente del mod
+			const ing = new Ingredient(ingData.id, -300 + i * 180, 400);
+			this.ingredients.push(ing);
+			this.gameContainer.addChild(ing);
+
+			ing.on("hygieneviolation", (violationType: string) => {
+				this.combo = 0;
+				this.violations++;
+				// 7. Aplicar penalización del mod aquí también
+				this.hygieneScore = Math.max(0, this.hygieneScore - this.config.hygienePenalty);
+				this.score = Math.max(0, this.score - 10);
+				this.updateHygieneUI();
+				this.updateScoreUI();
+				this.showFeedback(violationType);
+				this.spawnFloatingText("⚠️ VIOLACIÓN", ing.x, ing.y - 50, 0xFF0000);
+			});
+
+			ing.on("served", (stationType: string) => {
+				if (this.orderMgr.tryServe(stationType, ingData.id)) {
+					// 8. Recompensa base del mod
+					this.score += this.config.pointsPerOrder;
+					if (this.hygieneScore >= 80) { this.score += 2; }
+					this.spawnFloatingText("¡BIEN!", ing.x, ing.y - 50, 0xFFFF00);
+				} else {
+					this.score = Math.max(0, this.score - 5);
+					this.spawnFloatingText("-5", ing.x, ing.y - 50, 0xFF6600);
+				}
+				this.updateScoreUI();
+			});
+		});
+	}
+
+	private createTrashCan(): void {
+		this.trashCan = new Sprite(Texture.WHITE);
+		this.trashCan.tint = 0x444444;
+		this.trashCan.width = 120;
+		this.trashCan.height = 150;
+		this.trashCan.anchor.set(0.5);
+		this.trashCan.position.set(650, 400);
+		this.trashCan.interactive = true;
+		this.trashCan.cursor = "pointer";
+
+		const label = new Text("BASURA", { fill: "#FFFFFF", fontSize: 16, fontWeight: 'bold' });
+		label.anchor.set(0.5);
+		this.trashCan.addChild(label);
+
+		this.trashCan.on("pointerdown", () => {
+			this.showFeedback("trash");
+			this.spawnFloatingText("LIMPIO", 650, 350, 0xAAAAAA);
 		});
 
-		const title = new Text("📋 BUENAS PRÁCTICAS", titleStyle);
-		title.position.set(200, 20);
-		title.anchor.set(0.5, 0);
-		panel.addChild(title);
+		this.gameContainer.addChild(this.trashCan);
+	}
 
-		const instructions = new Text(
-			"• Mantén las estaciones limpias\n" +
-			"• Haz clic en las estaciones para limpiarlas\n" +
-			"• Los ingredientes refrigerados se calientan\n" +
-			"• No uses ingredientes en mal estado\n" +
-			"• Completa pedidos rápido y con higiene\n" +
-			"• Bonus: +2 puntos con higiene >80%",
-			textStyle
-		);
-		instructions.position.set(20, 60);
-		panel.addChild(instructions);
+	private createUI(): void {
+		this.scoreText = new Text("Puntaje: 0", this.STYLE_HUD);
+		this.scoreText.position.set(-700, -450);
+
+		this.timeText = new Text("Tiempo: 180", this.STYLE_HUD);
+		this.timeText.position.set(-700, -380);
+
+		this.hygieneScoreText = new Text("Higiene: 100%", { ...this.STYLE_HUD, fill: "#00FF00" });
+		this.hygieneScoreText.position.set(-700, -310);
+
+		this.violationsText = new Text("Violaciones: 0", this.STYLE_HUD);
+		this.violationsText.position.set(-700, -240);
+
+		this.comboText = new Text("", { ...this.STYLE_HUD, fill: "#FFD700", fontSize: 48 });
+		this.comboText.anchor.set(0.5);
+		this.comboText.position.set(0, -320);
+
+		this.gameContainer.addChild(this.scoreText, this.timeText, this.hygieneScoreText, this.violationsText, this.comboText);
+
+		this.feedbackText = new Text("", { ...this.STYLE_HUD, fontSize: 28 });
+		this.feedbackText.anchor.set(0.5);
+		this.feedbackText.position.set(0, -430);
+		this.feedbackText.alpha = 0;
+		this.gameContainer.addChild(this.feedbackText);
+
+		// Botón Entregar
+		this.deliverBtn = Sprite.from("ready");
+		this.deliverBtn.anchor.set(0.5);
+		this.deliverBtn.scale.set(0.25);
+		this.deliverBtn.position.set(600, -360);
+		this.deliverBtn.interactive = true;
+		this.deliverBtn.cursor = "pointer";
+		this.deliverBtn.on("pointerdown", () => this.orderMgr.deliverReady());
+		this.uiTopRightContainer.addChild(this.deliverBtn);
+
+		this.createInstructionsPanel();
+	}
+
+	private spawnFloatingText(msg: string, x: number, y: number, color: number): void {
+		const txt = new Text(msg, { ...this.STYLE_HUD, fill: color, fontSize: 28 });
+		txt.position.set(x, y);
+		txt.anchor.set(0.5);
+		this.gameContainer.addChild(txt);
+
+		let elapsed = 0;
+		const duration = 1000;
+		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+		const animate = (dt: number) => {
+			elapsed += dt;
+			txt.y -= 1.5;
+			txt.alpha = 1 - (elapsed / duration);
+			if (elapsed >= duration) {
+				this.gameContainer.removeChild(txt);
+			} else {
+				setTimeout(() => animate(16), 16);
+			}
+		};
+		animate(16);
+	}
+
+	private updateScoreUI(): void {
+		this.scoreText.text = `Puntaje: ${this.score}`;
+		this.comboText.text = this.combo > 1 ? `x${this.combo} Combo!` : "";
+
+		this.scoreText.scale.set(1.3);
+		if (this.combo > 1) {
+			this.comboText.scale.set(1.5);
+		}
 	}
 
 	private updateHygieneUI(): void {
 		this.hygieneScoreText.text = `Higiene: ${this.hygieneScore}%`;
 		this.violationsText.text = `Violaciones: ${this.violations}`;
 
-		// Cambiar color según nivel de higiene
-		if (this.hygieneScore >= 80) {
-			this.hygieneScoreText.style.fill = "#00FF00"; // Verde
-		} else if (this.hygieneScore >= 50) {
-			this.hygieneScoreText.style.fill = "#FFAA00"; // Naranja
-		} else {
-			this.hygieneScoreText.style.fill = "#FF0000"; // Rojo
-		}
+		if (this.hygieneScore >= 80) { this.hygieneScoreText.style.fill = "#00FF00"; }
+		else if (this.hygieneScore >= 50) { this.hygieneScoreText.style.fill = "#FFAA00"; }
+		else { this.hygieneScoreText.style.fill = "#FF0000"; }
 
-		// Game over por higiene muy baja
-		if (this.hygieneScore <= 0) {
-			this.endGame("Perdiste por violaciones de higiene");
-		}
+		if (this.hygieneScore <= 0) { this.endGame("¡Local clausurado por sanidad!"); }
 	}
 
 	private showFeedback(messageType: string): void {
-		// @types
 		const message = this.feedbackMessages[messageType] || "";
 		this.feedbackText.text = message;
 		this.feedbackText.alpha = 1;
 
-		// Fade out después de 2 segundos
 		setTimeout(() => {
-			let alpha = 1;
-			const fadeInterval = setInterval(() => {
-				alpha -= 0.05;
-				this.feedbackText.alpha = alpha;
-				if (alpha <= 0) {
-					clearInterval(fadeInterval);
-				}
-			}, 50);
-		}, 2000);
+			this.feedbackText.alpha = 0;
+		}, 2500);
+	}
+
+	private createInstructionsPanel(): void {
+		// 1. Botón de Ayuda (Trigger)
+		this.helpBtn = new Container();
+		const helpBg = new Graphics();
+		helpBg.beginFill(0xFFD700);
+		helpBg.drawCircle(0, 0, 30);
+		helpBg.endFill();
+
+		const helpIcon = new Text("?", { fill: "#3f2b1d", fontWeight: 'bold', fontSize: 32 });
+		helpIcon.anchor.set(0.5);
+
+		this.helpBtn.addChild(helpBg, helpIcon);
+		this.helpBtn.position.set(-720, -170);
+		this.helpBtn.interactive = true;
+		this.helpBtn.cursor = "pointer";
+		this.helpBtn.on("pointertap", () => this.toggleInstructions(true));
+		this.uiLeftContainer.addChild(this.helpBtn);
+
+		// 2. Panel de Instrucciones (Contenedor principal)
+		this.instructionsPanel = new Container();
+		this.instructionsPanel.visible = false; // Oculto por defecto
+		this.uiLeftContainer.addChild(this.instructionsPanel);
+
+		const panelBg = new Graphics();
+		panelBg.beginFill(0x000000, 0.9);
+		panelBg.drawRoundedRect(0, 0, 450, 380, 15);
+		panelBg.endFill();
+		panelBg.position.set(-750, -150);
+		this.instructionsPanel.addChild(panelBg);
+
+		// 3. Botón de Cerrar (X)
+		const closeBtn = new Container();
+		const closeBg = new Graphics();
+		closeBg.beginFill(0xFF4444);
+		closeBg.drawCircle(0, 0, 20);
+		closeBg.endFill();
+
+		const closeIcon = new Text("X", { fill: "#FFFFFF", fontWeight: 'bold', fontSize: 20 });
+		closeIcon.anchor.set(0.5);
+
+		closeBtn.addChild(closeBg, closeIcon);
+		closeBtn.position.set(-320, -135); // Posición arriba a la derecha del panel
+		closeBtn.interactive = true;
+		closeBtn.cursor = "pointer";
+		closeBtn.on("pointertap", () => this.toggleInstructions(false));
+		this.instructionsPanel.addChild(closeBtn);
+
+		// 4. Contenido del Manual
+		const titleStyle = new TextStyle({ fill: "#FFD700", fontSize: 26, fontWeight: "bold" });
+		const textStyle = new TextStyle({ fill: "#FFFFFF", fontSize: 18, wordWrap: true, wordWrapWidth: 400, lineHeight: 28 });
+
+		const title = new Text("📋 MANUAL DE OPERACIÓN", titleStyle);
+		title.position.set(-525, -120);
+		title.anchor.set(0.5, 0);
+		this.instructionsPanel.addChild(title);
+
+		const content = new Text(
+			"• Haz clic en estaciones para LIMPIARLAS.\n" +
+			"• Usa la BASURA para descartar errores.\n" +
+			"• Los COMBOS duplican tus puntos.\n" +
+			"• Mantén la HIGIENE >80% para bonos.\n" +
+			"• ¡Saca los pedidos antes que expiren!",
+			textStyle
+		);
+		content.position.set(-730, -60);
+		this.instructionsPanel.addChild(content);
+	}
+
+	private toggleInstructions(show: boolean): void {
+		this.instructionsPanel.visible = show;
+		this.helpBtn.visible = !show; // Ocultar el icono "?" cuando el panel está abierto
 	}
 
 	private endGame(reason: string): void {
-		if (this.gameOver) {
-			return;
-		}
+		if (this.gameOver) { return; }
 		this.gameOver = true;
 
-		// Limpiar todos los pedidos (clientes y burbujas)
 		this.orderMgr.clearAllOrders();
-
-		// Bloquear el botón de entregar
 		this.deliverBtn.interactive = false;
 		this.deliverBtn.alpha = 0.5;
 
-		// Crear overlay sobre el contenedor principal
 		const overlay = new Graphics();
-		overlay.beginFill(0x000000, 0.8);
+		overlay.beginFill(0x000000, 0.9);
 		overlay.drawRect(-1000, -1000, 2000, 2000);
 		overlay.endFill();
 		this.gameContainer.addChild(overlay);
 
-		// Texto de fin de juego
-		const endStyle = new TextStyle({
-			fill: "#FFFFFF",
-			fontSize: 48,
-			fontWeight: "bold",
-			align: "center",
-		});
+		const endStyle = new TextStyle({ fill: "#FFFFFF", fontSize: 54, fontWeight: "bold", align: "center" });
+		const resultText = new Text(
+			`${reason}\n\n` +
+			`Puntaje: ${this.score}\n` +
+			`Higiene Final: ${this.hygieneScore}%\n` +
+			`Errores: ${this.violations}`,
+			endStyle
+		);
+		resultText.anchor.set(0.5);
+		resultText.position.set(0, -50);
+		overlay.addChild(resultText);
 
-		const endText = new Text(`${reason}\n\n` + `Puntaje Final: ${this.score}\n` + `Higiene: ${this.hygieneScore}%\n` + `Violaciones: ${this.violations}`, endStyle);
-		endText.anchor.set(0.5);
-		endText.position.set(0, -100);
-		overlay.addChild(endText);
+		let grade = "F - Clausurado";
+		let color = "#FF0000";
+		if (this.hygieneScore >= 90 && this.score > 200) { grade = "S - Chef Estrella"; color = "#00FFFF"; }
+		else if (this.hygieneScore >= 80) { grade = "A - Excelente"; color = "#00FF00"; }
+		else if (this.hygieneScore >= 60) { grade = "B - Aceptable"; color = "#FFFF00"; }
+		else if (this.hygieneScore >= 40) { grade = "C - Necesita mejorar"; color = "#FFAA00"; }
 
-		// Evaluación final
-		let grade = "D - Necesitas más práctica";
-		if (this.hygieneScore >= 80 && this.violations < 3) {
-			grade = "A - ¡Excelente trabajo!";
-		} else if (this.hygieneScore >= 60 && this.violations < 5) {
-			grade = "B - Buen trabajo";
-		} else if (this.hygieneScore >= 40) {
-			grade = "C - Regular";
-		}
-
-		const gradeText = new Text(grade, { ...endStyle, fontSize: 36, fill: "#FFD700" });
+		const gradeText = new Text(grade, { ...endStyle, fontSize: 42, fill: color });
 		gradeText.anchor.set(0.5);
-		gradeText.position.set(0, 100);
+		gradeText.position.set(0, 180);
 		overlay.addChild(gradeText);
 	}
 
 	public override update(dt: number): void {
-		if (this.gameOver) {
-			return;
-		}
+		if (this.gameOver) { return; }
 
-		// Restar tiempo
 		this.timeLeft -= dt / 1000;
 		this.timeText.text = `Tiempo: ${Math.max(0, Math.floor(this.timeLeft))}`;
 
-		// Actualizar order manager
-		this.orderMgr.update(dt);
-
-		// Actualizar ingredientes
-		this.ingredients.forEach((ing) => ing.update(dt));
-
-		// Actualizar estaciones
-		this.stations.forEach((s) => s.update(dt));
-
-		// Fin de partida
-		if (this.timeLeft <= 0) {
-			this.endGame("¡Tiempo terminado!");
+		if (this.timeLeft < 30) {
+			const pulse = Math.sin(Date.now() * 0.01) * 0.1 + 1;
+			this.timeText.scale.set(pulse);
+			this.timeText.style.fill = "#FF0000";
 		}
 
+		if (this.scoreText.scale.x > 1) { this.scoreText.scale.set(this.scoreText.scale.x - 0.02); }
+		if (this.comboText.scale.x > 1) { this.comboText.scale.set(this.comboText.scale.x - 0.02); }
+
+		this.orderMgr.update(dt);
+		this.ingredients.forEach((ing) => ing.update(dt));
+		this.stations.forEach((s) => {
+			s.update(dt);
+			// @ts-ignore
+			if (s.isDirty) {
+				s.bg.tint = 0xFF8888;
+			} else {
+				s.bg.tint = 0xFFFFFF;
+			}
+		});
+
+		if (this.timeLeft <= 0) { this.endGame("¡Tiempo agotado!"); }
 		super.update(dt);
 	}
 
